@@ -10,6 +10,7 @@ public:
 	test_buf(acl::dbuf_pool* pool)
 		: pool_(pool)
 	{
+		(void) pool_;
 	}
 
 	~test_buf()
