@@ -17,6 +17,7 @@ void *dbuf_pool::operator new(size_t size)
 	ACL_DBUF_POOL* pool = acl_dbuf_pool_create(8192);
 	dbuf_pool* dbuf = (dbuf_pool*) acl_dbuf_pool_alloc(pool, size);
 	dbuf->pool_ = pool;
+	dbuf->mysize_ = size;
 	return dbuf;
 }
 
@@ -28,7 +29,7 @@ void dbuf_pool::operator delete(void* ptr)
 
 void dbuf_pool::dbuf_reset()
 {
-	acl_dbuf_pool_reset(pool_);
+	acl_dbuf_pool_reset(pool_, mysize_);
 }
 
 void* dbuf_pool::dbuf_alloc(size_t len)

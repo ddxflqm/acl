@@ -62,6 +62,7 @@ public:
 
 private:
 	ACL_DBUF_POOL* pool_;
+	size_t mysize_;
 };
 
 } // namespace acl
