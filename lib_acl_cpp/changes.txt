@@ -1,6 +1,10 @@
 修改历史列表：
 
 ------------------------------------------------------------------------
+333) 2015.7.31
+333.1) feature: HttpServlet 类中的方法 doRun 内部在响应客户端请求时，会首先
+根据客户端的请求头字段(Connection) 自动设置响应头中的 Connection 头字段
+
 332) 2015.7.30
 332.1) bugfix: redis_command::redirect() 函数内当 cluster->peek() 返回 NULL
 时应该直接返回 NULL
