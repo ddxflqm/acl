@@ -3,7 +3,7 @@
 	ProjectType="Visual C++"
 	Version="9.00"
 	Name="mysql_pool"
-	ProjectGUID="{10B61B37-2242-426E-A56A-8AC6D4FA91FA}"
+	ProjectGUID="{CDB5750C-9937-47BB-B138-63E2318CEF52}"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
