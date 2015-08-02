@@ -4,6 +4,9 @@
 335) 2015.8.2
 335.1) feature: db_handle/db_mysql/db_sqlite 类中提供了静态方法用来设置动态库动态
 加载的全路径
+335.2) feature: mysql 模块功能在默认编译时被编译进 lib_acl_cpp 库中，
+且 db_mysql 模块默认采用动态加载方式
+335.3) samples/mysql_query: 完善了示例功能
 
 334) 2015.8.1
 334.1) feature: 针对标准输入输出增加了两个流对象：stdin_stream, stdout_stream

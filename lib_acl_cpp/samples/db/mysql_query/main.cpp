@@ -228,16 +228,34 @@ int main(void)
 	// 允许将错误日志输出至屏幕
 	acl::log::stdout_open(true);
 
-	// 设置 libmysql.dll 的加载全路径
-	const char* path = "E:\\work\\project\\oschina\\svn.acl\\lib_acl_cpp\\samples\\db\\mysql_query\\libmysql.dll";
+	acl::string line;
+	acl::stdin_stream in;
+	acl::stdout_stream out;
+
+#if	defined(_WIN32) || defined(_WIN64)
+	const char* libname = "libmysql.dll";
+#else
+	const char* libname = "libmysqlclient_r.so";
+#endif
+
+	acl::string path;
+
+	out.format("Enter %s load path: ", libname);
+	if (in.gets(line) && !line.empty())
+#if	defined(_WIN32) || defined(_WIN64)
+		path.format("%s\\%s", line.c_str(), libname);
+#else
+		path.format("%s/%s", line.c_str(), libname);
+#endif
+	else
+		path = libname;
+
+	out.format("%s path: %s\r\n", libname, path.c_str());
+	// 设置动态库加载的全路径
 	acl::db_handle::set_loadpath(path);
 
 	acl::string dbaddr("127.0.0.1:3306");
 	acl::string dbname("acl_db"), dbuser("root"), dbpass("111111");
-	acl::string line;
-
-	acl::stdin_stream in;
-	acl::stdout_stream out;
 
 	out.format("Enter dbaddr [default: %s]: ", dbaddr.c_str());
 	if (in.gets(line) && !line.empty())
@@ -258,6 +276,7 @@ int main(void)
 	out.format("dbname: %s, dbuser: %s, dbpass: %s\r\n",
 		dbname.c_str(), dbuser.c_str(), dbpass.c_str());
 
+	// 如果需要创建数据库，则需要以 root 身份进行创建
 	out.format("Do you want to create %s? yes|no: ", dbname.c_str());
 	if (in.gets(line) && (line == "yes" || line == "y"))
 	{
@@ -267,6 +286,7 @@ int main(void)
 			dbuser = "root";
 		}
 
+		// 创建数据库
 		if (db_create(dbaddr, dbname, dbuser, dbpass) == false)
 		{
 			printf("create db failed, enter any key to exit.\r\n");
@@ -343,8 +363,8 @@ int main(void)
 	printf("\r\n");
 
 //#ifndef WIN32
-	//	mysql_server_end();
-	//	mysql_thread_end();
+//	mysql_server_end();
+//	mysql_thread_end();
 //#endif
 
 	printf("mysqlclient lib's version: %ld, info: %s\r\n",
