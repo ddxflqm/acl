@@ -225,6 +225,13 @@ int main(void)
 	// WIN32 下需要调用此函数进行有关 SOCKET 的初始化
 	acl::acl_cpp_init();
 
+	// 允许将错误日志输出至屏幕
+	acl::log::stdout_open(true);
+
+	// 设置 libmysql.dll 的加载全路径
+	const char* path = "E:\\work\\project\\oschina\\svn.acl\\lib_acl_cpp\\samples\\db\\mysql_query\\libmysql.dll";
+	acl::db_handle::set_loadpath(path);
+
 	acl::string dbaddr("127.0.0.1:3306");
 	acl::string dbname("acl_db"), dbuser("root"), dbpass("111111");
 	acl::string line;
@@ -274,9 +281,6 @@ int main(void)
 	acl::db_mysql db(dbaddr, dbname, dbuser, dbpass);
 	int   max = 100;
 
-	// 允许将错误日志输出至屏幕
-	acl::log::stdout_open(true);
-
 	// 先打开数据库连接
 	if (db.open() == false)
 	{
@@ -287,6 +291,8 @@ int main(void)
 	}
 
 	printf("open db %s ok\r\n", dbname.c_str());
+	out.puts("Enter any key to continue ...");
+	(void) in.gets(line);
 
 	// 当数据表不存在时创建表
 	if (tbl_create(db) == false)
