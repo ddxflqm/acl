@@ -135,8 +135,8 @@ static bool tbl_insert(acl::db_handle& db, int n)
 static int tbl_select(acl::db_handle& db, int n)
 {
 	acl::query query;
-	query.create_sql("select * from group_tbl where"
-		" group_name=:group and uvip_tbl=:test")
+	query.create_sql("select * from group_tbl where group_name=:group"
+		" and uvip_tbl=:test")
 		.set_format("group", "group:%d", n)
 		.set_format("test", "test");
 
