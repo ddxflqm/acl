@@ -92,12 +92,14 @@ public:
 	{
 		return dbcount_;
 	}
+
 protected:
 	/**
 	 * 纯虚函数：创建 DB 的方法
 	 * @return {db_handle*}
 	 */
 	virtual db_handle* create() = 0;
+
 private:
 	std::list<db_handle*> pool_;
 	int   dblimit_;  // 连接池的最大连接数限制
