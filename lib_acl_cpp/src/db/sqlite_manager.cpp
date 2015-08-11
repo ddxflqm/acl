@@ -16,8 +16,7 @@ sqlite_manager::~sqlite_manager()
 	acl_myfree(dbfile_);
 }
 
-connect_pool* sqlite_manager::create_pool(const char* addr,
-	int count, size_t idx)
+connect_pool* sqlite_manager::create_pool(const char*, int, size_t)
 {
 	sqlite_pool* dbpool = NEW sqlite_pool(dbfile_, dblimit_);
 	return dbpool;

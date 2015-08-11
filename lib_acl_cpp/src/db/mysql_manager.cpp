@@ -42,8 +42,7 @@ mysql_manager::~mysql_manager()
 		acl_myfree(dbpass_);
 }
 
-connect_pool* mysql_manager::create_pool(const char* addr,
-	int count, size_t idx)
+connect_pool* mysql_manager::create_pool(const char*, int, size_t)
 {
 	mysql_pool* dbpool = NEW mysql_pool(dbaddr_, dbname_, dbuser_,
 		dbpass_, dblimit_, dbflags_, auto_commit_,
