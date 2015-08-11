@@ -364,7 +364,7 @@ const char* db_mysql::get_error() const
 		return "mysql not opened yet!";
 }
 
-bool db_mysql::open(const char* local_charset /* = utf8 */)
+bool db_mysql::dbopen(const char* local_charset)
 {
 	if (conn_)
 		return true;
@@ -512,7 +512,7 @@ bool db_mysql::sane_mysql_query(const char* sql)
 
 	/* 重新打开MYSQL连接进行重试 */
 	close();
-	if (open("GBK") == false)
+	if (dbopen("GBK") == false)
 	{
 		logger_error("reopen db(%s) error", dbname_);
 		return false;

@@ -1,17 +1,13 @@
 #include "acl_stdafx.hpp"
-#include "acl_cpp/connpool/connect_client.hpp"
-#include "acl_cpp/db/db_handle.hpp"
-#include "acl_cpp/db/db_mysql.hpp"
 #include "acl_cpp/db/mysql_pool.hpp"
+#include "acl_cpp/db/mysql_manager.hpp"
 
-namespace acl
-{
+namespace acl {
 
-mysql_pool::mysql_pool(const char* dbaddr, const char* dbname,
+mysql_manager::mysql_manager(const char* dbaddr, const char* dbname,
 	const char* dbuser, const char* dbpass, int dblimit /* = 64 */,
 	unsigned long dbflags /* = 0 */, bool auto_commit /* = true */,
 	int conn_timeout /* = 60 */, int rw_timeout /* = 60 */)
-: db_pool(dblimit)
 {
 	acl_assert(dbaddr && *dbaddr);
 	acl_assert(dbname && *dbname);
@@ -27,13 +23,14 @@ mysql_pool::mysql_pool(const char* dbaddr, const char* dbname,
 	else
 		dbpass_ = NULL;
 
+	dblimit_ = dblimit;
 	dbflags_ = dbflags;
 	auto_commit_ = auto_commit;
 	conn_timeout_ = conn_timeout;
 	rw_timeout_ = rw_timeout;
 }
 
-mysql_pool::~mysql_pool()
+mysql_manager::~mysql_manager()
 {
 	if (dbaddr_)
 		acl_myfree(dbaddr_);
@@ -45,11 +42,13 @@ mysql_pool::~mysql_pool()
 		acl_myfree(dbpass_);
 }
 
-connect_client* mysql_pool::create_connect()
+connect_pool* mysql_manager::create_pool(const char* addr,
+	int count, size_t idx)
 {
-	return NEW db_mysql(dbaddr_, dbname_, dbuser_,
-		dbpass_, dbflags_, auto_commit_,
+	mysql_pool* dbpool = NEW mysql_pool(dbaddr_, dbname_, dbuser_,
+		dbpass_, dblimit_, dbflags_, auto_commit_,
 		conn_timeout_, rw_timeout_);
+	return dbpool;
 }
 
 } // namespace acl

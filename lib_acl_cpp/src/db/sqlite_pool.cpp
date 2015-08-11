@@ -1,4 +1,5 @@
 #include "acl_stdafx.hpp"
+#include "acl_cpp/connpool/connect_client.hpp"
 #include "acl_cpp/db/db_handle.hpp"
 #include "acl_cpp/db/db_sqlite.hpp"
 #include "acl_cpp/db/sqlite_pool.hpp"
@@ -15,11 +16,10 @@ sqlite_pool::sqlite_pool(const char* dbfile, int dblimit /* = 64 */)
 
 sqlite_pool::~sqlite_pool()
 {
-	if (dbfile_)
-		acl_myfree(dbfile_);
+	acl_myfree(dbfile_);
 }
 
-db_handle* sqlite_pool::create()
+connect_client* sqlite_pool::create_connect()
 {
 	return NEW db_sqlite(dbfile_);
 }
