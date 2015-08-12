@@ -1,4 +1,5 @@
 #include "acl_stdafx.hpp"
+#include "acl_cpp/stdlib/log.hpp"
 #include "acl_cpp/db/mysql_pool.hpp"
 #include "acl_cpp/db/mysql_conf.hpp"
 #include "acl_cpp/db/mysql_manager.hpp"
