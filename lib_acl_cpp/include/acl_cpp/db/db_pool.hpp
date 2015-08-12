@@ -13,10 +13,11 @@ class ACL_CPP_API db_pool : public connect_pool
 public:
 	/**
 	 * 数据库构造函数
+	 * @param dbaddr {const char*} 数据库地址
 	 * @param count {int} 连接池最大连接个数限制
 	 * @param idx {size_t} 该连接池对象在集合中的下标位置(从 0 开始)
 	 */
-	db_pool(int count, size_t idx = 0);
+	db_pool(const char* dbaddr, int count, size_t idx = 0);
 	virtual ~db_pool() {};
 
 	/**

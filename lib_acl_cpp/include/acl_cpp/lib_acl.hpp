@@ -84,6 +84,7 @@
 #include "acl_cpp/http/http_request_manager.hpp"
 
 #include "acl_cpp/db/query.hpp"
+#include "acl_cpp/db/mysql_conf.hpp"
 #include "acl_cpp/db/db_handle.hpp"
 #include "acl_cpp/db/db_mysql.hpp"
 #include "acl_cpp/db/db_sqlite.hpp"

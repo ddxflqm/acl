@@ -4,16 +4,19 @@
 
 namespace acl {
 
-sqlite_manager::sqlite_manager(const char* dbfile, int dblimit /* = 64 */)
+sqlite_manager::sqlite_manager()
 {
-	acl_assert(dbfile && *dbfile);
-	dbfile_ = acl_mystrdup(dbfile);
-	dblimit_ = dblimit;
 }
 
 sqlite_manager::~sqlite_manager()
 {
-	acl_myfree(dbfile_);
+}
+
+sqlite_manager& sqlite_manager::add(const char* dbfile, int dblimit)
+{
+	// 调用基类 connect_manager::set 方法添加
+	set(dbfile, dblimit);
+	return *this;
 }
 
 connect_pool* sqlite_manager::create_pool(const char*, int, size_t)

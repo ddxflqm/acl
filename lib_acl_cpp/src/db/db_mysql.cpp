@@ -296,7 +296,14 @@ db_mysql::db_mysql(const char* dbaddr, const char* dbname,
 	if (dbname == NULL || *dbname == 0)
 		logger_fatal("dbname null");
 
-	dbaddr_ = acl_mystrdup(dbaddr);
+	// µÿ÷∑∏Ò Ω£∫[dbname@]dbaddr
+	const char* ptr = strchr(dbaddr, '@');
+	if (ptr)
+		ptr++;
+	else
+		ptr = dbaddr;
+	acl_assert(*ptr);
+	dbaddr_ = acl_mystrdup(ptr);
 	dbname_ = acl_mystrdup(dbname);
 
 	if (dbuser && *dbuser)

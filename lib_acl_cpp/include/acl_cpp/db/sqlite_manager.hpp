@@ -7,13 +7,15 @@ namespace acl {
 class ACL_CPP_API sqlite_manager : public connect_manager
 {
 public:
-	/**
-	 * 构造函数
-	 * @param dbfile {const char*} sqlite 数据库的数据文件
-	 * @param dblimit {int} 数据库连接池最大连接数限制
-	 */
-	sqlite_manager(const char* dbfile, int dblimit = 64);
+	sqlite_manager();
 	~sqlite_manager();
+
+	/**
+	* @param dbfile {const char*} sqlite 数据库的数据文件
+	* @param dblimit {int} 数据库连接池最大连接数限制
+	* @return {sqlite_manager&}
+	 */
+	sqlite_manager& add(const char* dbfile, int dblimit);
 
 protected:
 	/**

@@ -1,14 +1,21 @@
 #pragma once
 #include "acl_cpp/acl_cpp_define.hpp"
+#include <map>
+#include "acl_cpp/stdlib/string.hpp"
 #include "acl_cpp/connpool/connect_manager.hpp"
 
 namespace acl {
 
+class mysql_conf;
+
 class ACL_CPP_API mysql_manager : public connect_manager
 {
 public:
+	mysql_manager();
+	~mysql_manager();
+
 	/**
-	 * 采用 mysql 数据库时的构造函数
+	 * 添加一个数据库实例
 	 * @param dbaddr {const char*} mysql 服务器地址，格式：IP:PORT，
 	 *  在 UNIX 平台下可以为 UNIX 域套接口
 	 * @param dbname {const char*} 数据库名
@@ -19,13 +26,20 @@ public:
 	 * @param auto_commit {bool} 是否自动提交
 	 * @param conn_timeout {int} 连接数据库超时时间(秒)
 	 * @param rw_timeout {int} 与数据库通信时的IO时间(秒)
+	 * @return {mysql_manager&}
 	 */
-	mysql_manager(const char* dbaddr, const char* dbname,
+	mysql_manager& add(const char* dbaddr, const char* dbname,
 		const char* dbuser, const char* dbpass,
 		int dblimit = 64, unsigned long dbflags = 0,
 		bool auto_commit = true, int conn_timeout = 60,
 		int rw_timeout = 60);
-	~mysql_manager();
+
+	/**
+	 * 添加一个数据库实例
+	 * @param conf {const mysql_conf&}
+	 * @return {mysql_manager&}
+	 */
+	mysql_manager& add(const mysql_conf& conf);
 
 protected:
 	/**
@@ -47,6 +61,8 @@ private:
 	bool  auto_commit_;     // 是否自动提交修改后的数据
 	int   conn_timeout_;    // 连接数据库的超时时间
 	int   rw_timeout_;      // 与数据库通信的超时时间
+
+	std::map<string, mysql_conf*> dbs_;
 };
 
 } // namespace acl

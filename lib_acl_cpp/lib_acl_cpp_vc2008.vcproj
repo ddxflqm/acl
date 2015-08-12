@@ -434,6 +434,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\src\db\mysql_conf.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\src\db\mysql_manager.cpp"
 					>
 				</File>
@@ -1205,6 +1209,10 @@
 				</File>
 				<File
 					RelativePath=".\include\acl_cpp\db\db_sqlite.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\include\acl_cpp\db\mysql_conf.hpp"
 					>
 				</File>
 				<File

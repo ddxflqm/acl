@@ -6,8 +6,8 @@
 namespace acl
 {
 
-db_pool::db_pool(int count, size_t idx /* = 0 */)
-	: connect_pool("dummy", count, idx)
+db_pool::db_pool(const char* dbaddr, int count, size_t idx /* = 0 */)
+	: connect_pool(dbaddr, count, idx)
 {
 }
 
