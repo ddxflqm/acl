@@ -14,6 +14,7 @@ namespace acl
 
 HttpServlet::HttpServlet(void)
 {
+	first_ = true;
 	local_charset_[0] = 0;
 	rw_timeout_ = 60;
 	parse_body_enable_ = true;
@@ -58,6 +59,9 @@ bool HttpServlet::doRun(session& session, socket_stream* stream /* = NULL */)
 	socket_stream* in;
 	socket_stream* out;
 	bool cgi_mode;
+
+	if (first_)
+		first_ = false;
 
 	if (stream == NULL)
 	{
@@ -127,7 +131,7 @@ bool HttpServlet::doRun(session& session, socket_stream* stream /* = NULL */)
 		ret = false; // 有可能是IO失败或未知方法
 		if (req.getLastError() == HTTP_REQ_ERR_METHOD)
 			doUnknown(req, res);
-		else
+		else if (first_)
 			doError(req, res);
 		break;
 	}
