@@ -60,6 +60,7 @@ bool HttpServlet::doRun(session& session, socket_stream* stream /* = NULL */)
 	socket_stream* out;
 	bool cgi_mode;
 
+	bool first = first_;
 	if (first_)
 		first_ = false;
 
@@ -131,7 +132,7 @@ bool HttpServlet::doRun(session& session, socket_stream* stream /* = NULL */)
 		ret = false; // 有可能是IO失败或未知方法
 		if (req.getLastError() == HTTP_REQ_ERR_METHOD)
 			doUnknown(req, res);
-		else if (first_)
+		else if (first)
 			doError(req, res);
 		break;
 	}
