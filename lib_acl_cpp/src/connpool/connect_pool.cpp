@@ -113,7 +113,7 @@ connect_client* connect_pool::peek()
 	else if (count_ >= max_)
 	{
 		logger_error("too many connections, max: %d, curr: %d,"
-			" server: %s", count_, max_, addr_);
+			" server: %s", (int) max_, (int) count_, addr_);
 		lock_.unlock();
 		return NULL;
 	}
@@ -174,9 +174,9 @@ void connect_pool::put(connect_client* conn, bool keep /* = true */)
 	}
 	else
 	{
+		acl_assert(count_ > 0);
 		delete conn;
 		count_--;
-		acl_assert(count_ >= 0);
 	}
 
 	if (idle_ttl_ >= 0 && now - last_check_ >= check_inter_)

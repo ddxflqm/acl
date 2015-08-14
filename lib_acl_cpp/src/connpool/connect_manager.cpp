@@ -158,7 +158,7 @@ connect_pool& connect_manager::set(const char* addr, size_t count)
 
 	lock_.unlock();
 
-	logger("Add one service, addr: %s, count: %d", addr, count);
+	logger("Add one service, addr: %s, count: %d", addr, (int) count);
 
 	return *pool;
 }
