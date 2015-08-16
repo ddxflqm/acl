@@ -1,4 +1,5 @@
 #include "acl_stdafx.hpp"
+#include "zlib.h"
 #include "acl_cpp/stdlib/log.hpp"
 #include "acl_cpp/stdlib/zlib_stream.hpp"
 #include "acl_cpp/stream/ostream.hpp"
@@ -20,9 +21,12 @@ http_client::http_client(void)
 , unzip_(true)
 , zstream_(NULL)
 , is_request_(true)
+, head_sent_(false)
 , body_finish_(false)
 , disconnected_(true)
 , chunked_transfer_(false)
+, gzip_crc32_(0)
+, gzip_total_in_(0)
 , buf_(NULL)
 {
 }
@@ -39,9 +43,12 @@ http_client::http_client(socket_stream* client, int rw_timeout /* = 120 */,
 , unzip_(unzip)
 , zstream_(NULL)
 , is_request_(is_request)
+, head_sent_(false)
 , body_finish_(false)
 , disconnected_(false)
 , chunked_transfer_(false)
+, gzip_crc32_(0)
+, gzip_total_in_(0)
 , buf_(NULL)
 {
 }
@@ -98,8 +105,11 @@ void http_client::reset(void)
 	}
 
 	last_ret_ = -1;
+	head_sent_ = false;
 	body_finish_ = false;
 	chunked_transfer_ = false;
+	gzip_crc32_ = 0;
+	gzip_total_in_ = 0;
 }
 
 bool http_client::open(const char* addr, int conn_timeout /* = 60 */,
@@ -130,58 +140,255 @@ bool http_client::open(const char* addr, int conn_timeout /* = 60 */,
 	return true;
 }
 
-int http_client::write_head(const http_header& header)
+bool http_client::write_head(const http_header& header)
 {
+	if (head_sent_)
+		return true;
+	head_sent_ = true;
+
 	chunked_transfer_ = header.chunked_transfer();
+	if (header.is_transfer_gzip())
+	{
+		if (zstream_ != NULL)
+			delete zstream_;
+
+		zstream_ = NEW zlib_stream;
+		if (zstream_->zip_begin() == false)
+		{
+			logger_error("zip_begin error!");
+			delete zstream_;
+			zstream_ = NULL;
+
+			// 如果初始化 zip 失败，则强制转换成非 zip 模式
+			const_cast<http_header*>
+				(&header)->set_transfer_gzip(false);
+		}
+
+		// 初始化 crc32 校验和
+		gzip_crc32_ = crc32(0, Z_NULL, 0);
+		// 初始化非压缩数据总长度
+		gzip_total_in_ = 0;
+	}
+
 	string buf;
 	if (header.is_request())
 		header.build_request(buf);
 	else
 		header.build_response(buf);
-	int ret = get_ostream().write(buf.c_str(), buf.length());
+
+	ostream& out = get_ostream();
+	int ret = out.write(buf.c_str(), buf.length());
 	if (ret < 0)
+	{
 		disconnected_ = true;
-	return ret;
+		return false;
+	}
+	else if (zstream_ == NULL)
+		return true;
+
+	static const unsigned char gzheader[10] =
+		{ 0x1f, 0x8b, Z_DEFLATED, 0, 0, 0, 0, 0, 0, 3 };
+
+	return out.write(gzheader, sizeof(gzheader)) < 0 ? false : true;
 }
 
-bool http_client::write_body(const void* data, size_t len)
+bool http_client::write_chunk(ostream& out, const void* data, size_t len)
 {
-	ostream& fp = get_ostream();
+#ifndef HAS_IOV
+# define HAS_IOV
+#endif
 
-	if (chunked_transfer_ == false)
-	{
-		if (data == NULL || len == 0)
-			return true;
-		if (fp.write(data, len) == -1)
-		{
-			disconnected_ = true;
-			return false;
-		}
-		else
-			return true;
-	}
+#ifdef HAS_IOV
+	struct iovec iov[3];
 
-	// 如果设置了 chunked 传输方式，则按块传输方式写数据
+	char hdr[32];
+	safe_snprintf(hdr, sizeof(hdr), "%x\r\n", (int) len);
 
-	if (data == NULL || len == 0)
-	{
-		if (fp.format("0\r\n\r\n") == -1)
-		{
-			disconnected_ = true;
-			return false;
-		}
-		else
-			return true;
-	}
+#ifdef MINGW
+	iov[0].iov_base = hdr;
+#else
+	iov[0].iov_base = (void*) hdr;
+#endif
+	iov[0].iov_len = strlen(hdr);
 
-	if (fp.format("%x\r\n", (int) len) == -1
-		|| fp.write(data, len) == -1
-		|| fp.write("\r\n", 2) == -1)
+#ifdef MINGW
+	iov[1].iov_base = (char*) data;
+#else
+	iov[1].iov_base = (void*) data;
+#endif
+	iov[1].iov_len = (int) len;
+
+#ifdef MINGW
+	iov[2].iov_base = (char*) "\r\n";
+#else
+	iov[2].iov_base = (void*) "\r\n";
+#endif
+	iov[2].iov_len = 2;
+
+	return out.writev(iov, 3) == -1 ? false : true;
+#else
+	if (out.format("%x\r\n", (int) len) == -1
+		|| out.write(data, len) == -1
+		|| out.write("\r\n", 2) == -1)
 	{
 		disconnected_ = true;
 		return false;
 	}
 	return true;
+#endif
+}
+
+bool http_client::write_chunk_trailer(ostream& out)
+{
+	if (out.format("0\r\n\r\n") == -1)
+	{
+		disconnected_ = true;
+		return false;
+	}
+	return true;
+}
+
+bool http_client::write_gzip(ostream& out, const void* data, size_t len)
+{
+	acl_assert(zstream_);
+
+	if (buf_ == NULL)
+		buf_ = NEW string(4096);
+	else
+		buf_->clear();
+
+	if (data && len > 0)
+	{
+		// 增加非压缩数据总长度
+		gzip_total_in_ += len;
+
+		// 计算 crc32 数据校验和
+		gzip_crc32_ = crc32(gzip_crc32_, (const Bytef*) data,
+			(unsigned) len);
+
+		if (!zstream_->zip_update((const char*) data, len, buf_))
+		{
+			logger_error("zip_update error!");
+			return false;
+		}
+
+		// 如果为空，则直接返回，等待下次的写操作
+		if (buf_->empty())
+			return true;
+
+		data = buf_->c_str();
+		len = buf_->size();
+	}
+	else
+	{
+		// 检查数据长度有效
+		unsigned total_in = zstream_->get_zstream()->total_in;
+		if (total_in != gzip_total_in_)
+			logger_warn("total_in: %d != gzip_total_in_: %d",
+				total_in, gzip_total_in_);
+
+		if (!zstream_->zip_finish(buf_))
+		{
+			logger_error("zip_finish error!");
+			return false;
+		}
+
+		if (buf_->empty())
+			return true;
+
+		data = buf_->c_str();
+		len = buf_->size();
+	}
+
+	if (chunked_transfer_)
+		return write_chunk(out, data, len);
+
+	if (out.write(data, len) < 0)
+	{
+		disconnected_ = true;
+		return false;
+	}
+
+	return true;
+}
+
+bool http_client::write_gzip_trailer(ostream& out)
+{
+#ifdef HAVE_BIG_ENDIAN
+	struct gztrailer
+	{
+		unsigned char crc32_[4];
+		unsigned char zlen_[4];
+	};
+	struct gztrailer tailer;
+	trailer.crc32_[0] = (u_char) (gzip_crc32_ & 0xff);
+	trailer.crc32_[1] = (u_char) ((gzip_crc32_ >> 8) & 0xff);
+	trailer.crc32_[2] = (u_char) ((gzip_crc32_ >> 16) & 0xff);
+	trailer.crc32_[3] = (u_char) ((gzip_crc32_ >> 24) & 0xff);
+
+	trailer.zlen_[0] = (u_char) (gzip_total_in_ & 0xff);
+	trailer.zlen_[1] = (u_char) ((gzip_total_in_ >> 8) & 0xff);
+	trailer.zlen_[2] = (u_char) ((gzip_total_in_ >> 16) & 0xff);
+	trailer.zlen_[3] = (u_char) ((gzip_total_in_ >> 24) & 0xff);
+#else
+	struct gztrailer 
+	{
+		unsigned int crc32_;
+		unsigned int zlen_;
+	};
+
+	struct gztrailer tailer;
+	tailer.crc32_ = gzip_crc32_;
+	tailer.zlen_ = gzip_total_in_;
+
+#endif // HAVE_BIG_ENDIAN
+
+	if (chunked_transfer_)
+		return write_chunk(out, &tailer, sizeof(tailer))
+			&& write_chunk_trailer(out);
+
+	if (out.write(&tailer, sizeof(tailer)) < 0)
+	{
+		disconnected_ = true;
+		return false;
+	}
+
+	return true;
+}
+
+bool http_client::write_body(const void* data, size_t len)
+{
+	ostream& out = get_ostream();
+
+	// 如果是 gzip 传输，则边压缩边写数据
+	if (zstream_ != NULL)
+	{
+		if (write_gzip(out, data, len) == false)
+			return false;
+		if (data == NULL || len == 0)
+			return write_gzip_trailer(out);
+		else
+			return true;
+	}
+
+	// 明文传输方式
+
+	if (data == NULL || len == 0)
+	{
+		if (chunked_transfer_)
+			return write_chunk_trailer(out);
+		else
+			return true;
+	}
+	else if (chunked_transfer_)
+		return write_chunk(out, data, len);
+	else if (out.write(data, len) == -1)
+	{
+		disconnected_ = true;
+		return false;
+	}
+	else
+		return true;
 }
 
 ostream& http_client::get_ostream(void) const
@@ -757,7 +964,7 @@ bool http_client::body_gets(string& out, bool nonl /* = true */,
 	size_t* size /* = NULL */)
 {
 	if (buf_ == NULL)
-		buf_ = new string(4096);
+		buf_ = NEW string(4096);
 
 	size_t len, size_saved = out.length();
 

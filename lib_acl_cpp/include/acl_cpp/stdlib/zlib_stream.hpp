@@ -176,6 +176,15 @@ public:
 	 */
 	bool unzip_reset();
 
+	/**
+	 * 获得当前的 zstream 对象
+	 * @return {z_stream*}
+	 */
+	z_stream* get_zstream() const
+	{
+		return zstream_;
+	}
+
 	///////////////////////////////////////////////////////////////
 
 	bool pipe_zip_begin(zlib_level_t level = zlib_default,
@@ -188,7 +197,7 @@ public:
 		string* out, size_t max = 0);
 	virtual int pop_end(string* out, size_t max = 0);
 	virtual void clear();
-protected:
+
 private:
 	z_stream* zstream_;
 	bool finished_;

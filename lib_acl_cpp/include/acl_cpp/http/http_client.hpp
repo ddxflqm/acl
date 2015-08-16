@@ -69,9 +69,9 @@ public:
 	/**
 	 * 写 HTTP 请求头数据至输出流中
 	 * @param header {http_header&}
-	 * @return {int} 真实写入的数据量, 返回 -1 表示出错
+	 * @return {bool} 写头部数据是否成功
 	 */
-	int write_head(const http_header& header);
+	bool write_head(const http_header& header);
 
 	/**
 	 * 发送 HTTP 数据体，可以循环调用此函数，当在第一次调用 write 函数写入
@@ -386,9 +386,12 @@ private:
 	bool is_request_;           // 是否是客户请求端
 	int  gzip_header_left_;     // gzip 头剩余的长度
 	int  last_ret_;             // 数据读完后记录最后的返回值
+	bool head_sent_;            // 头部数据是否已经发送完毕
 	bool body_finish_;          // 是否已经读完 HTTP 响应体数据
 	bool disconnected_;         // 网络连接是否已经关闭
 	bool chunked_transfer_;     // 是否为 chunked 传输模式
+	unsigned gzip_crc32_;       // gzip 压缩数据时的检验值
+	unsigned gzip_total_in_;    // gzip 压缩前的总数据长度      
 	string* buf_;               // 内部缓冲区，用在按行读等操作中
 
 	bool read_request_head(void);
@@ -399,6 +402,11 @@ private:
 	int  read_response_body(string& out, bool clean, int* real_size);
 
 	HTTP_HDR* get_http_hdr() const;
+	bool write_chunk(ostream& out, const void* data, size_t len);
+	bool write_chunk_trailer(ostream& out);
+
+	bool write_gzip(ostream& out, const void* data, size_t len);
+	bool write_gzip_trailer(ostream& out);
 };
 
 }  // namespace acl

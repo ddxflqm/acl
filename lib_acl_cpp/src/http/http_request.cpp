@@ -207,7 +207,7 @@ bool http_request::write_head()
 		client_->reset();  // ÖØÖÃ×´Ì¬
 
 		// ·¢ËÍ HTTP ÇëÇóÍ·
-		if (client_->write_head(header_) > 0)
+		if (client_->write_head(header_) == true)
 			return true;
 
 		close();
@@ -274,7 +274,7 @@ bool http_request::send_request(const void* data, size_t len)
 	client_->reset();  // ÖØÖÃ×´Ì¬
 
 	// Ğ´ HTTP ÇëÇóÍ·
-	if (client_->write_head(header_) < 0)
+	if (client_->write_head(header_) == false)
 	{
 		close();
 		return false;

@@ -7,6 +7,7 @@ class string;
 class ostream;
 class socket_stream;
 class http_header;
+class http_client;
 class HttpCookie;
 class HttpServlet;
 
@@ -216,6 +217,7 @@ public:
 
 private:
 	socket_stream& stream_;		// 客户端连接流
+	http_client* client_;		// http 响应流对象
 	http_header* header_;		// http 响应头
 	char  charset_[32];		// 字符集
 	char  content_type_[32];	// content-type 类型
