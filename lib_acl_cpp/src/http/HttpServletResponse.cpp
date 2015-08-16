@@ -67,6 +67,12 @@ HttpServletResponse& HttpServletResponse::setContentType(const char* value)
 	return *this;
 }
 
+HttpServletResponse& HttpServletResponse::setContentEncoding(bool gzip)
+{
+	header_->set_transfer_gzip(gzip);
+	return *this;
+}
+
 HttpServletResponse& HttpServletResponse::setDateHeader(
 	const char* name, time_t value)
 {

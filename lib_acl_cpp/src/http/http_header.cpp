@@ -810,7 +810,7 @@ bool http_header::build_response(string& out) const
 	// 同时禁止保持长连接，即： Connection: close
 	if (transfer_gzip_)
 	{
-		out << "Transfer-Encoding: gzip\r\n";
+		out << "Content-Encoding: gzip\r\n";
 
 		if (!chunked_transfer_ && keep_alive_)
 			const_cast<http_header*>(this)->keep_alive_ = false;

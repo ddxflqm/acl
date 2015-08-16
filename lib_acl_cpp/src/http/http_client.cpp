@@ -1,6 +1,7 @@
 #include "acl_stdafx.hpp"
 #include "zlib.h"
 #include "acl_cpp/stdlib/log.hpp"
+#include "acl_cpp/stdlib/snprintf.hpp"
 #include "acl_cpp/stdlib/zlib_stream.hpp"
 #include "acl_cpp/stream/ostream.hpp"
 #include "acl_cpp/stream/socket_stream.hpp"
@@ -176,6 +177,8 @@ bool http_client::write_head(const http_header& header)
 	else
 		header.build_response(buf);
 
+	//printf(">>>buf: %s\r\n", buf.c_str());
+
 	ostream& out = get_ostream();
 	int ret = out.write(buf.c_str(), buf.length());
 	if (ret < 0)
@@ -189,11 +192,13 @@ bool http_client::write_head(const http_header& header)
 	static const unsigned char gzheader[10] =
 		{ 0x1f, 0x8b, Z_DEFLATED, 0, 0, 0, 0, 0, 0, 3 };
 
+	//printf(">>>write head ok: %d\r\n", (int) sizeof(gzheader));
 	return out.write(gzheader, sizeof(gzheader)) < 0 ? false : true;
 }
 
 bool http_client::write_chunk(ostream& out, const void* data, size_t len)
 {
+	//printf("write chunk: len: %d\r\n", (int) len);
 #ifndef HAS_IOV
 # define HAS_IOV
 #endif
@@ -240,6 +245,7 @@ bool http_client::write_chunk(ostream& out, const void* data, size_t len)
 
 bool http_client::write_chunk_trailer(ostream& out)
 {
+	//printf("write chunk trailer\r\n");
 	if (out.format("0\r\n\r\n") == -1)
 	{
 		disconnected_ = true;
@@ -287,6 +293,7 @@ bool http_client::write_gzip(ostream& out, const void* data, size_t len)
 			logger_warn("total_in: %d != gzip_total_in_: %d",
 				total_in, gzip_total_in_);
 
+		//printf("total_in: %d, %d\r\n", total_in, gzip_total_in_);
 		if (!zstream_->zip_finish(buf_))
 		{
 			logger_error("zip_finish error!");
@@ -321,15 +328,15 @@ bool http_client::write_gzip_trailer(ostream& out)
 		unsigned char zlen_[4];
 	};
 	struct gztrailer tailer;
-	trailer.crc32_[0] = (u_char) (gzip_crc32_ & 0xff);
-	trailer.crc32_[1] = (u_char) ((gzip_crc32_ >> 8) & 0xff);
-	trailer.crc32_[2] = (u_char) ((gzip_crc32_ >> 16) & 0xff);
-	trailer.crc32_[3] = (u_char) ((gzip_crc32_ >> 24) & 0xff);
+	tailer.crc32_[0] = (u_char) (gzip_crc32_ & 0xff);
+	tailer.crc32_[1] = (u_char) ((gzip_crc32_ >> 8) & 0xff);
+	tailer.crc32_[2] = (u_char) ((gzip_crc32_ >> 16) & 0xff);
+	tailer.crc32_[3] = (u_char) ((gzip_crc32_ >> 24) & 0xff);
 
-	trailer.zlen_[0] = (u_char) (gzip_total_in_ & 0xff);
-	trailer.zlen_[1] = (u_char) ((gzip_total_in_ >> 8) & 0xff);
-	trailer.zlen_[2] = (u_char) ((gzip_total_in_ >> 16) & 0xff);
-	trailer.zlen_[3] = (u_char) ((gzip_total_in_ >> 24) & 0xff);
+	tailer.zlen_[0] = (u_char) (gzip_total_in_ & 0xff);
+	tailer.zlen_[1] = (u_char) ((gzip_total_in_ >> 8) & 0xff);
+	tailer.zlen_[2] = (u_char) ((gzip_total_in_ >> 16) & 0xff);
+	tailer.zlen_[3] = (u_char) ((gzip_total_in_ >> 24) & 0xff);
 #else
 	struct gztrailer 
 	{
@@ -343,6 +350,7 @@ bool http_client::write_gzip_trailer(ostream& out)
 
 #endif // HAVE_BIG_ENDIAN
 
+	//printf(">>>>>crc32: %u, zlen: %u\r\n", tailer.crc32_, tailer.zlen_);
 	if (chunked_transfer_)
 		return write_chunk(out, &tailer, sizeof(tailer))
 			&& write_chunk_trailer(out);

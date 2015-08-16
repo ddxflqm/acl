@@ -47,6 +47,7 @@ public:
 	/**
 	 * 设置与 HTTP 客户端保持联系长连接
 	 * @param on {bool}
+	 * @return {HttpServletResponse&}
 	 */
 	HttpServletResponse& setKeepAlive(bool on);
 
@@ -54,13 +55,22 @@ public:
 	 * 设置 HTTP 响应数据体的 Content-Type 字段值，可字段值可以为：
 	 * text/html 或 text/html; charset=utf8 格式
 	 * @param value {const char*} 字段值
+	 * @return {HttpServletResponse&}
 	 */
 	HttpServletResponse& setContentType(const char* value);
+
+	/**
+	 * 设置 HTTP 响应数据体采用 gzip 压缩格式
+	 * @param gzip {bool} 是否采用 gzip 压缩格式
+	 * @return {HttpServletResponse&}
+	 */
+	HttpServletResponse& setContentEncoding(bool gzip);
 
 	/**
 	 * 设置 HTTP 响应数据体中字符集，当已经在 setContentType 设置
 	 * 了字符集，则就不必再调用本函数设置字符集
 	 * @param charset {const char*} 响应体数据的字符集
+	 * @return {HttpServletResponse&}
 	 */
 	HttpServletResponse& setCharacterEncoding(const char* charset);
 
