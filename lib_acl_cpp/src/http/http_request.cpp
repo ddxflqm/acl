@@ -632,7 +632,7 @@ bool http_request::get_body(string& out, const char* to_charset /* = NULL */)
 	return true;
 }
 
-int http_request::read_body(string& out, bool clean /* = NULL */,
+int http_request::read_body(string& out, bool clean /* = false */,
 	int* real_size /* = NULL */)
 {
 	if (clean)

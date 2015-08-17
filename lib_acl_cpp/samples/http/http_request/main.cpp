@@ -29,6 +29,8 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	acl::log::stdout_open(true);
+
 	acl::string buf(1024);
 	for (size_t i = 0; i < 1024; i++)
 		buf << 'X';
@@ -39,25 +41,31 @@ int main(int argc, char* argv[])
 	for (int i = 0; i < max; i++)
 	{
 		acl::http_header& header = req.request_header();
+		//header.set_method(acl::HTTP_METHOD_POST);
 		header.set_url("/");
 		header.set_keep_alive(true);
-		header.set_content_length(buf.length());
+		header.accept_gzip(true);
+		//header.set_content_length(buf.length());
 
-		if (req.request(buf.c_str(), buf.length()) == false)
+		acl::string hdr;
+		header.build_request(hdr);
+		printf("request header:\r\n%s\r\n", hdr.c_str());
+
+		//if (req.request(buf.c_str(), buf.length()) == false)
+		if (req.request(NULL, 0) == false)
 		{
 			printf("send request error\n");
 			break;
 		}
 
-		if (i < 10)
-			printf("send request ok\r\n");
+		printf("send request body ok\r\n");
 
 		tmp.clear();
 
-		int  size = 0;
+		int  size = 0, real_size = 0, n;
 		while (true)
 		{
-			int ret = req.read_body(tmp, false);
+			int ret = req.read_body(tmp, false, &n);
 			if (ret < 0) {
 				printf("read_body error\n");
 				return 1;
@@ -65,9 +73,12 @@ int main(int argc, char* argv[])
 			else if (ret == 0)
 				break;
 			size += ret;
+			real_size += n;
 		}
-		if (i < 10)
-			printf(">>size: %d\n", size);
+		printf("read body size: %d, real_size: %d, %s\n",
+			size, real_size, tmp.c_str());
+
+		printf("===============================================\r\n");
 	}
 
 	return 0;

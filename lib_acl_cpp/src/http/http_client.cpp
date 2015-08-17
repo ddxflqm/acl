@@ -141,6 +141,8 @@ bool http_client::open(const char* addr, int conn_timeout /* = 60 */,
 	return true;
 }
 
+//////////////////////////////////////////////////////////////////////////////
+
 bool http_client::write_chunk(ostream& out, const void* data, size_t len)
 {
 #ifndef HAS_IOV
@@ -174,7 +176,13 @@ bool http_client::write_chunk(ostream& out, const void* data, size_t len)
 #endif
 	iov[2].iov_len = 2;
 
-	return out.writev(iov, 3) == -1 ? false : true;
+	if (out.writev(iov, 3) == -1)
+	{
+		disconnected_ = true;
+		return false;
+	}
+	else
+		return true;
 #else
 	if (out.format("%x\r\n", (int) len) == -1
 		|| out.write(data, len) == -1
@@ -183,18 +191,22 @@ bool http_client::write_chunk(ostream& out, const void* data, size_t len)
 		disconnected_ = true;
 		return false;
 	}
-	return true;
+	else
+		return true;
 #endif
 }
 
 bool http_client::write_chunk_trailer(ostream& out)
 {
-	if (out.format("0\r\n\r\n") == -1)
+	static const char trailer[] = "0\r\n\r\n";
+
+	if (out.write(trailer, sizeof(trailer) - 1) == -1)
 	{
 		disconnected_ = true;
 		return false;
 	}
-	return true;
+	else
+		return true;
 }
 
 bool http_client::write_gzip(ostream& out, const void* data, size_t len)
@@ -206,6 +218,7 @@ bool http_client::write_gzip(ostream& out, const void* data, size_t len)
 	else
 		buf_->clear();
 
+	// 边压缩边输出数据
 	if (data && len > 0)
 	{
 		// 增加非压缩数据总长度
@@ -228,6 +241,8 @@ bool http_client::write_gzip(ostream& out, const void* data, size_t len)
 		data = buf_->c_str();
 		len = buf_->size();
 	}
+
+	// 写入 zstream 流对象中最后可能缓存的数据，同时结束压缩过程
 	else
 	{
 		// 检查数据长度有效
@@ -249,9 +264,11 @@ bool http_client::write_gzip(ostream& out, const void* data, size_t len)
 		len = buf_->size();
 	}
 
+	// 块传输方式输出压缩数据
 	if (chunked_transfer_)
 		return write_chunk(out, data, len);
 
+	// 普通流式方式输出压缩数据
 	if (out.write(data, len) < 0)
 	{
 		disconnected_ = true;
@@ -261,6 +278,8 @@ bool http_client::write_gzip(ostream& out, const void* data, size_t len)
 	return true;
 }
 
+// 输出 gzip 尾部结束数据
+
 bool http_client::write_gzip_trailer(ostream& out)
 {
 #ifdef HAVE_BIG_ENDIAN
@@ -269,16 +288,17 @@ bool http_client::write_gzip_trailer(ostream& out)
 		unsigned char crc32_[4];
 		unsigned char zlen_[4];
 	};
-	struct gztrailer tailer;
-	tailer.crc32_[0] = (u_char) (gzip_crc32_ & 0xff);
-	tailer.crc32_[1] = (u_char) ((gzip_crc32_ >> 8) & 0xff);
-	tailer.crc32_[2] = (u_char) ((gzip_crc32_ >> 16) & 0xff);
-	tailer.crc32_[3] = (u_char) ((gzip_crc32_ >> 24) & 0xff);
+	struct gztrailer trailer;
 
-	tailer.zlen_[0] = (u_char) (gzip_total_in_ & 0xff);
-	tailer.zlen_[1] = (u_char) ((gzip_total_in_ >> 8) & 0xff);
-	tailer.zlen_[2] = (u_char) ((gzip_total_in_ >> 16) & 0xff);
-	tailer.zlen_[3] = (u_char) ((gzip_total_in_ >> 24) & 0xff);
+	trailer.crc32_[0] = (u_char) (gzip_crc32_ & 0xff);
+	trailer.crc32_[1] = (u_char) ((gzip_crc32_ >> 8) & 0xff);
+	trailer.crc32_[2] = (u_char) ((gzip_crc32_ >> 16) & 0xff);
+	trailer.crc32_[3] = (u_char) ((gzip_crc32_ >> 24) & 0xff);
+
+	trailer.zlen_[0] = (u_char) (gzip_total_in_ & 0xff);
+	trailer.zlen_[1] = (u_char) ((gzip_total_in_ >> 8) & 0xff);
+	trailer.zlen_[2] = (u_char) ((gzip_total_in_ >> 16) & 0xff);
+	trailer.zlen_[3] = (u_char) ((gzip_total_in_ >> 24) & 0xff);
 #else
 	struct gztrailer 
 	{
@@ -286,23 +306,25 @@ bool http_client::write_gzip_trailer(ostream& out)
 		unsigned int zlen_;
 	};
 
-	struct gztrailer tailer;
-	tailer.crc32_ = gzip_crc32_;
-	tailer.zlen_ = gzip_total_in_;
+	struct gztrailer trailer;
+	trailer.crc32_ = gzip_crc32_;
+	trailer.zlen_ = gzip_total_in_;
 
 #endif // HAVE_BIG_ENDIAN
 
+	// 块传输方式输出 gzip 尾
 	if (chunked_transfer_)
-		return write_chunk(out, &tailer, sizeof(tailer))
+		return write_chunk(out, &trailer, sizeof(trailer))
 			&& write_chunk_trailer(out);
 
-	if (out.write(&tailer, sizeof(tailer)) < 0)
+	// 普通方式输出 gzip 尾
+	if (out.write(&trailer, sizeof(trailer)) < 0)
 	{
 		disconnected_ = true;
 		return false;
 	}
-
-	return true;
+	else
+		return true;
 }
 
 bool http_client::write_head(const http_header& header)
@@ -311,7 +333,10 @@ bool http_client::write_head(const http_header& header)
 		return true;
 	head_sent_ = true;
 
+	// 先保留是否为块传输的状态
 	chunked_transfer_ = header.chunked_transfer();
+
+	// 如果设置了 gzip 传输方式，则需要先初始化 zlib 流对象
 	if (header.is_transfer_gzip())
 	{
 		if (zstream_ != NULL)
@@ -336,6 +361,7 @@ bool http_client::write_head(const http_header& header)
 		gzip_total_in_ = 0;
 	}
 
+	// 创建 HTTP 请求/响应头
 	string buf;
 	if (header.is_request())
 		header.build_request(buf);
@@ -344,15 +370,8 @@ bool http_client::write_head(const http_header& header)
 
 	ostream& out = get_ostream();
 
-	if (chunked_transfer_)
-	{
-		if (write_chunk(out, buf.c_str(), buf.size()) == false)
-		{
-			disconnected_ = true;
-			return false;
-		}
-	}
-	else if (out.write(buf.c_str(), buf.length()) < 0)
+	// 先写 HTTP 头
+	if (out.write(buf.c_str(), buf.length()) < 0)
 	{
 		disconnected_ = true;
 		return false;
@@ -360,19 +379,21 @@ bool http_client::write_head(const http_header& header)
 	else if (zstream_ == NULL)
 		return true;
 
+	// 如果是采用 gzip 数据压缩方式，则需要先输出 gzip 头
+
 	static const unsigned char gzheader[10] =
 		{ 0x1f, 0x8b, Z_DEFLATED, 0, 0, 0, 0, 0, 0, 3 };
 
 	if (chunked_transfer_)
 	{
+		// 块传输方式写数据
 		if (write_chunk(out, gzheader, sizeof(gzheader)) == false)
-		{
-			disconnected_ = true;
 			return false;
-		}
 		else
 			return true;
 	}
+
+	// 普通流式写数据
 	else if (out.write(gzheader, sizeof(gzheader)) < 0)
 	{
 		disconnected_ = true;
@@ -389,16 +410,20 @@ bool http_client::write_body(const void* data, size_t len)
 	// 如果是 gzip 传输，则边压缩边写数据
 	if (zstream_ != NULL)
 	{
+		// 输出压缩数据体
 		if (write_gzip(out, data, len) == false)
 			return false;
+
+		// 如果数据输出完毕，则还需输出 gzip 尾部字段
 		if (data == NULL || len == 0)
 			return write_gzip_trailer(out);
 		else
 			return true;
 	}
 
-	// 明文传输方式
+	// 非压缩方式传输数据
 
+	// 如果参数为 NULL，则说明数据写完毕
 	if (data == NULL || len == 0)
 	{
 		if (chunked_transfer_)
@@ -406,8 +431,12 @@ bool http_client::write_body(const void* data, size_t len)
 		else
 			return true;
 	}
+
+	// 块方式写入数据体
 	else if (chunked_transfer_)
 		return write_chunk(out, data, len);
+
+	// 普通流式写入数据体
 	else if (out.write(data, len) == -1)
 	{
 		disconnected_ = true;
@@ -416,6 +445,8 @@ bool http_client::write_body(const void* data, size_t len)
 	else
 		return true;
 }
+
+//////////////////////////////////////////////////////////////////////////////
 
 ostream& http_client::get_ostream(void) const
 {
