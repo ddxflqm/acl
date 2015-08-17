@@ -10,6 +10,7 @@
 # if defined(ACL_WINDOWS) || defined(USE_DYNAMIC)
 
 typedef int     (*deflateInit_fn)(z_stream*, int, const char*, int);
+typedef int     (*deflateInit2_fn)(z_stream*, int, int, int, int, int);
 typedef int     (*deflate_fn)(z_stream*, int);
 typedef int     (*deflateReset_fn)(z_stream*);
 typedef int     (*deflateEnd_fn)(z_stream*);
