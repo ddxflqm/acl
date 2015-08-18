@@ -100,8 +100,8 @@ public:
 	 * 对于分区下载，调用本函数设置数据下载的偏移位置（下标从 0 开始）
 	 * @param from {http_off_t} 数据区间起始偏移位置（下标从 0 开始计算）
 	 * @param to {http_off_t} 数据区间结束位置（该值需小于总数据长度）
-	 * @param total {http_off_t} 总数据长度，当数据源为一个静态文件时该值应
-	 *  等于该文件的总长度大小
+	 * @param total {http_off_t} 总数据长度，当数据源为一个静态文件时该值
+	 *  应等于该文件的总长度大小
 	 * @return {HttpServletResponse&}
 	 */
 #if  defined(_WIN32) || defined(_WIN64)
@@ -190,8 +190,9 @@ public:
 
 	/**
 	 * 带格式方式向 HTTP 客户端发送响应数据，内部自动调用
-	 * HttpServletResponse::write(const void*, size_t) 过程，
-	 * 在使用 chunked 方式传输数据时，应该应该最后再调用 write(NULL, 0) 表示数据结束
+	 * HttpServletResponse::write(const void*, size_t) 过程，在使用
+	 * chunked 方式传输数据时，应该应该最后再调用 write(NULL, 0)
+	 * 表示数据结束
 	 * @param fmt {const char*} 变参格式字符串
 	 * @return {int} 成功则返回值 > 0，否则返回 -1
 	 */
