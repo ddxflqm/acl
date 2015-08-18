@@ -381,6 +381,13 @@ bool http_client::write_head(const http_header& header)
 
 	// 如果是采用 gzip 数据压缩方式，则需要先输出 gzip 头
 
+	/**
+	 * RFC 1952 Section 2.3 defines the gzip header:
+	 * +---+---+---+---+---+---+---+---+---+---+
+	 * |ID1|ID2|CM |FLG|     MTIME     |XFL|OS |
+	 * +---+---+---+---+---+---+---+---+---+---+
+	 * Unix OS_CODE: 3
+	 */
 	static const unsigned char gzheader[10] =
 		{ 0x1f, 0x8b, Z_DEFLATED, 0, 0, 0, 0, 0, 0, 3 };
 
