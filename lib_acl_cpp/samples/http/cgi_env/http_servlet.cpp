@@ -54,6 +54,7 @@ public:
 		res.setCharacterEncoding("gb2312");
 		res.setContentEncoding(true);
 		res.setContentLength(buf.size());
+		res.setChunkedTransferEncoding(true);
 
 		return res.write(buf) && res.write(NULL, 0);
 	}
