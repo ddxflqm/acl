@@ -6,6 +6,7 @@
 #include "acl_cpp/http/http_header.hpp"
 #include "acl_cpp/http/http_client.hpp"
 #include "acl_cpp/http/HttpServlet.hpp"
+#include "acl_cpp/http/HttpServletRequest.hpp"
 #include "acl_cpp/http/HttpServletResponse.hpp"
 
 namespace acl
@@ -13,6 +14,7 @@ namespace acl
 
 HttpServletResponse::HttpServletResponse(socket_stream& stream)
 : stream_(stream)
+, request_(NULL)
 {
 	client_ = NEW http_client(&stream_, stream_.get_rw_timeout());
 	header_ = NEW http_header();
@@ -152,7 +154,30 @@ bool HttpServletResponse::sendHeader(void)
 			content_type_, charset_);
 	else
 		safe_snprintf(buf, sizeof(buf), "%s", content_type_);
+
 	header_->set_content_type(buf);
+
+	// 虽然服务端在响应头中设置了 gzip 压缩方式，但如果请求端不接收
+	// gzip 压缩数据，则需要从响应头中禁止
+	if (header_->is_transfer_gzip() && request_)
+	{
+		bool accept_gzip = false;
+		std::vector<string> tokens;
+		request_->getAcceptEncoding(tokens);
+		std::vector<string>::const_iterator it;
+
+		for (it = tokens.begin(); it != tokens.end(); ++it)
+		{
+			if ((*it).compare("gzip", false) == 0)
+			{
+				accept_gzip = true;
+				break;
+			}
+		}
+
+		if (!accept_gzip)
+			header_->set_transfer_gzip(false);
+	}
 
 	return client_->write_head(*header_);
 }
@@ -196,6 +221,11 @@ void HttpServletResponse::encodeUrl(string& out, const char* url)
 ostream& HttpServletResponse::getOutputStream(void) const
 {
 	return stream_;
+}
+
+void HttpServletResponse::setHttpServletRequest(HttpServletRequest* request)
+{
+	request_ = request;
 }
 
 } // namespace acl

@@ -537,6 +537,8 @@ bool http_client::read_response_head(void)
 				delete zstream_;
 				zstream_ = NULL;
 			}
+
+			// gzip 响应数据体前会有 10 字节的头部字段
 			gzip_header_left_ = 10;
 		}
 		else
@@ -831,14 +833,16 @@ int http_client::read_request_body(char* buf, size_t size)
 	// 缓冲区太大了没有任何意义
 	if (size >= 1024000)
 		size = 1024000;
+
 	http_off_t ret = http_req_body_get_sync(req_, vstream, buf, (int) size);
 
-	if (ret <= 0)
+	if (ret < 0)
 	{
+		disconnected_ = true;
 		body_finish_ = true;
-		if (ret < 0)
-			disconnected_ = true;
 	}
+	else if (ret == 0)
+		body_finish_ = true;
 
 	return ((int) ret);
 }
@@ -862,13 +866,13 @@ int http_client::read_body(string& out, bool clean /* = true */,
 		return read_request_body(out, clean, real_size);
 }
 
-int http_client::read_response_body(string& out, bool clean,
-	int* real_size)
+int http_client::read_response_body(string& out, bool clean, int* real_size)
 {
 	if (real_size)
 		*real_size = 0;
+
 	if (body_finish_)
-		return (last_ret_);
+		return last_ret_;
 
 	if (stream_ == NULL)
 	{
@@ -876,8 +880,9 @@ int http_client::read_response_body(string& out, bool clean,
 		disconnected_ = true;
 		return -1;
 	}
-	ACL_VSTREAM* vstream = stream_->get_vstream();
-	if (vstream == NULL)
+
+	ACL_VSTREAM* vs = stream_->get_vstream();
+	if (vs == NULL)
 	{
 		logger_error("connect stream null");
 		disconnected_ = true;
@@ -890,6 +895,7 @@ int http_client::read_response_body(string& out, bool clean,
 		disconnected_ = true;
 		return -1;
 	}
+
 	if (res_ == NULL)
 		res_ = http_res_new(hdr_res_);
 
@@ -899,9 +905,9 @@ int http_client::read_response_body(string& out, bool clean,
 	int   saved_count = (int) out.length();
 	char  buf[8192];
 
-SKIP_GZIP_HEAD_AGAIN:  // 对于有 GZIP 头数据，可能需要重复读
+READ_AGAIN:  // 对于有 GZIP 头数据，可能需要重复读
 
-	int ret = (int) http_res_body_get_sync(res_, vstream, buf, sizeof(buf));
+	int ret = (int) http_res_body_get_sync(res_, vs, buf, sizeof(buf));
 
 	if (zstream_ == NULL)
 	{
@@ -944,10 +950,11 @@ SKIP_GZIP_HEAD_AGAIN:  // 对于有 GZIP 头数据，可能需要重复读
 	if (gzip_header_left_ >= ret)
 	{
 		gzip_header_left_ -= ret;
-		goto SKIP_GZIP_HEAD_AGAIN;
+		goto READ_AGAIN;
 	}
 
 	int  n;
+
 	if (gzip_header_left_ > 0)
 	{
 		n = gzip_header_left_;
@@ -955,12 +962,22 @@ SKIP_GZIP_HEAD_AGAIN:  // 对于有 GZIP 头数据，可能需要重复读
 	}
 	else
 		n = 0;
+
 	if (zstream_->unzip_update(buf + n, ret - n, &out) == false)
 	{
 		logger_error("unzip_update error");
 		return -1;
 	}
-	return (int) out.length() - saved_count;
+
+	n = (int) out.length() - saved_count;
+
+	// 如果新解压数据为 0，则有可能是本次解压过程需要的压缩数据不完整，
+	// 或有可能是此次读到了最后的 8 个字节的尾部字段所至，所以需要再
+	// 尝试读一次，以期读到下一部分数据或读完所有的数据体
+	if (n == 0)
+		goto READ_AGAIN;
+
+	return n;
 }
 
 int http_client::read_request_body(string& out, bool clean,

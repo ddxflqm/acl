@@ -1,6 +1,7 @@
 #pragma once
 #include "acl_cpp/acl_cpp_define.hpp"
 #include <vector>
+#include "acl_cpp/stdlib/string.hpp"
 #include "acl_cpp/http/http_header.hpp"
 #include "acl_cpp/http/http_ctype.hpp"
 #include "acl_cpp/http/http_type.hpp"
@@ -277,6 +278,12 @@ public:
 	 * @return {int} 返回值 < 0 表示不存在 Keep-Alive 字段
 	 */
 	int getKeepAlive(void) const;
+
+	/**
+	 * 获得 HTTP 客户端支持的数据压缩算法集合
+	 * @param out {std::vector<string>&} 存储结果集
+	 */
+	void getAcceptEncoding(std::vector<string>& out) const;
 
 	/*
 	 * 当 HTTP 请求为 POST 方法，通过本函数设置读 HTTP 数据体的

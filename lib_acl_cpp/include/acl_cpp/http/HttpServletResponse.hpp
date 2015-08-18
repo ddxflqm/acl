@@ -10,6 +10,7 @@ class http_header;
 class http_client;
 class HttpCookie;
 class HttpServlet;
+class HttpServletRequest;
 
 /**
  * 与 HTTP 客户端响应相关的类，该类不应被继承，用户也不需要
@@ -198,8 +199,8 @@ public:
 
 	/**
 	 * 带格式方式向 HTTP 客户端发送响应数据，内部自动调用
-	 * HttpServletResponse::write(const string&) 过程，
-	 * 在使用 chunked 方式传输数据时，应该应该最后再调用 write(NULL, 0) 表示数据结束
+	 * HttpServletResponse::write(const string&) 过程，在使用 chunked
+	 * 方式传输数据时，应该应该最后再调用 write(NULL, 0) 表示数据结束
 	 * @param fmt {const char*} 变参格式字符串
 	 * @param ap {va_list} 变参列表
 	 * @return {int} 成功则返回值 > 0，否则返回 -1
@@ -225,8 +226,15 @@ public:
 	 */
 	ostream& getOutputStream(void) const;
 
+	/**
+	 * 设置 http 请求对象，该函数目前只应被 HttpServlet 类内部调用
+	 * @param request {HttpServletRequest*}
+	 */
+	void setHttpServletRequest(HttpServletRequest* request);
+
 private:
 	socket_stream& stream_;		// 客户端连接流
+	HttpServletRequest* request_;	// http 请求对象
 	http_client* client_;		// http 响应流对象
 	http_header* header_;		// http 响应头
 	char  charset_[32];		// 字符集
