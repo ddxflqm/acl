@@ -537,10 +537,8 @@ void zlib_stream::clear()
 		unzip_reset();
 }
 
-#else  // !HAS_ZLIB && !HAS_ZLIB_DLL
-
-# error "You should define HAS_ZLIB or HAS_ZLIB_DLL first!"
-
-#endif
-
 } // namespace acl
+
+#else  // !HAS_ZLIB && !HAS_ZLIB_DLL
+# error "You should define HAS_ZLIB or HAS_ZLIB_DLL first!"
+#endif
