@@ -7,9 +7,9 @@
 class test_buf
 {
 public:
-	test_buf()
+	test_buf(int i)
 	{
-		i_ = 100;
+		i_ = i;
 	}
 
 	~test_buf()
@@ -130,7 +130,7 @@ private:
 			for (int j = 0; j < max_count_; j++)
 			{
 				ptr = (char*) pool->dbuf_alloc(sizeof(test_buf));
-				buf = new (ptr) test_buf();
+				buf = new (ptr) test_buf(i);
 				// buf->set(i);
 				buf->~test_buf();
 			}
@@ -149,7 +149,7 @@ private:
 		{
 			for (int j = 0; j < max_count_; j++)
 			{
-				buf = new test_buf;
+				buf = new test_buf(i);
 				delete buf;
 			}
 		}
