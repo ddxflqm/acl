@@ -53,7 +53,7 @@ void master_service::on_read(acl::socket_stream* stream)
 	else if (stream->write(buf, ret) == -1)
 		logger_error("write to %s error %s",
 			stream->get_peer(true), acl::last_serror());
-	if (0)
+//	if (0)
 	logger(">>Peer: %s, Local: %s", stream->get_peer(true),
 		stream->get_local(true));
 }
