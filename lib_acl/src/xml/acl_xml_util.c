@@ -403,8 +403,9 @@ ACL_VSTRING *acl_xml_build(ACL_XML *xml, ACL_VSTRING *buf)
 			continue;
 		}
 		if (LEN(node->text) == 0) {
-			acl_vstring_strcat(buf, " />");
+			acl_vstring_strcat(buf, "></");
 			acl_vstring_strcat(buf, STR(node->ltag));
+			acl_vstring_strcat(buf, ">");
 		} else
 			acl_vstring_sprintf_append(buf, ">%s</%s>",
 				STR(node->text), STR(node->ltag));
