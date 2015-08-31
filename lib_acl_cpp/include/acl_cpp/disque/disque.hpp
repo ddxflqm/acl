@@ -108,6 +108,8 @@ public:
 	 */
 	const std::vector<disque_job*>* getjob(const std::vector<string>& names,
 		size_t timeout, size_t count);
+	const std::vector<disque_job*>* getjob(const char* name,
+		size_t timeout, size_t count);
 
 	/**
 	 * acknowledge the execution of one or more jobs via IDs. The node
