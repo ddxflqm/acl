@@ -487,6 +487,9 @@
     <ClCompile Include="src\db\mysql_conf.cpp">
       <Filter>src\db</Filter>
     </ClCompile>
+    <ClCompile Include="src\stdlib\thread_queue.cpp">
+      <Filter>src\stdlib</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\acl_stdafx.hpp">
@@ -1004,6 +1007,9 @@
     </ClInclude>
     <ClInclude Include="include\acl_cpp\db\mysql_conf.hpp">
       <Filter>include\db</Filter>
+    </ClInclude>
+    <ClInclude Include="include\acl_cpp\stdlib\thread_queue.hpp">
+      <Filter>include\stdlib</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
