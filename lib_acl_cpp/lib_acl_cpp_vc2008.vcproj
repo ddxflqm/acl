@@ -986,6 +986,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\src\stdlib\thread_queue.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\src\stdlib\url_coder.cpp"
 					>
 				</File>
@@ -1673,6 +1677,10 @@
 				</File>
 				<File
 					RelativePath=".\include\acl_cpp\stdlib\thread_pool.hpp"
+					>
+				</File>
+				<File
+					RelativePath=".\include\acl_cpp\stdlib\thread_queue.hpp"
 					>
 				</File>
 				<File
