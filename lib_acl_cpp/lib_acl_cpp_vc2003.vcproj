@@ -884,6 +884,13 @@ copy $(TargetName).pdb ..\dist\lib\win32\$(TargetName).pdb /Y
 				</File>
 			</Filter>
 			<Filter
+				Name="smtp"
+				Filter="">
+				<File
+					RelativePath=".\src\smtp\smtp_client.cpp">
+				</File>
+			</Filter>
+			<Filter
 				Name="disque"
 				Filter="">
 				<File
@@ -1412,6 +1419,13 @@ copy $(TargetName).pdb ..\dist\lib\win32\$(TargetName).pdb /Y
 				Filter="">
 				<File
 					RelativePath=".\include\acl_cpp\event\event_timer.hpp">
+				</File>
+			</Filter>
+			<Filter
+				Name="smtp"
+				Filter="">
+				<File
+					RelativePath=".\include\acl_cpp\smtp\smtp_client.hpp">
 				</File>
 			</Filter>
 			<Filter

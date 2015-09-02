@@ -1130,6 +1130,14 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="smtp"
+				>
+				<File
+					RelativePath=".\src\smtp\smtp_client.cpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Í·ÎÄ¼þ"
@@ -1813,6 +1821,14 @@
 				</File>
 				<File
 					RelativePath=".\include\acl_cpp\disque\disque_node.hpp"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="smtp"
+				>
+				<File
+					RelativePath=".\include\acl_cpp\smtp\smtp_client.hpp"
 					>
 				</File>
 			</Filter>
