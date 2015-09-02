@@ -166,3 +166,5 @@
 #include "acl_cpp/disque/disque_cond.hpp"
 #include "acl_cpp/disque/disque_job.hpp"
 #include "acl_cpp/disque/disque_node.hpp"
+
+#include "acl_cpp/smtp/smtp_client.hpp"
