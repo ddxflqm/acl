@@ -13,7 +13,8 @@ class istream;
 class ACL_CPP_API smtp_client
 {
 public:
-	smtp_client(const char* addr, int conn_timeout, int rw_timeout);
+	smtp_client(const char* addr, int conn_timeout,
+		int rw_timeout, bool use_ssl = false);
 	~smtp_client();
 
 	smtp_client& set_auth(const char* user, const char* pass);
@@ -47,7 +48,7 @@ public:
 	bool to_recipients();
 	
 private:
-	int   status_;
+	bool  use_ssl_;
 	dbuf_pool* dbuf_;
 	char* addr_;
 	int   conn_timeout_;

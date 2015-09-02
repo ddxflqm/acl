@@ -7,7 +7,8 @@
 
 namespace acl {
 
-smtp_client::smtp_client(const char* addr, int conn_timeout, int rw_timeout)
+smtp_client::smtp_client(const char* addr, int conn_timeout,
+	int rw_timeout, bool use_ssl /* = false */)
 {
 	dbuf_ = new dbuf_pool;
 	addr_ = dbuf_->dbuf_strdup(addr);
@@ -19,6 +20,7 @@ smtp_client::smtp_client(const char* addr, int conn_timeout, int rw_timeout)
 	auth_user_ = NULL;
 	auth_pass_ = NULL;
 	from_ = NULL;
+	use_ssl_ = use_ssl;
 }
 
 smtp_client::~smtp_client()
@@ -93,6 +95,10 @@ bool smtp_client::open()
 	}
 	// 打开流对象
 	stream_.open(client_->conn);
+	if (use_ssl_)
+	{
+
+	}
 	return true;
 }
 
