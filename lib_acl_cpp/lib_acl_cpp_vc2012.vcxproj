@@ -513,6 +513,7 @@ copy $(TargetName).pdb ..\dist\lib\win64\$(TargetName).pdb /Y
     <ClCompile Include="src\session\memcache_session.cpp" />
     <ClCompile Include="src\session\redis_session.cpp" />
     <ClCompile Include="src\session\session.cpp" />
+    <ClCompile Include="src\smtp\mail_message.cpp" />
     <ClCompile Include="src\smtp\smtp_client.cpp" />
     <ClCompile Include="src\stdlib\charset_conv.cpp" />
     <ClCompile Include="src\stdlib\dbuf_pool.cpp" />
@@ -668,6 +669,7 @@ copy $(TargetName).pdb ..\dist\lib\win64\$(TargetName).pdb /Y
     <ClInclude Include="include\acl_cpp\session\memcache_session.hpp" />
     <ClInclude Include="include\acl_cpp\session\redis_session.hpp" />
     <ClInclude Include="include\acl_cpp\session\session.hpp" />
+    <ClInclude Include="include\acl_cpp\smtp\mail_message.hpp" />
     <ClInclude Include="include\acl_cpp\smtp\smtp_client.hpp" />
     <ClInclude Include="include\acl_cpp\stdlib\charset_conv.hpp" />
     <ClInclude Include="include\acl_cpp\stdlib\dbuf_pool.hpp" />

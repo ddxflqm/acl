@@ -493,6 +493,9 @@
     <ClCompile Include="src\smtp\smtp_client.cpp">
       <Filter>Source Files\smtp</Filter>
     </ClCompile>
+    <ClCompile Include="src\smtp\mail_message.cpp">
+      <Filter>Source Files\smtp</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\acl_stdafx.hpp">
@@ -1015,6 +1018,9 @@
       <Filter>Header Files\db</Filter>
     </ClInclude>
     <ClInclude Include="include\acl_cpp\smtp\smtp_client.hpp">
+      <Filter>Header Files\smtp</Filter>
+    </ClInclude>
+    <ClInclude Include="include\acl_cpp\smtp\mail_message.hpp">
       <Filter>Header Files\smtp</Filter>
     </ClInclude>
   </ItemGroup>

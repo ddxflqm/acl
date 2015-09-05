@@ -1,31 +1,30 @@
 #include "acl_stdafx.hpp"
 #include "acl_cpp/stdlib/log.hpp"
 #include "acl_cpp/stdlib/util.hpp"
-#include "acl_cpp/stdlib/dbuf_pool.hpp"
 #include "acl_cpp/stream/istream.hpp"
 #include "acl_cpp/stream/polarssl_conf.hpp"
 #include "acl_cpp/stream/polarssl_io.hpp"
+#include "acl_cpp/mime/rfc822.hpp"
+#include "acl_cpp/smtp/mail_message.hpp"
 #include "acl_cpp/smtp/smtp_client.hpp"
 
 namespace acl {
 
 smtp_client::smtp_client(const char* addr, int conn_timeout, int rw_timeout)
 {
-	dbuf_ = new dbuf_pool;
-	addr_ = dbuf_->dbuf_strdup(addr);
+	addr_ = acl_mystrdup(addr);
 	conn_timeout_ = conn_timeout;
 	rw_timeout_ = rw_timeout;
 	client_ = NULL;
 
 	ehlo_ = true;
-	auth_user_ = NULL;
-	auth_pass_ = NULL;
-	from_ = NULL;
 	ssl_conf_ = NULL;
 }
 
 smtp_client::~smtp_client()
 {
+	acl_myfree(addr_);
+
 	if (client_)
 	{
 		// 将 SMTP_CLIENT 对象的流置空，以避免内部再次释放，
@@ -37,7 +36,6 @@ smtp_client::~smtp_client()
 	// 当 socket 流对象打开着，则关闭之，同时将依附于其的 SSL 对象释放
 	if (stream_.opened())
 		stream_.close();
-	dbuf_->destroy();
 }
 
 smtp_client& smtp_client::set_ssl(polarssl_conf* ssl_conf)
@@ -46,55 +44,18 @@ smtp_client& smtp_client::set_ssl(polarssl_conf* ssl_conf)
 	return *this;
 }
 
-smtp_client& smtp_client::set_auth(const char* user, const char* pass)
-{
-	if (user && *user && pass && *pass)
-	{
-		auth_user_ = dbuf_->dbuf_strdup(user);
-		auth_pass_ = dbuf_->dbuf_strdup(pass);
-	}
-
-	return *this;
-}
-
-smtp_client& smtp_client::set_from(const char* from)
-{
-	if (from && *from)
-		from_ = dbuf_->dbuf_strdup(from);
-
-	return *this;
-}
-
-smtp_client& smtp_client::add_recipients(const char* recipients)
-{
-	string buf(recipients);
-	std::list<string>& tokens = buf.split(" \t;,");
-	std::list<string>::const_iterator cit;
-	for (cit = tokens.begin(); cit != tokens.end(); ++cit)
-		(void) add_to((*cit).c_str());
-
-	return *this;
-}
-
-smtp_client& smtp_client::add_to(const char* to)
-{
-	if (to && *to)
-		recipients_.push_back(dbuf_->dbuf_strdup(to));
-
-	return *this;
-}
-
-int smtp_client::get_smtp_code() const
+int smtp_client::get_code() const
 {
 	return client_ == NULL ? -1 : client_->smtp_code;
 }
 
-const char* smtp_client::get_smtp_status() const
+const char* smtp_client::get_status() const
 {
 	return client_ == NULL ? "unknown" : client_->buf;
 }
 
-bool smtp_client::send_envelope()
+bool smtp_client::send(const mail_message& message,
+	const char* email /* = NULL */)
 {
 	if (open() == false)
 		return false;
@@ -102,12 +63,21 @@ bool smtp_client::send_envelope()
 		return false;
 	if (greet() == false)
 		return false;
-	if (auth_login() == false)
+	if (!auth_login(message.get_auth_user(), message.get_auth_pass()))
 		return false;
-	if (mail_from() == false)
+	const rfc822_addr* from = message.get_from();
+	if (from == NULL || from->addr == NULL)
 		return false;
-	if (to_recipients() == false)
+	if (mail_from(from->addr) == false)
 		return false;
+	if (to_recipients(message.get_recipients()) == false)
+		return false;
+	if (email != NULL)
+	{
+		if (send_email(email) == false)
+			return false;
+		return true;
+	}
 	return true;
 }
 
@@ -154,34 +124,47 @@ bool smtp_client::greet()
 		== 0 ? true : false;
 }
 
-bool smtp_client::auth_login()
+bool smtp_client::auth_login(const char* user, const char* pass)
 {
-	if (auth_user_ == NULL || auth_pass_ == NULL)
+	if (user == NULL || *user == 0)
 	{
-		logger_error("auth_user: %s, auth_pass: %s",
-			auth_user_ ? "not null" : "null",
-			auth_pass_ ? "not null" : "null");
+		logger_error("user null");
 		return false;
 	}
-	return smtp_auth(client_, auth_user_, auth_pass_) == 0 ? true : false;
+	if (pass == NULL || *pass == 0)
+	{
+		logger_error("pass null");
+		return false;
+	}
+	return smtp_auth(client_, user, pass) == 0 ? true : false;
 }
 
-bool smtp_client::mail_from()
+bool smtp_client::mail_from(const char* from)
 {
-	if (from_ == NULL || *from_ == 0)
+	if (from == NULL || *from == 0)
 	{
 		logger_error("from null");
 		return false;
 	}
-	return smtp_mail(client_, from_) == 0 ? true : false;
+	return smtp_mail(client_, from) == 0 ? true : false;
 }
 
-bool smtp_client::to_recipients()
+bool smtp_client::rcpt_to(const char* to)
 {
-	std::vector<char*>::const_iterator cit;
-	for (cit = recipients_.begin(); cit != recipients_.end(); ++cit)
+	if (to == NULL || *to == 0)
 	{
-		if (smtp_rcpt(client_, *cit) != 0)
+		logger_error("to null");
+		return false;
+	}
+	return smtp_rcpt(client_, to) == 0 ? true : false;
+}
+
+bool smtp_client::to_recipients(const std::vector<rfc822_addr*>& recipients)
+{
+	std::vector<rfc822_addr*>::const_iterator cit;
+	for (cit = recipients.begin(); cit != recipients.end(); ++cit)
+	{
+		if ((*cit)->addr && rcpt_to((*cit)->addr) != 0)
 			return false;
 	}
 	return true;
@@ -233,15 +216,9 @@ bool smtp_client::vformat(const char* fmt, va_list ap)
 	return write(buf.c_str(), buf.size());
 }
 
-bool smtp_client::send(const char* filepath)
+bool smtp_client::send_email(const char* filepath)
 {
 	return smtp_send_file(client_, filepath) == 0 ? true : false;
-}
-
-bool smtp_client::send(istream& in)
-{
-	return smtp_send_stream(client_, in.get_vstream()) == 0
-		? true : false;
 }
 
 } // namespace acl
