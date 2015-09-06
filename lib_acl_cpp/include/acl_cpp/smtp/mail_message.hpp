@@ -7,7 +7,7 @@ namespace acl {
 
 class dbuf_pool;
 struct rfc822_addr;
-class ostream;
+class ofstream;
 
 class ACL_CPP_API mail_message
 {
