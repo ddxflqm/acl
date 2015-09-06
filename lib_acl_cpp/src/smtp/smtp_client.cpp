@@ -78,6 +78,15 @@ bool smtp_client::send(const mail_message& message,
 			return false;
 		return true;
 	}
+
+	email = message.get_email();
+	if (email != NULL)
+	{
+		if (send_email(email) == false)
+			return false;
+		return true;
+	}
+
 	return true;
 }
 

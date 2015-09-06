@@ -7,12 +7,14 @@ namespace acl {
 
 class dbuf_pool;
 struct rfc822_addr;
+class mail_attach;
+class mail_body;
 class ofstream;
 
 class ACL_CPP_API mail_message
 {
 public:
-	mail_message();
+	mail_message(const char* charset = "utf-8");
 	~mail_message();
 
 	mail_message& set_auth(const char* user, const char* pass);
@@ -23,13 +25,17 @@ public:
 	mail_message& add_to(const char* to);
 	mail_message& add_cc(const char* cc);
 	mail_message& add_bcc(const char* bcc);
-	mail_message& set_subject(const char* subject,
-		const char* charset = "UTF-8");
+	mail_message& set_subject(const char* subject);
 	mail_message& add_header(const char* name, const char* value);
-	mail_message& set_body(const char* body);
-	mail_message& add_attachment(const char* filepath);
+	mail_message& set_body(const mail_body* body);
+	mail_message& add_attachment(const char* filepath,
+		const char* content_type);
 
-	bool compose(const char* filepath, const char* to_charset = "utf-8");
+	bool compose(const char* filepath);
+	const char* get_email() const
+	{
+		return filepath_;
+	}
 
 	const char* get_auth_user() const
 	{
@@ -83,6 +89,8 @@ public:
 
 private:
 	dbuf_pool* dbuf_;
+	char* charset_;
+	char* transfer_encoding_;
 
 	char* auth_user_;
 	char* auth_pass_;
@@ -94,22 +102,23 @@ private:
 	std::vector<rfc822_addr*> bcc_list_;
 	std::vector<rfc822_addr*> recipients_;
 	char* subject_;
-	char* charset_;
 	std::vector<std::pair<char*, char*> > headers_;
-	std::vector<char*> attachments_;
+	std::vector<mail_attach*> attachments_;
 	string boundary_;
-	char* body_;
+	const mail_body* body_;
 	size_t body_len_;
 	char* filepath_;
 
 	void add_addrs(const char* in, std::vector<rfc822_addr*>& out);
 	bool append_addr(ofstream& fp, const char* name,
-		const rfc822_addr* addr, const char* to_charset);
+		const rfc822_addr* addr);
 	void create_boundary();
 	bool append_message_id(ofstream& fp);
 
-	bool compose_header(ofstream& fp, const char* to_charset);
-	bool append_multipart(ofstream& fp, const char* to_charset);
+	bool append_header(ofstream& fp);
+	bool append_multipart(ofstream& fp);
+	bool append_multipart_body(ofstream& fp);
+	bool append_attachment(ofstream& fp, const mail_attach& attach);
 };
 
 } // namespace acl

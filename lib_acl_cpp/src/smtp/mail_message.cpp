@@ -5,17 +5,25 @@
 #include "acl_cpp/stdlib/string.hpp"
 #include "acl_cpp/stdlib/dbuf_pool.hpp"
 #include "acl_cpp/stream/ofstream.hpp"
+#include "acl_cpp/stream/ifstream.hpp"
 #include "acl_cpp/stdlib/thread.hpp"
 #include "acl_cpp/mime/rfc822.hpp"
 #include "acl_cpp/mime/rfc2047.hpp"
+#include "acl_cpp/mime/mime_base64.hpp"
+#include "acl_cpp/smtp/mail_attach.hpp"
+#include "acl_cpp/smtp/mail_body.hpp"
 #include "acl_cpp/smtp/mail_message.hpp"
 
 namespace acl
 {
 
-mail_message::mail_message()
+mail_message::mail_message(const char* charset /* = "utf-8"*/)
 {
 	dbuf_ = new dbuf_pool;
+	if (charset == NULL || *charset == 0)
+		charset = "utf-8";
+	charset_ = dbuf_->dbuf_strdup(charset);
+	transfer_encoding_ = dbuf_->dbuf_strdup("base64");
 	auth_user_ = NULL;
 	auth_pass_ = NULL;
 	from_ = NULL;
@@ -30,6 +38,9 @@ mail_message::mail_message()
 
 mail_message::~mail_message()
 {
+	std::vector<mail_attach*>::iterator it;
+	for (it = attachments_.begin(); it != attachments_.end(); ++it)
+		(*it)->~mail_attach();
 	dbuf_->destroy();
 }
 
@@ -85,7 +96,7 @@ mail_message& mail_message::set_replyto(const char* replyto, const char* name)
 void mail_message::add_addrs(const char* in, std::vector<rfc822_addr*>& out)
 {
 	rfc822 rfc;
-	const std::list<rfc822_addr*>& addrs = rfc.parse_addrs(in, "utf-8");
+	const std::list<rfc822_addr*>& addrs = rfc.parse_addrs(in, charset_);
 	std::list<rfc822_addr*>::const_iterator cit = addrs.begin();
 	for (; cit != addrs.end(); ++cit)
 	{
@@ -140,13 +151,10 @@ mail_message& mail_message::add_bcc(const char* bcc)
 	return *this;
 }
 
-mail_message& mail_message::set_subject(const char* subject,
-	const char* charset /* = "UTF-8" */)
+mail_message& mail_message::set_subject(const char* subject)
 {
 	if (subject && *subject)
 		subject_ = dbuf_->dbuf_strdup(subject_);
-	if (charset && *charset)
-		charset_ = dbuf_->dbuf_strdup(charset);
 	return *this;
 }
 
@@ -160,21 +168,21 @@ mail_message& mail_message::add_header(const char* name, const char* value)
 	return *this;
 }
 
-mail_message& mail_message::set_body(const char* body)
+mail_message& mail_message::set_body(const mail_body* body)
 {
-	if (body && *body)
-	{
-		body_len_ = strlen(body);
-		body_ = (char*) dbuf_->dbuf_memdup(body, body_len_);
-	}
-
+	body_ = body;
 	return *this;
 }
 
-mail_message& mail_message::add_attachment(const char* filepath)
+mail_message& mail_message::add_attachment(const char* filepath,
+	const char* content_type)
 {
-	if (filepath && *filepath)
-		attachments_.push_back(dbuf_->dbuf_strdup(filepath));
+	if (filepath == NULL || content_type == NULL)
+		return *this;
+
+	char* buf = (char*) dbuf_->dbuf_alloc(sizeof(mail_attach));
+	mail_attach* attach = new(buf) mail_attach(filepath, content_type);
+	attachments_.push_back(attach);
 	return *this;
 }
 
@@ -194,7 +202,7 @@ void mail_message::create_boundary()
 }
 
 bool mail_message::append_addr(ofstream& fp, const char* name,
-	const rfc822_addr* addr, const char* to_charset)
+	const rfc822_addr* addr)
 {
 	if (fp.format("%s: ", name) == -1)
 	{
@@ -206,7 +214,7 @@ bool mail_message::append_addr(ofstream& fp, const char* name,
 	string buf;
 
 	if (addr->comment && rfc2047::encode(addr->comment,
-		strlen(addr->comment), &buf, to_charset) == false)
+		strlen(addr->comment), &buf, charset_) == false)
 	{
 		logger_error("rfc2047::encode(%s) error", addr->comment);
 		return false;
@@ -243,7 +251,7 @@ bool mail_message::append_message_id(ofstream& fp)
 	return true;
 }
 
-bool mail_message::compose_header(ofstream& fp, const char* to_charset)
+bool mail_message::append_header(ofstream& fp)
 {
 	std::vector<std::pair<char*, char*> >::const_iterator cit;
 	for (cit = headers_.begin(); cit != headers_.end(); ++cit)
@@ -256,23 +264,14 @@ bool mail_message::compose_header(ofstream& fp, const char* to_charset)
 		}
 	}
 
-	if (sender_ && sender_->addr
-		&& append_addr(fp, "Sender", sender_, to_charset) == false)
-	{
+	if (sender_ && !append_addr(fp, "Sender", sender_))
 		return false;
-	}
 
-	if (replyto_ && replyto_->addr
-		&& append_addr(fp, "ReplyTo", replyto_, to_charset) == false)
-	{
+	if (replyto_ && !append_addr(fp, "ReplyTo", replyto_))
 		return false;
-	}
 
-	if (from_ && from_->addr
-		&& append_addr(fp, "From", from_, to_charset) == false)
-	{
+	if (from_ && !append_addr(fp, "From", from_))
 		return false;
-	}
 
 	if (append_message_id(fp) == false)
 		return false;
@@ -280,17 +279,132 @@ bool mail_message::compose_header(ofstream& fp, const char* to_charset)
 	return true;
 }
 
-bool mail_message::append_multipart(ofstream& fp, const char* to_charset)
+bool mail_message::append_multipart_body(ofstream& fp)
+{
+	if (body_ == NULL)
+	{
+		logger_error("body_ null");
+		return false;
+	}
+
+	const char* text = body_->get_text();
+	const char* html = body_->get_html();
+	if (*text == 0 && *html == 0)
+		return true;
+
+	if (*text)
+	{
+		if (fp.format("%s\r\n"
+			"Content-Type: text/plain;\r\n"
+			"\tcharset=\"%s\"\r\n"
+			"Content-Transfer-Encoding: base64\r\n\r\n",
+			boundary_, charset_) == -1)
+		{
+			logger_error("write to %s error %s",
+				fp.file_path(), last_serror());
+			return false;
+		}
+	}
+
+	if (*html)
+	{
+		if (fp.format("%s\r\n"
+			"Content-Type: text/html;\r\n"
+			"\tcharset=\"%s\"\r\n"
+			"Content-Transfer-Encoding: base64\r\n",
+			boundary_, charset_) == -1)
+		{
+			logger_error("write to %s error %s",
+				fp.file_path(), last_serror());
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool mail_message::append_attachment(ofstream& fp, const mail_attach& attach)
+{
+	// 文件名需要采用 rfc2047 编码
+	string filename;
+	const char* ptr = attach.get_filename();
+	if (!rfc2047::encode(ptr, strlen(ptr), &filename, charset_))
+	{
+		logger_error("rfc2047::encode(%s) error!",
+			attach.get_filename());
+		return false;
+	}
+
+	// 添加 MIME 附件信息头
+	if (fp.format("%s\r\n"
+		"Content-Type: %s; name=\"%s\"\r\n"
+		"Content-Transfer-Encoding: base64\r\n"
+		"Content-Disposition: attachment;\r\n"
+		"	filename=\"%s\"\r\n\r\n",
+		boundary_.c_str(), attach.get_content_type(),
+		filename.c_str(), filename.c_str()) == -1)
+	{
+		logger_error("write attachment header to %s error %s",
+			fp.file_path(), last_serror());
+		return false;
+	}
+
+	// 采用流式 MIME BASE64 方式，边从附件中读取数据，边进行 MIME BASE64 编码，
+	// 并将结果写入目标文件中
+
+	ifstream in;
+	if (in.open_read(attach.get_filepath()) == false)
+	{
+		logger_error("open %s error %s", attach.get_filepath(),
+			last_serror());
+		return false;
+	}
+
+	mime_base64 base64(true, true);
+	char  buf[8192];
+	string out;
+	while (!in.eof())
+	{
+		int ret = in.read(buf, sizeof(buf), false);
+		if (ret == -1)
+			break;
+		base64.encode_update(buf, ret, &out);
+		if (out.empty())
+			continue;
+		if (fp.write(out) == -1)
+		{
+			logger_error("write to %s error %s",
+				fp.file_path(), last_serror());
+			return false;
+		}
+		out.clear();
+	}
+
+	base64.encode_finish(&out);
+	if (out.empty())
+		return true;
+	if (fp.write(out) == -1)
+	{
+		logger_error("write to %s error %s",
+			fp.file_path(), last_serror());
+		return false;
+	}
+	return true;
+}
+
+bool mail_message::append_multipart(ofstream& fp)
 {
 	const char *prompt = "This is a multi-part message in MIME format.";
 
+	// 创建 MIME 数据唯一分隔符
 	create_boundary();
 	
+	// 向邮件头中添加 MIME 相关的信息头
 	if (fp.format("Mime-version: 1.0\r\n"
 		"Content-Type: multipart/mixed;\r\n"
 		"	charset=\"%s\";\r\n"
 		"	boundary=\"%s\"\r\n\r\n",
-		to_charset, boundary_.c_str()) == -1)
+		charset_, boundary_.c_str()) == -1)
 	{
 		logger_error("write to %s error: %s",
 			fp.file_path(), last_serror());
@@ -304,6 +418,7 @@ bool mail_message::append_multipart(ofstream& fp, const char* to_charset)
 		return false;
 	}
 
+	// 写入开始的分隔符
 	if (fp.format("--%s\r\n", boundary_.c_str()) == -1)
 	{
 		logger_error("write boundary to %s error %s",
@@ -311,9 +426,23 @@ bool mail_message::append_multipart(ofstream& fp, const char* to_charset)
 		return false;
 	}
 
-	if (fp.write(body_, body_len_) == -1)
+	// 添加数据体
+	if (append_multipart_body(fp) == false)
+		return false;
+
+	// 将所有附件内容进行 BASE64 编码后存入目标文件中
+
+	std::vector<mail_attach*>::const_iterator cit;
+	for (cit = attachments_.begin(); cit != attachments_.end(); ++cit)
 	{
-		logger_error("write body to %s error %s",
+		if (append_attachment(fp, **cit) == false)
+			return false;
+	}
+
+	// 添加最后的分隔符至邮件尾部
+	if (fp.format("%s--\r\n", boundary_.c_str()) == -1)
+	{
+		logger_error("write boundary end to %s error %s",
 			fp.file_path(), last_serror());
 		return false;
 	}
@@ -321,8 +450,7 @@ bool mail_message::append_multipart(ofstream& fp, const char* to_charset)
 	return true;
 }
 
-bool mail_message::compose(const char* filepath,
-	const char* to_charset /* = "utf-8" */)
+bool mail_message::compose(const char* filepath)
 {
 	ofstream fp;
 	if (fp.open_write(filepath) == false)
@@ -331,13 +459,13 @@ bool mail_message::compose(const char* filepath,
 		return false;
 	}
 
-	if (to_charset == NULL)
-		to_charset = "utf-8";
-
 	filepath_ = dbuf_->dbuf_strdup(filepath);
 
-	if (compose_header(fp, to_charset) == false)
+	if (append_header(fp) == false)
 		return false;
+
+	if (!attachments_.empty())
+		return append_multipart(fp);
 
 	return false;
 }
