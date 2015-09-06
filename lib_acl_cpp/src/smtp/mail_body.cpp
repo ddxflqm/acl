@@ -1,92 +1,120 @@
 #include "acl_stdafx.hpp"
+#include "acl_cpp/stdlib/log.hpp"
 #include "acl_cpp/mime/mime_base64.hpp"
 #include "acl_cpp/mime/mime_code.hpp"
 #include "acl_cpp/mime/mime_quoted_printable.hpp"
 #include "acl_cpp/mime/mime_uucode.hpp"
 #include "acl_cpp/mime/mime_xxcode.hpp"
+#include "acl_cpp/smtp/mail_message.hpp"
 #include "acl_cpp/smtp/mail_body.hpp"
 
 namespace acl {
 
-mail_body::mail_body()
-	: text_encoded_(NULL)
-	, html_encoded_(NULL)
-	, charset_(32)
-	, content_type_(32)
-	, transfer_encoding_(32)
+mail_body::mail_body(const char* charset /* = "utf-8" */,
+	const char* encoding /* = "base64" */)
+	: charset_(charset)
+	, transfer_encoding_(encoding)
+	, is_alternative_(false)
 {
+	if (transfer_encoding_.compare("base64", false) == 0)
+		coder_ = NEW mime_base64(true, true);
+	else if (transfer_encoding_.compare("qp", false) == 0)
+		coder_ = NEW mime_quoted_printable(true, true);
+	else if (transfer_encoding_.compare("uucode", false) == 0)
+		coder_ = NEW mime_uucode(true, true);
+	else if (transfer_encoding_.compare("xxcode", false) == 0)
+		coder_ = NEW mime_xxcode(true, true);
+	else
+		coder_ = NULL;
 }
 
 mail_body::~mail_body()
 {
-	if (text_encoded_ != &text_)
-		delete text_encoded_;
-	if (html_encoded_ != &html_)
-		delete html_encoded_;
+	delete coder_;
 }
 
-mail_body& mail_body::set_text(const char* text)
+bool mail_body::build(const char* text, size_t tlen,
+	const char* html, size_t hlen)
 {
-	text_ = text;
-	return *this;
-}
-
-mail_body& mail_body::set_html(const char* html)
-{
-	html_ = html;
-	return *this;
-}
-
-mail_body& mail_body::set_charset(const char* charset)
-{
-	charset_ = charset;
-	return *this;
-}
-
-mail_body& mail_body::set_content_type(const char* content_type)
-{
-	content_type_ = content_type;
-	return *this;
-}
-
-mail_body& mail_body::set_transfer_encoding(const char* transfer_encoding)
-{
-	transfer_encoding_ = transfer_encoding;
-	return *this;
-}
-
-void mail_body::build()
-{
-	mime_code* coder;
-	if (transfer_encoding_.compare("base64", false) == 0)
-		coder = NEW mime_base64(true, true);
-	else if (transfer_encoding_.compare("qp", false) == 0)
-		coder = NEW mime_quoted_printable(true, true);
-	else if (transfer_encoding_.compare("uucode", false) == 0)
-		coder = NEW mime_uucode(true, true);
-	else if (transfer_encoding_.compare("xxcode", false) == 0)
-		coder = NEW mime_xxcode(true, true);
-	else
-		coder = NULL;
-
-	if (coder == NULL)
+	int n = 0;
+	if (text && tlen > 0)
 	{
-		text_encoded_ = &text_;
-		html_encoded_ = &html_;
-		return;
+		n++;
+		content_type_.format("text/plain");
+	}
+	if (html && hlen > 0)
+	{
+		n++;
+		content_type_.format("text/html");
 	}
 
-	text_encoded_ = NEW string(text_.size() * 4 / 3 + 32);
-	html_encoded_ = NEW string(html_.size() * 4 / 3 + 32);
+	if (n == 0)
+	{
+		logger_error("text and html are all NULL");
+		return false;
+	}
+	if (n == 2)
+	{
+		content_type_.format("multipart/alternative");
+		is_alternative_ = true;
+	}
 
-	coder->encode_update(text_, (int) text_.size(), text_encoded_);
-	coder->encode_finish(text_encoded_);
+	buf_.format("Content-Type: %s\r\n", content_type_.c_str());
+	if (n == 1)
+	{
+		buf_.format_append("\tcharset=\"%s\"\r\n", charset_.c_str());
+		buf_.format_append("Content-Transfer-Encoding: %s\r\n\r\n",
+			transfer_encoding_.c_str());
+		const char* ptr;
+		int   len;
+		if (text && tlen > 0)
+		{
+			ptr = text;
+			len = (int) tlen;
+		}
+		else if (html && hlen > 0)
+		{
+			ptr = html;
+			len = (int) hlen;
+		}
+		else
+		{
+			logger_error("text and html are all null");
+			return false;
+		}
 
-	coder->reset();
-	coder->encode_update(html_, (int) html_.size(), html_encoded_);
-	coder->encode_finish(html_encoded_);
+		coder_->encode_update(ptr, len, &buf_);
+		coder_->encode_finish(&buf_);
+	}
+	else
+	{
+		mail_message::create_boundary("0002", boundary_);
 
-	delete coder;
+		buf_.format_append("\tboundary=\"%s\"\r\n\r\n\r\n",
+			boundary_.c_str());
+
+		buf_.format_append("--%s\r\n", boundary_.c_str());
+		buf_.format_append("Content-Type: text/plain;\r\n");
+		buf_.format_append("\tcharset=\"%s\"\r\n", charset_.c_str());
+		buf_.format_append("Content-Transfer-Encoding: %s\r\n\r\n",
+			transfer_encoding_.c_str());
+		coder_->encode_update(text, (int) tlen, &buf_);
+		coder_->encode_finish(&buf_);
+		buf_.append("\r\n\r\n");
+
+		buf_.format_append("--%s\r\n", boundary_.c_str());
+		buf_.format_append("Content-Type: text/html;\r\n");
+		buf_.format_append("\tcharset=\"%s\"\r\n", charset_.c_str());
+		buf_.format_append("Content-Transfer-Encoding: %s\r\n\r\n",
+			transfer_encoding_.c_str());
+		coder_->encode_update(html, (int) hlen, &buf_);
+		coder_->encode_finish(&buf_);
+		buf_.append("\r\n\r\n");
+
+		buf_.format_append("--%s--\r\n", boundary_.c_str());
+	}
+
+	return true;
 }
 
 } // namespace acl

@@ -87,6 +87,8 @@ public:
 		return filepath_;
 	}
 
+	static void create_boundary(const char* id, string& out);
+
 private:
 	dbuf_pool* dbuf_;
 	char* charset_;
@@ -112,8 +114,8 @@ private:
 	void add_addrs(const char* in, std::vector<rfc822_addr*>& out);
 	bool append_addr(ofstream& fp, const char* name,
 		const rfc822_addr* addr);
-	void create_boundary();
 	bool append_message_id(ofstream& fp);
+	bool append_subject(ofstream& fp, const char* subject);
 
 	bool append_header(ofstream& fp);
 	bool append_multipart(ofstream& fp);
