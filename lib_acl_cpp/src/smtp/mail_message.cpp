@@ -30,7 +30,6 @@ mail_message::mail_message(const char* charset /* = "utf-8"*/)
 	sender_ = NULL;
 	replyto_ = NULL;
 	subject_ = NULL;
-	charset_ = NULL;
 	body_ = NULL;
 	body_len_ = 0;
 	filepath_ = NULL;
@@ -298,7 +297,7 @@ bool mail_message::append_multipart_body(ofstream& fp)
 			"Content-Type: text/plain;\r\n"
 			"\tcharset=\"%s\"\r\n"
 			"Content-Transfer-Encoding: base64\r\n\r\n",
-			boundary_, charset_) == -1)
+			boundary_.c_str(), charset_) == -1)
 		{
 			logger_error("write to %s error %s",
 				fp.file_path(), last_serror());
@@ -312,7 +311,7 @@ bool mail_message::append_multipart_body(ofstream& fp)
 			"Content-Type: text/html;\r\n"
 			"\tcharset=\"%s\"\r\n"
 			"Content-Transfer-Encoding: base64\r\n",
-			boundary_, charset_) == -1)
+			boundary_.c_str(), charset_) == -1)
 		{
 			logger_error("write to %s error %s",
 				fp.file_path(), last_serror());
