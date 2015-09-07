@@ -189,6 +189,11 @@ static void build_relative(void)
 	else
 		printf("compose %s ok\r\n", filepath);
 
+	// 调用所有动态对象的析构函数
+	std::vector<acl::mail_attach*>::iterator it = attachments.begin();
+	for (; it != attachments.end(); ++it)
+		(*it)->~mail_attach();
+
 	// 一次性释放前面动态分配的内存
 	dbuf->destroy();
 }
