@@ -86,7 +86,7 @@ mail_body& mail_body::set_relative(const char* html, size_t hlen,
 
 bool mail_body::build(const char* in, size_t len, string& out) const
 {
-	out.format_append("Content-Type: %s\r\n", content_type_.c_str());
+	out.format_append("Content-Type: %s;\r\n", content_type_.c_str());
 	out.format_append("\tcharset=\"%s\"\r\n", charset_.c_str());
 	out.format_append("Content-Transfer-Encoding: %s\r\n\r\n",
 		transfer_encoding_.c_str());
@@ -202,7 +202,7 @@ bool mail_body::save_alternative(const char* html, size_t hlen,
 	mail_message::create_boundary("0003",
 		const_cast<mail_body*>(this)->boundary_);
 	string ctype;
-	ctype.format("multipart/alternative\r\n"
+	ctype.format("multipart/alternative;\r\n"
 		"\tboundary=\"%s\"", boundary_.c_str());
 	const_cast<mail_body*>(this)->set_content_type(ctype);
 

@@ -119,7 +119,6 @@ private:
 
 	bool append_header(ofstream& fp);
 	bool append_multipart(ofstream& fp);
-	bool append_multipart_body(ofstream& fp);
 };
 
 } // namespace acl

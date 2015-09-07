@@ -806,7 +806,7 @@ void mime::mime_debug(const char* save_path, bool decode /* = true */)
 	if (save_path == NULL)
 		return;
 
-	logger("ctype: %s, stype: %s\r\n",
+	logger("ctype: %d, stype: %d\r\n",
 		mime_ctype_name(state->root->ctype),
 		mime_stype_name(state->root->stype));
 
@@ -817,7 +817,7 @@ void mime::mime_debug(const char* save_path, bool decode /* = true */)
 	acl_foreach(iter, &state_dummy)
 	{
 		MIME_NODE *node = (MIME_NODE*) iter.data;
-		printf("ctype: %s, stype: %s\r\n",
+		printf("ctype: %d, stype: %d\r\n",
 			mime_ctype_name(node->ctype),
 			mime_stype_name(node->stype));
 		if (node->boundary)

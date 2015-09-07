@@ -136,7 +136,7 @@ bool mail_attach::save_to(mime_code* coder, ostream& out)
 
 void mail_attach::build_header(const char* transfer_encoding, string& out)
 {
-	out.format_append("Content-Type: %s\r\n", ctype_.c_str());
+	out.format_append("Content-Type: %s;\r\n", ctype_.c_str());
 	out.format_append("\tname=\"%s\"\r\n", filename_.c_str());
 	out.format_append("Content-Transfer-Encoding: %s\r\n",
 		transfer_encoding);

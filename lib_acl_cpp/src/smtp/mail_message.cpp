@@ -291,28 +291,6 @@ bool mail_message::append_header(ofstream& fp)
 	return true;
 }
 
-bool mail_message::append_multipart_body(ofstream& fp)
-{
-	if (body_ == NULL)
-		return true;
-
-	string body;
-	body_->save_to(body);
-	if (body.empty())
-		return true;
-
-	body.append("\r\n");
-
-	if (fp.format("--%s\r\n", boundary_.c_str()) == -1
-		|| fp.write(body) == -1)
-	{
-		logger_error("write to %s error %s",
-			fp.file_path(), last_serror());
-		return false;
-	}
-	return true;
-}
-
 void mail_message::create_boundary(const char* id, string& out)
 {
 	out.format("====_%s_aclPart_%lu_%lu_%lu_====",
@@ -322,8 +300,6 @@ void mail_message::create_boundary(const char* id, string& out)
 
 bool mail_message::append_multipart(ofstream& fp)
 {
-	const char *prompt = "This is a multi-part message in MIME format.";
-
 	// 创建 MIME 数据唯一分隔符
 	create_boundary("0001", boundary_);
 	
@@ -339,16 +315,28 @@ bool mail_message::append_multipart(ofstream& fp)
 		return false;
 	}
 
-	if (fp.format("%s\r\n\r\n", prompt) == -1)
+	const char *prompt = "This is a multi-part message in MIME format.";
+
+	if (fp.format("%s\r\n\r\n--%s\r\n", prompt, boundary_.c_str()) == -1)
 	{
-		logger_error("write mime prompt to %s error %s",
+		logger_error("write mime prompt and boundary to %s error %s",
 			fp.file_path(), last_serror());
 		return false;
 	}
 
 	// 添加数据体
-	if (append_multipart_body(fp) == false)
+	string body;
+	body_->save_to(body);
+	if (body.empty())
+		return true;
+	body.append("\r\n");
+
+	if (fp.write(body) == -1)
+	{
+		logger_error("write to %s error %s",
+			fp.file_path(), last_serror());
 		return false;
+	}
 
 	// 将所有附件内容进行 BASE64 编码后存入目标文件中
 
@@ -399,8 +387,23 @@ bool mail_message::compose(const char* filepath)
 
 	if (!attachments_.empty())
 		return append_multipart(fp);
+	else if (body_ == NULL)
+	{
+		logger_error("body null");
+		return false;
+	}
 
-	return false;
+	string buf;
+	if (body_->save_to(buf) == false)
+		return false;
+	if (fp.write(buf) == -1)
+	{
+		logger_error("write to %s error %s",
+			fp.file_path(), last_serror());
+		return false;
+	}
+
+	return true;
 }
 
 } // namespace acl
