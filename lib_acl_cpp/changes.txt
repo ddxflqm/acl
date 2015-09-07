@@ -7,6 +7,8 @@
 机器上有问题，统一换成 acl_atoi64
 354.3) feature: smtp 模块增加了邮件合成的功能
 354.4) sample: mime_builder 例子用来测试邮件合成功能
+354.5) bugfix: mime_stype_name 函数的下标起始位置不是从 0 开始的，所以需要将所给的
+下标位置减去起始下标值方能得到数组的真正下标值
 
 353) 2015.9.6
 353.1) bugfix: redis_zset::zrangebyscore_get 其中的 argc 计数有误
