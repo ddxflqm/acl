@@ -2,6 +2,7 @@
 #include "acl_cpp/acl_cpp_define.hpp"
 #include <vector>
 #include "acl_cpp/stdlib/string.hpp"
+#include "acl_cpp/http/http_ctype.hpp"
 
 namespace acl {
 
@@ -15,9 +16,13 @@ public:
 		const char* encoding = "base64");
 	~mail_body();
 
-	const string& get_content_type(bool& is_alternative) const
+	const string& get_content_type() const
 	{
 		return content_type_;
+	}
+	const http_ctype& get_ctype() const
+	{
+		return ctype_;
 	}
 
 	mail_body& set_html(const char* html, size_t len);

@@ -5,6 +5,7 @@
 #include "acl_cpp/mime/mime_quoted_printable.hpp"
 #include "acl_cpp/mime/mime_uucode.hpp"
 #include "acl_cpp/mime/mime_xxcode.hpp"
+#include "acl_cpp/mime/mime_define.hpp"
 #include "acl_cpp/smtp/mail_attach.hpp"
 #include "acl_cpp/smtp/mail_message.hpp"
 #include "acl_cpp/smtp/mail_body.hpp"
@@ -110,7 +111,7 @@ bool mail_body::save_to(string& out) const
 		return save_relative(html_, hlen_, text_, tlen_,
 			*attachments_, out);
 	default:
-		logger_error("unknown mime_stype: %s", mime_stype_);
+		logger_error("unknown mime_stype: %d", mime_stype_);
 		return false;
 	}
 }
