@@ -120,7 +120,6 @@ private:
 	bool append_header(ofstream& fp);
 	bool append_multipart(ofstream& fp);
 	bool append_multipart_body(ofstream& fp);
-	bool append_attachment(ofstream& fp, const mail_attach& attach);
 };
 
 } // namespace acl

@@ -101,11 +101,7 @@ acl_int64 db_row::field_int64(size_t ifield, acl_int64 null_value /* = 0 */) con
 	if (ptr == NULL)
 		return null_value;
 	else
-#if defined(_WIN32) || defined(_WIN64)
-		return ACL_DB_ATOU(ptr);
-#else
-		return strtoull(ptr, (char**) NULL, 10);
-#endif
+		return acl_atoi64(ptr);
 }
 
 acl_int64 db_row::field_int64(const char* name, acl_int64 null_value /* = 0 */) const
@@ -114,11 +110,7 @@ acl_int64 db_row::field_int64(const char* name, acl_int64 null_value /* = 0 */) 
 	if (ptr == NULL)
 		return null_value;
 	else
-#if defined(_WIN32) || defined(_WIN64)
-		return ACL_DB_ATOU(ptr);
-#else
-		return strtoull(ptr, (char**) NULL, 10);
-#endif
+		return acl_atoi64(ptr);
 }
 
 double db_row::field_double(size_t ifield, double null_value /* = 0.0 */) const

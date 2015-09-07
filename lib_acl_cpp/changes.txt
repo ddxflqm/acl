@@ -3,6 +3,8 @@
 ------------------------------------------------------------------------
 354) 2015.9.7
 354.1) bugfix: geo_member::set_coordinate 中设置经纬度的参数有误
+354.2) bugfix: db_row::field_int64 之前使用的将字符串转为64位整数的方法在32位
+机器上有问题，统一换成 acl_atoi64
 
 353) 2015.9.6
 353.1) bugfix: redis_zset::zrangebyscore_get 其中的 argc 计数有误

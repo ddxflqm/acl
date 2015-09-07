@@ -17,7 +17,7 @@ int main(void)
 	const char* text = "中国人民银行 TEXT 格式";
 	const char* html = "<html><body>中国人民银行 HTML 格式</body></html>";
 	acl::mail_body body("gbk");
-	body.build(text, strlen(text), html, strlen(html));
+	body.set_alternative(html, strlen(html), text, strlen(text));
 	message.set_body(&body);
 
 	const char* filepath = "./test.eml";

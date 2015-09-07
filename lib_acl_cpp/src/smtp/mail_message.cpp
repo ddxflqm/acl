@@ -180,7 +180,8 @@ mail_message& mail_message::add_attachment(const char* filepath,
 		return *this;
 
 	char* buf = (char*) dbuf_->dbuf_alloc(sizeof(mail_attach));
-	mail_attach* attach = new(buf) mail_attach(filepath, content_type);
+	mail_attach* attach = new(buf) mail_attach(filepath,
+		content_type, charset_);
 	attachments_.push_back(attach);
 	return *this;
 }
@@ -232,7 +233,9 @@ bool mail_message::append_addr(ofstream& fp, const char* name,
 bool mail_message::append_subject(ofstream& fp, const char* subject)
 {
 	string buf;
-	rfc2047::encode(subject, (int) strlen(subject), &buf, charset_);
+	rfc2047::encode(subject, (int) strlen(subject), &buf,
+		charset_, 'B', false);
+
 	if (fp.format("Subject: %s\r\n", buf.c_str()) == -1)
 	{
 		logger_error("write subject to %s error %s",
@@ -293,82 +296,15 @@ bool mail_message::append_multipart_body(ofstream& fp)
 	if (body_ == NULL)
 		return true;
 
-	const string& body = body_->get_body();
+	string body;
+	body_->save_to(body);
 	if (body.empty())
 		return true;
 
+	body.append("\r\n");
+
 	if (fp.format("--%s\r\n", boundary_.c_str()) == -1
-		|| fp.write(body) == -1 || fp.write("\r\n") == -1)
-	{
-		logger_error("write to %s error %s",
-			fp.file_path(), last_serror());
-		return false;
-	}
-
-	return true;
-}
-
-bool mail_message::append_attachment(ofstream& fp, const mail_attach& attach)
-{
-	// 文件名需要采用 rfc2047 编码
-	string filename;
-	const char* ptr = attach.get_filename();
-	if (!rfc2047::encode(ptr, strlen(ptr), &filename, charset_, 'B', false))
-	{
-		logger_error("rfc2047::encode(%s) error!",
-			attach.get_filename());
-		return false;
-	}
-
-	// 添加 MIME 附件信息头
-	if (fp.format("--%s\r\n"
-		"Content-Type: %s; name=\"%s\"\r\n"
-		"Content-Transfer-Encoding: base64\r\n"
-		"Content-Disposition: attachment;\r\n"
-		"\tfilename=\"%s\"\r\n\r\n",
-		boundary_.c_str(), attach.get_content_type(),
-		filename.c_str(), filename.c_str()) == -1)
-	{
-		logger_error("write attachment header to %s error %s",
-			fp.file_path(), last_serror());
-		return false;
-	}
-
-	// 采用流式 MIME BASE64 方式，边从附件中读取数据，边进行 MIME BASE64 编码，
-	// 并将结果写入目标文件中
-
-	ifstream in;
-	if (in.open_read(attach.get_filepath()) == false)
-	{
-		logger_error("open %s error %s", attach.get_filepath(),
-			last_serror());
-		return false;
-	}
-
-	mime_base64 base64(true, true);
-	char  buf[8192];
-	string out;
-	while (!in.eof())
-	{
-		int ret = in.read(buf, sizeof(buf), false);
-		if (ret == -1)
-			break;
-		base64.encode_update(buf, ret, &out);
-		if (out.empty())
-			continue;
-		if (fp.write(out) == -1)
-		{
-			logger_error("write to %s error %s",
-				fp.file_path(), last_serror());
-			return false;
-		}
-		out.clear();
-	}
-
-	base64.encode_finish(&out);
-	out << "\r\n";
-
-	if (fp.write(out) == -1)
+		|| fp.write(body) == -1)
 	{
 		logger_error("write to %s error %s",
 			fp.file_path(), last_serror());
@@ -416,11 +352,24 @@ bool mail_message::append_multipart(ofstream& fp)
 
 	// 将所有附件内容进行 BASE64 编码后存入目标文件中
 
+	mime_base64 base64(true, false);
+
 	std::vector<mail_attach*>::const_iterator cit;
 	for (cit = attachments_.begin(); cit != attachments_.end(); ++cit)
 	{
-		if (append_attachment(fp, **cit) == false)
+		if (fp.format("--%s\r\n", boundary_.c_str()) == -1)
+		{
+			logger_error("write boundary to %s error %s",
+				fp.file_path(), last_serror());
 			return false;
+		}
+
+		if ((*cit)->save_to(&base64, fp) == false)
+		{
+			logger_error("write attachment header to %s error %s",
+				fp.file_path(), last_serror());
+			return false;
+		}
 	}
 
 	// 添加最后的分隔符至邮件尾部

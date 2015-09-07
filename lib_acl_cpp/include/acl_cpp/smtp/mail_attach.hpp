@@ -4,10 +4,14 @@
 
 namespace acl {
 
+class mime_code;
+class ostream;
+
 class ACL_CPP_API mail_attach
 {
 public:
-	mail_attach(const char* filepath, const char* content_type);
+	mail_attach(const char* filepath, const char* content_type,
+		const char* charset);
 	~mail_attach();
 
 	mail_attach& set_content_id(const char* id);
@@ -24,19 +28,24 @@ public:
 
 	const char* get_content_type() const
 	{
-		return content_type_.c_str();
+		return ctype_.c_str();
 	}
 
 	const char* get_content_id() const
 	{
-		return content_id_.c_str();
+		return cid_.c_str();
 	}
+
+	bool save_to(mime_code* coder, string& out);
+	bool save_to(mime_code* coder, ostream& out);
+	void build_header(const char* transfer_encoding, string& out);
 
 private:
 	string filepath_;
 	string filename_;
-	string content_type_;
-	string content_id_;
+	string ctype_;
+	string cid_;
+	string charset_;
 };
 
 } // namespace acl
