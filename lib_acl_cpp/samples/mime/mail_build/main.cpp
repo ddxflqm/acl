@@ -9,10 +9,11 @@ static void build_html(void)
 
 	message.set_from("zsxxsz@263.net")
 		.set_sender("zsx1@263.net")
-		.set_replyto("zsx2@263.net")
+		.set_reply_to("zsx2@263.net")
 		.add_to("\"郑树新1\" <zsx1@sina.com>; \"郑树新2\" <zsx2@sina.com>")
 		.add_cc("\"郑树新3\" <zsx1@163.com>; \"郑树新4\" <zsx2@163.com>")
-		.set_subject("主题：中国人民银行！");
+		.set_subject("主题：中国人民银行！")
+		.add_header("X-Forward-For", "<zsx@263.net>");
 
 	const char* html = "<html><body>中国人民银行 HTML 格式</body></html>";
 	acl::mail_body body("gbk");
@@ -20,7 +21,7 @@ static void build_html(void)
 	message.set_body(&body);
 
 	const char* filepath = "./html.eml";
-	if (message.compose(filepath) == false)
+	if (message.save_to(filepath) == false)
 		printf("compose %s error: %s\r\n", filepath, acl::last_serror());
 	else
 		printf("compose %s ok\r\n", filepath);
@@ -32,7 +33,7 @@ static void build_text(void)
 
 	message.set_from("zsxxsz@263.net")
 		.set_sender("zsx1@263.net")
-		.set_replyto("zsx2@263.net")
+		.set_reply_to("zsx2@263.net")
 		.add_to("\"郑树新1\" <zsx1@sina.com>; \"郑树新2\" <zsx2@sina.com>")
 		.add_cc("\"郑树新3\" <zsx1@163.com>; \"郑树新4\" <zsx2@163.com>")
 		.set_subject("主题：中国人民银行！");
@@ -43,7 +44,7 @@ static void build_text(void)
 	message.set_body(&body);
 
 	const char* filepath = "./text.eml";
-	if (message.compose(filepath) == false)
+	if (message.save_to(filepath) == false)
 		printf("compose %s error: %s\r\n", filepath, acl::last_serror());
 	else
 		printf("compose %s ok\r\n", filepath);
@@ -53,9 +54,9 @@ static void build_alternative(void)
 {
 	acl::mail_message message("gbk");
 
-	message.set_from("zsxxsz@263.net")
+	message.set_from("zsxxsz@263.net", "郑树新")
 		.set_sender("zsx1@263.net")
-		.set_replyto("zsx2@263.net")
+		.set_reply_to("zsx2@263.net")
 		.add_to("\"郑树新1\" <zsx1@sina.com>; \"郑树新2\" <zsx2@sina.com>")
 		.add_cc("\"郑树新3\" <zsx1@163.com>; \"郑树新4\" <zsx2@163.com>")
 		.set_subject("主题：中国人民银行！");
@@ -69,7 +70,7 @@ static void build_alternative(void)
 	message.set_body(&body);
 
 	const char* filepath = "./alternative.eml";
-	if (message.compose(filepath) == false)
+	if (message.save_to(filepath) == false)
 		printf("compose %s error: %s\r\n", filepath, acl::last_serror());
 	else
 		printf("compose %s ok\r\n", filepath);
@@ -79,9 +80,9 @@ static void build_relative(void)
 {
 	acl::mail_message message("gbk");
 
-	message.set_from("zsxxsz@263.net")
+	message.set_from("zsxxsz@263.net", "郑树新")
 		.set_sender("zsx1@263.net")
-		.set_replyto("zsx2@263.net")
+		.set_reply_to("zsx2@263.net")
 		.add_to("\"郑树新1\" <zsx1@sina.com>; \"郑树新2\" <zsx2@sina.com>")
 		.add_cc("\"郑树新3\" <zsx1@163.com>; \"郑树新4\" <zsx2@163.com>")
 		.set_subject("主题：中国人民银行！");
@@ -184,7 +185,7 @@ static void build_relative(void)
 	message.set_body(&body);
 
 	const char* filepath = "./relative.eml";
-	if (message.compose(filepath) == false)
+	if (message.save_to(filepath) == false)
 		printf("compose %s error: %s\r\n", filepath, acl::last_serror());
 	else
 		printf("compose %s ok\r\n", filepath);
