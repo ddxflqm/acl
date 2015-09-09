@@ -11,6 +11,9 @@ class istream;
 class polarssl_conf;
 class mail_message;
 
+/**
+ * SMTP 邮件发送客户端类，可以使用此类对象发送邮件，支持身份认证等功能
+ */
 class ACL_CPP_API smtp_client
 {
 public:
