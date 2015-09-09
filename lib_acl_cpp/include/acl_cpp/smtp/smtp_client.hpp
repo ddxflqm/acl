@@ -26,7 +26,10 @@ public:
 	~smtp_client();
 
 	/**
-	 * 调用本函数发送邮件数据至邮件服务端，该函数会首先调用 send_envelop 发送信封
+	 * 调用本函数发送邮件数据至邮件服务端，该函数会首先调用 send_envelop
+	 * 发送信封，当 email 或 message.get_email() 非空时，则会调用发送邮件
+	 * 过程；否则（即 email 和 message.get_email() 均为 NULL）则只发送
+	 * 信封
 	 * @param message {const mail_messsage&} 邮件相关信息，必须提前构建好
 	 * @param email {const char*} 非空时，优先使用此文件做为邮件体数据发送
 	 * @return {bool} 发送是否成功
@@ -38,13 +41,14 @@ public:
 	bool send(const mail_message& message, const char* email = NULL);
 
 	/**
-	 * 在 SMTP 会话阶段仅发送邮件信封部分数据，应用调用此函数成功后，还需要调用
+	 * 在 SMTP 会话阶段仅发送邮件信封部分数据，应用调用此函数成功后，
+	 * 还需要调用:
 	 * 1、data_begin：开始发送邮件体指令
 	 * 2、write/format/vformat/send_file：发送邮件数据
 	 * 3、data_end：表示发送邮件体数据完毕
 	 * @param message {const mail_message&} 发送邮件所构建的邮件消息对象
 	 * @return {bool} 是否成功
-	 *  注：本函数是下面 open/auth_login/mail_from/rcpt_to 发送信封过程的组合
+	 *  注：本函数是 open/auth_login/mail_from/rcpt_to 发送信封过程的组合
 	 */
 	bool send_envelope(const mail_message& message);
 
@@ -99,8 +103,8 @@ public:
 
 	/**
 	 * 连接远程 SMTP 服务器
-	 * @return {bool} 连接是否成功，若想使用 SSL 方式，则需要在类对象初始化后
-	 *  调用 set_ssl 设置 SSL 通信方式
+	 * @return {bool} 连接是否成功，若想使用 SSL 方式，则需要在类对象
+	 *  初始化后调用 set_ssl 设置 SSL 通信方式
 	 */
 	bool open();
 
@@ -130,32 +134,32 @@ public:
 	bool auth_login(const char* user, const char* pass);
 
 	/**
-	 * 调用 auth_login 成功后（如果无身份验证，则可以在 greet 成功后）调用本
-	 * 函数向 SMTP 服务器发送 MAIL FROM 命令
+	 * 调用 auth_login 成功后（如果无身份验证，则可以在 greet 成功后）
+	 * 调用本函数向 SMTP 服务器发送 MAIL FROM 命令
 	 * @param from {const char*} 发件人的邮箱地址
 	 * @return {bool} 是否成功
 	 */
 	bool mail_from(const char* from);
 
 	/**
-	 * 调用 mail_from 成功后调用本函数向 SMTP 服务端发送 RCPT TO 命令，指明一个
-	 * 收件人，可以多次本函数将邮件发送至多个收件人
+	 * 调用 mail_from 成功后调用本函数向 SMTP 服务端发送 RCPT TO 命令，
+	 * 指明一个收件人，可以多次本函数将邮件发送至多个收件人
 	 * @param to {const char*} 收件人邮箱地址
 	 * @return {bool} 是否成功
 	 */
 	bool rcpt_to(const char* to);
 
 	/**
-	 * 调用 rcpt_to 或 send_envelope 成功调用本函数向 SMTP 服务端 DATA 命令，
-	 * 表明开始发送邮件数据
+	 * 调用 rcpt_to 或 send_envelope 成功调用本函数向 SMTP 服务端
+	 * DATA 命令，表明开始发送邮件数据
 	 * @return {bool} 命令操作是否成功
 	 *  注：在调用本函数前，必须保证 SMTP 信封已经成功发送
 	 */
 	bool data_begin();
 
 	/**
-	 * 调用 data_begin 成功调用本函数向 SMTP 服务端发送一封完整的邮件，需要给出
-	 * 邮件存储于磁盘上的路径
+	 * 调用 data_begin 成功调用本函数向 SMTP 服务端发送一封完整的邮件，
+	 * 需要给出邮件存储于磁盘上的路径
 	 * @param filepath {const char*} 邮件文件路径
 	 * @return {bool} 命令操作是否成功
 	 *  注：在调用本函数前，必须保证 SMTP 信封已经成功发送
@@ -163,8 +167,8 @@ public:
 	bool send_email(const char* filepath);
 
 	/**
-	 * 邮件发送完毕（如调用：send_email）后，最后必须调用本函数告诉 SMTP 邮件服务器
-	 * 发送数据结束
+	 * 邮件发送完毕（如调用：send_email）后，最后必须调用本函数告诉 SMTP
+	 * 邮件服务器发送数据结束
 	 * @return {bool} 命令操作是否成功
 	 */
 	bool data_end();
