@@ -87,8 +87,11 @@ bool smtp_client::send_envelope(const mail_message& message)
 		return false;
 
 	const rfc822_addr* from = message.get_from();
-	if (from == NULL || from->addr == NULL)
+	if (from == NULL)
+	{
+		logger_error("from null");
 		return false;
+	}
 	if (mail_from(from->addr) == false)
 		return false;
 	return to_recipients(message.get_recipients());
