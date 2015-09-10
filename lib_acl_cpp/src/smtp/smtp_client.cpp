@@ -80,8 +80,12 @@ bool smtp_client::send_envelope(const mail_message& message)
 		return false;
 	if (greet() == false)
 		return false;
-	if (!auth_login(message.get_auth_user(), message.get_auth_pass()))
+
+	const char* user = message.get_auth_user();
+	const char* pass = message.get_auth_pass();
+	if (user && pass && auth_login(user, pass) == false)
 		return false;
+
 	const rfc822_addr* from = message.get_from();
 	if (from == NULL || from->addr == NULL)
 		return false;
