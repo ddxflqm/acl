@@ -118,7 +118,7 @@ bool mail_body::save_to(string& out) const
 
 void mail_body::set_content_type(const char* content_type)
 {
-	content_type_ = (content_type);
+	content_type_ = content_type;
 	ctype_.parse(content_type);
 }
 
