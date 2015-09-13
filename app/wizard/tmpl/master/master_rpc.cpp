@@ -249,9 +249,11 @@ void master_service::proc_on_init()
 {
 	// 获得异步框架的事件引擎句柄
 	acl::aio_handle* handle = get_handle();
+	if (handle == NULL)
+		logger_fatal("aio handle null!");
 
 	// 初始化 rpc 服务对象
-	rpc_manager::get_instance().init(handle, var_cfg_thread_pool_limit);
+	rpc_manager::get_instance().init(*handle, var_cfg_thread_pool_limit);
 }
 
 void master_service::proc_on_exit()
