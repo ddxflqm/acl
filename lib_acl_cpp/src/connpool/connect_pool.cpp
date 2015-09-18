@@ -22,10 +22,6 @@ connect_pool::connect_pool(const char* addr, size_t max, size_t idx /* = 0 */)
 , last_(0)
 {
 	retry_inter_ = 1;
-
-	if (max_ < 1)
-		max_ = 10;
-
 	ACL_SAFE_STRNCPY(addr_, addr, sizeof(addr_));
 }
 
@@ -110,7 +106,7 @@ connect_client* connect_pool::peek()
 		lock_.unlock();
 		return conn;
 	}
-	else if (count_ >= max_)
+	else if (max_ > 0 && count_ >= max_)
 	{
 		logger_error("too many connections, max: %d, curr: %d,"
 			" server: %s", (int) max_, (int) count_, addr_);

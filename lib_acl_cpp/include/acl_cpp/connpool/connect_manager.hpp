@@ -39,7 +39,8 @@ public:
 	/**
 	* 添加服务器的客户端连接池，该函数可以在程序运行时被调用，内部自动加锁
 	 * @param addr {const char*} 服务器地址(ip:port)
-	 * @param count {size_t} 连接池数量限制
+	 * @param count {size_t} 连接池数量限制, 如果该值设为 0，则不设置
+	 *  连接池的连接上限
 	 * @return {connect_pool&} 返回新添加的连接池对象
 	 */
 	connect_pool& set(const char* addr, size_t count);
