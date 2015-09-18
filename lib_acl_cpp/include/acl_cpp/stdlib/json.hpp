@@ -504,7 +504,7 @@ public:
 	 * 将 json 对象树转成字符串
 	 * @param out {string&} 存储转换结果的缓冲区
 	 */
-	void build_json(string& out);
+	void build_json(string& out) const;
 
 	/**
 	 * 将 json 对象树转换成 json 字符串

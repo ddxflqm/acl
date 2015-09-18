@@ -515,7 +515,7 @@ const string& json::to_string(void)
 	return *buf_;
 }
 
-void json::build_json(string& out)
+void json::build_json(string& out) const
 {
 	ACL_VSTRING* buf = out.vstring();
 	(void) acl_json_build(json_, buf);
