@@ -30,7 +30,7 @@ public:
 	 *    或  IP:PORT:COUNT,IP:PORT:COUNT,IP:PORT;IP:PORT ...
 	 *  如：127.0.0.1:7777:50;192.168.1.1:7777:10;127.0.0.1:7778
 	 * @param default_count {size_t} 当 addr_list 中分隔的某个服务没有
-	 *  COUNT 信息时便用此值
+	 *  COUNT 信息时便用此值，当此值为 0 时，则不限制连接数上限
 	 *  注：default_addr 和 addr_list 不能同时为空
 	 */
 	void init(const char* default_addr, const char* addr_list,
