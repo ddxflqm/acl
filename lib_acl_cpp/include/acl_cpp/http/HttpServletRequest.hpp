@@ -32,22 +32,8 @@ public:
 	 * @param res {HttpServletResponse&}
 	 * @param store {session&} 存储会话数据的对象
 	 * @param stream {socket_stream&} 数据流，内部不会主动关闭流
-	 */
-	HttpServletRequest(HttpServletResponse& res, session& store,
-		socket_stream& stream);
-	~HttpServletRequest(void);
-
-	/**
-	 * 设置本地字符集
-	 * @param local_charset {const char*} 本地字符集，该值非空时，
+	 * @param charset {const char*} 本地字符集，该值非空时，
 	 *  内部会自动将 HTTP 请求的数据转换为本地字符集，否则不转换
-	 * @return {HttpServletRequest&}
-	 */
-	HttpServletRequest& setLocalCharset(const char* charset);
-
-	/**
-	 * 设置是否需要自动解析 BODY 数据体，目前可以解析有数据格式有：
-	 *  xml/json/x-www-form-urlencoded
 	 * @param body_parse {bool} 针对 POST 方法，该参数指定是否需要
 	 *  读取 HTTP 请求数据体类型判断是否需要自动进行分析，内部缺省为 true；
 	 *  当为 true 则内部会读取 HTTP 请求体数据，并进行分析，针对以下情况：
@@ -59,9 +45,11 @@ public:
 	 * @param body_limit {int} 针对 POST 方法，当数据体为文本参数
 	 *  类型时，此参数限制数据体的长度；当数据体为数据流或 MIME
 	 *  格式或 on 为 false，此参数无效
-	 * @return {HttpServletRequest&}
 	 */
-	HttpServletRequest& setBodyParse(bool on, int len = 102400);
+	HttpServletRequest(HttpServletResponse& res, session& store,
+		socket_stream& stream, const char* charset = NULL,
+		bool body_parse = true, int body_limit = 102400);
+	~HttpServletRequest(void);
 
 	/**
 	 * 获得 HTTP 客户端请求方法：GET, POST, PUT, CONNECT, PURGE
