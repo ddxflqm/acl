@@ -86,8 +86,10 @@ bool HttpServlet::doRun(session& session, socket_stream* stream /* = NULL */)
 	// req/res 采用栈变量，减少内存分配次数
 
 	HttpServletResponse res(*out);
-	HttpServletRequest req(res, session, *in, local_charset_,
-		parse_body_enable_, parse_body_limit_);
+	HttpServletRequest req(res, session, *in);
+
+	req.setLocalCharset(local_charset_)
+		.setBodyParse(parse_body_enable_, parse_body_limit_);
 
 	// 设置 HttpServletRequest 对象
 	res.setHttpServletRequest(&req);

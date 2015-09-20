@@ -21,16 +21,17 @@
 namespace acl
 {
 
-HttpServletRequest::HttpServletRequest(HttpServletResponse& res, session& store,
-	socket_stream& stream, const char* local_charset /* = NULL */,
-	bool body_parse /* = true */, int body_limit /* = 102400 */)
+#define COPY(x, y) ACL_SAFE_STRNCPY((x), (y), sizeof((x)))
+
+HttpServletRequest::HttpServletRequest(HttpServletResponse& res,
+	session& store, socket_stream& stream)
 : req_error_(HTTP_REQ_OK)
 , res_(res)
 , store_(store)
 , http_session_(NULL)
 , stream_(stream)
-, body_parse_(body_parse)
-, body_limit_(body_limit)
+, body_parse_(true)
+, body_limit_(10400)
 , cookies_inited_(false)
 , client_(NULL)
 , method_(HTTP_METHOD_UNKNOWN)
@@ -40,17 +41,13 @@ HttpServletRequest::HttpServletRequest(HttpServletResponse& res, session& store,
 , xml_(NULL)
 , readHeaderCalled_(false)
 {
-	ACL_SAFE_STRNCPY(cookie_name_, "ACL_SESSION_ID", sizeof(cookie_name_));
+	COPY(cookie_name_, "ACL_SESSION_ID");
 	ACL_VSTREAM* in = stream.get_vstream();
 	if (in == ACL_VSTREAM_IN)
 		cgi_mode_ = true;
 	else
 		cgi_mode_ = false;
-	if (local_charset && *local_charset)
-		safe_snprintf(localCharset_, sizeof(localCharset_),
-			"%s", local_charset);
-	else
-		localCharset_[0] = 0;
+	localCharset_[0] = 0;
 	rw_timeout_ = 60;
 }
 
@@ -72,6 +69,27 @@ HttpServletRequest::~HttpServletRequest(void)
 	delete xml_;
 	delete http_session_;
 }
+
+HttpServletRequest& HttpServletRequest::setLocalCharset(const char* charset)
+{
+	if (charset && *charset)
+	{
+		COPY(localCharset_, charset);
+	}
+	else
+		localCharset_[0] = 0;
+	return *this;
+}
+
+HttpServletRequest& HttpServletRequest::setBodyParse(
+	bool on, int len /* = 102400 */)
+{
+	body_parse_ = on;
+	body_limit_ = len;
+	return *this;
+}
+
+/////////////////////////////////////////////////////////////////////////////
 
 http_method_t HttpServletRequest::getMethod(void) const
 {
