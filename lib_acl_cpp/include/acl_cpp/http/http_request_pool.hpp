@@ -31,7 +31,7 @@ public:
 	 * @param rw_timeout {int} 网络 IO 读写超时时间(秒)
 	 * @return {http_request_pool&}
 	 */
-	http_request_pool& set_timeout(int conn_timeout = 30, int rw_timeout = 60);
+	http_request_pool& set_timeout(int conn_timeout, int rw_timeout);
 
 protected:
 	// 基类纯虚函数
