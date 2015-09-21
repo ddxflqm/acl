@@ -207,7 +207,8 @@ int connect_pool::check_idle(time_t ttl, bool exclusive /* = true */)
 		lock_.lock();
 	if (pool_.empty())
 	{
-		lock_.unlock();
+		if (exclusive)
+			lock_.unlock();
 		return 0;
 	}
 
@@ -222,7 +223,8 @@ int connect_pool::check_idle(time_t ttl, bool exclusive /* = true */)
 		};
 		pool_.clear();
 		count_ = 0;
-		lock_.unlock();
+		if (exclusive)
+			lock_.unlock();
 		return n;
 	}
 
@@ -253,7 +255,8 @@ int connect_pool::check_idle(time_t ttl, bool exclusive /* = true */)
 		count_--;
 	}
 
-	lock_.unlock();
+	if (exclusive)
+		lock_.unlock();
 	return n;
 }
 
