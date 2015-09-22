@@ -211,9 +211,18 @@ ACL_API void acl_json_reset(ACL_JSON *json);
  * 解析 json 数据, 并持续地自动生成 json 结点树
  * @param json {ACL_JSON*} json 对象
  * @param data {const char*} 以 '\0' 结尾的数据字符串, 可以是完整的 json 数据;
- *  也可以是不完整的 json 数据, 允许循环调用此函数, 将不完整数据持续地输入
+ *  也可以是不完整的 json 数据, 允许循环调用此函数, 将不完整数据持续地输入; 该参数
+ *  若为 NULL，则直接返回空串地址，因此禁止为 NULL
+ * @return {const char*} 当解析结束后，该返回值表示剩余数据的指针地址
  */
-ACL_API void acl_json_update(ACL_JSON *json, const char *data);
+ACL_API const char* acl_json_update(ACL_JSON *json, const char *data);
+
+/**
+ * 判断 JSON 解析是否完成
+ * @param json {ACL_JSON*} json 对象
+ * @return {int} 返回非 0 值表示解析完成，否则表示未完成
+ */
+ACL_API int acl_json_finish(ACL_JSON *json);
 
 /*------------------------- in acl_json_util.c ----------------------------*/
 

@@ -19,7 +19,7 @@ static const char *json_root(ACL_JSON *json, const char *data)
 {
 	SKIP_WHILE(*data != '{', data);
 	if (*data == 0)
-		return NULL;
+		return data;
 	data++;
 
 	json->root->left_ch = '{';
@@ -40,7 +40,7 @@ static const char *json_obj(ACL_JSON *json, const char *data)
 
 	SKIP_SPACE(data);
 	if (*data == 0)
-		return NULL;
+		return data;
 
 	/* 创建对象 '{}' 子结点 */
 
@@ -92,7 +92,7 @@ static const char *json_pair(ACL_JSON *json, const char *data)
 
 	SKIP_SPACE(data);
 	if (*data == 0)
-		return NULL;
+		return data;
 
 	acl_assert(parent);
 
@@ -103,7 +103,7 @@ static const char *json_pair(ACL_JSON *json, const char *data)
 		if (parent == json->root) {
 			/* 如果根结点分析结束则整个 json 分析完毕 */
 			json->finish = 1;
-			return NULL;
+			return data;
 		}
 		/* 弹出父结点 */
 		json->curr_node = parent;
@@ -257,7 +257,7 @@ static const char *json_colon(ACL_JSON *json, const char *data)
 {
 	SKIP_SPACE(data);
 	if (*data == 0)
-		return NULL;
+		return data;
 
 	if (*data != ':') {
 		data++;
@@ -280,7 +280,7 @@ static const char *json_array(ACL_JSON *json, const char *data)
 
 	SKIP_SPACE(data);
 	if (*data == 0)
-		return NULL;
+		return data;
 
 	/* 创建数组对象 */
 	array = acl_json_node_alloc(json);
@@ -309,7 +309,7 @@ static const char *json_element(ACL_JSON *json, const char *data)
 
 	SKIP_SPACE(data);
 	if (*data == 0)
-		return NULL;
+		return data;
 
 	if (*data == '{') {
 		data++;
@@ -342,7 +342,7 @@ static const char *json_value(ACL_JSON *json, const char *data)
 {
 	SKIP_SPACE(data);
 	if (*data == 0)
-		return NULL;
+		return data;
 
 	/* 为 '{' 或 '[' 时说明遇到了当前结点的子结点 */
 	if (*data == '{') {
@@ -383,7 +383,7 @@ static const char *json_string(ACL_JSON *json, const char *data)
 		/* 先过滤开头没用的空格 */
 		SKIP_SPACE(data);
 		if (*data == 0)
-			return NULL;
+			return data;
 	}
 
 	/* 说明本结点是叶结点 */
@@ -491,7 +491,7 @@ static const char *json_strend(ACL_JSON *json, const char *data)
 
 	SKIP_SPACE(data);
 	if (*data == 0)
-		return NULL;
+		return data;
 
 	if (*data == ',' || *data == ';') {
 		json->status = ACL_JSON_S_NEXT;
@@ -506,7 +506,7 @@ static const char *json_strend(ACL_JSON *json, const char *data)
 
 	if (parent == json->root) {
 		json->finish = 1;
-		return NULL;
+		return data;
 	}
 
 	data++;
@@ -523,12 +523,12 @@ static const char *json_brother(ACL_JSON *json, const char *data)
 
 	if (json->curr_node == json->root) {
 		json->finish = 1;
-		return NULL;
+		return data;
 	}
 
 	SKIP_SPACE(data);
 	if (*data == 0)
-		return NULL;
+		return data;
 
 	/* 如果到达根结点的结束符，则 json 解析过程完毕 */
 	parent = acl_json_node_parent(json->curr_node);
@@ -553,7 +553,7 @@ static const char *json_brother(ACL_JSON *json, const char *data)
 
 		if (parent == json->root) {
 			json->finish = 1;
-			return NULL;
+			return data;
 		}
 
 		json->curr_node = parent;
@@ -598,17 +598,26 @@ static struct JSON_STATUS_MACHINE status_tab[] = {
 	{ ACL_JSON_S_STREND,	json_strend },
 };
 
-void acl_json_update(ACL_JSON *json, const char *data)
+const char* acl_json_update(ACL_JSON *json, const char *data)
 {
 	const char *ptr = data;
 
+	if (data == NULL)
+		return "";
+
 	/* 检查是否已经解析完毕 */
 	if (json->finish)
-		return;
+		return ptr;
 
 	/* json 解析器状态机循环处理过程 */
 
-	while (ptr && *ptr) {
+	while (*ptr && !json->finish)
 		ptr = status_tab[json->status].callback(json, ptr);
-	}
+
+	return ptr;
+}
+
+int acl_json_finish(ACL_JSON *json)
+{
+	return json->finish;
 }

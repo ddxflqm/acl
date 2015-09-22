@@ -313,9 +313,14 @@ json& json::part_word(bool on)
 	return *this;
 }
 
-void json::update(const char* data)
+const char* json::update(const char* data)
 {
-	acl_json_update(json_, data);
+	return acl_json_update(json_, data);
+}
+
+bool json::finish()
+{
+	return acl_json_finish(json_) == 0 ? false : true;
 }
 
 const std::vector<json_node*>& json::getElementsByTagName(const char* tag) const
