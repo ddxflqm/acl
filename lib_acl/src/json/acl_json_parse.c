@@ -504,12 +504,13 @@ static const char *json_strend(ACL_JSON *json, const char *data)
 		return data;
 	}
 
+	data++;
+
 	if (parent == json->root) {
 		json->finish = 1;
 		return data;
 	}
 
-	data++;
 	json->curr_node = parent;
 	json->status = ACL_JSON_S_NEXT;
 	return data;
