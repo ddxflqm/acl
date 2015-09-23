@@ -23,17 +23,20 @@ struct ACL_JSON_NODE {
 #define	ACL_JSON_T_A_STRING      (1 << 0)
 #define	ACL_JSON_T_A_NUMBER      (1 << 1)
 #define	ACL_JSON_T_A_BOOL        (1 << 2)
-#define	ACL_JSON_T_NUMBER        (1 << 3)
-#define ACL_JSON_T_OBJ           (1 << 4)
-#define ACL_JSON_T_ARRAY         (1 << 5)
+#define	ACL_JSON_T_A_NULL        (1 << 3)
+
+#define	ACL_JSON_T_STRING        (1 << 4)
+#define	ACL_JSON_T_NUMBER        (1 << 5)
 #define	ACL_JSON_T_BOOL          (1 << 6)
 #define	ACL_JSON_T_NULL          (1 << 7)
 
-#define ACL_JSON_T_TEXT          (1 << 8)
+#define ACL_JSON_T_ARRAY         (1 << 8)
+#define ACL_JSON_T_OBJ           (1 << 9)
+#define ACL_JSON_T_TEXT          (1 << 10)
 #define ACL_JSON_T_LEAF          ACL_JSON_T_TEXT
-#define ACL_JSON_T_MEMBER        (1 << 9)
-#define ACL_JSON_T_PAIR          (1 << 10)
-#define	ACL_JSON_T_ELEMENT       (1 << 11)
+#define ACL_JSON_T_MEMBER        (1 << 11)
+#define ACL_JSON_T_PAIR          (1 << 12)
+#define	ACL_JSON_T_ELEMENT       (1 << 13)
 
 	ACL_JSON_NODE *parent;      /**< 父结点 */
 	ACL_RING children;          /**< 子结点集合 */
