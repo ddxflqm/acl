@@ -136,6 +136,7 @@ all: RM $(OBJ)
 	@echo ""
 	@echo "All ok! Output:$(PROG)"
 	@echo ""
+rebuild rb: clean all
 RM:
 	rm -f $(PROG)
 clean:
