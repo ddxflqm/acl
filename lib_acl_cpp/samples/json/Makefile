@@ -12,6 +12,7 @@ all:
 	@(cd json8; make)
 	@(cd json9; make)
 	@(cd json10; make)
+	@(cd json11; make)
 clean:
 	@(cd json0; make clean)
 	@(cd json1; make clean)
@@ -24,6 +25,7 @@ clean:
 	@(cd json8; make clean)
 	@(cd json9; make clean)
 	@(cd json10; make clean)
+	@(cd json11; make clean)
 
 test:
 	@echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>test json0 ...<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"

@@ -4,6 +4,8 @@
 359) 2015.9.25
 359.1) feature: http 模块中的 HttpServlet 类增加了 doOther 虚接口，从而可以
 支持其它未知的 HTTP 请求方法
+359.2) feature: smtp 模块下组装邮件的功能完善
+359.3) samples/mime/mail_builder: 示例功能完善
 
 358) 2015.9.22
 358.1) feature: json 解析器增加支持判断是否解析完毕的功能

@@ -15,7 +15,7 @@ static void build_html(void)
 		.set_subject("主题：中国人民银行！")
 		.add_header("X-Forward-For", "<zsx@263.net>");
 
-	const char* html = "<html><body>中国人民银行 HTML 格式</body></html>";
+	const char* html = "<html><body><B><font color='red'>中国人民银行 HTML 格式</font></B></body></html>";
 	acl::mail_body body("gbk");
 	body.set_html(html, strlen(html));
 	message.set_body(body);
@@ -64,7 +64,7 @@ static void build_alternative(void)
 		.add_attachment("Makefile", "text/plain");
 
 	const char* plain = "中国人民银行 TEXT 格式";
-	const char* html = "<html><body>中国人民银行 HTML 格式</body></html>";
+	const char* html = "<html><body><B><font color='red'>中国人民银行 HTML 格式</font></B></body></html>";
 	acl::mail_body body("gbk");
 	body.set_alternative(html, strlen(html), plain, strlen(plain));
 	message.set_body(body);
@@ -411,7 +411,7 @@ static void build_mixed_html(void)
 	message.add_attachment("main.cpp", "text/plain")
 		.add_attachment("var/email2/architecture.pptx", "application/ms-pptx");
 
-	const char* html_file = "./var/email1/html.txt";
+	const char* html_file = "./var/html.txt";
 	acl::string html;
 	if (acl::ifstream::load(html_file, &html) == false)
 	{
@@ -423,6 +423,7 @@ static void build_mixed_html(void)
 
 	acl::mail_body body("gbk");
 	body.set_html(html.c_str(), html.size());
+	message.set_body(body);
 
 	const char* filepath = "./mixed_html.eml";
 	if (message.save_to(filepath) == false)
@@ -445,7 +446,7 @@ static void build_mixed_plain(void)
 	message.add_attachment("main.cpp", "text/plain")
 		.add_attachment("var/email2/architecture.pptx", "application/ms-pptx");
 
-	const char* plain_file = "./var/email1/plain.txt";
+	const char* plain_file = "./var/plain.txt";
 	acl::string plain;
 	if (acl::ifstream::load(plain_file, &plain) == false)
 	{
@@ -457,6 +458,7 @@ static void build_mixed_plain(void)
 
 	acl::mail_body body("gbk");
 	body.set_html(plain.c_str(), plain.size());
+	message.set_body(body);
 
 	const char* filepath = "./mixed_plain.eml";
 	if (message.save_to(filepath) == false)
@@ -468,7 +470,7 @@ static void build_mixed_plain(void)
 static void usage(const char* procname)
 {
 	printf("usage: %s -h [help]\r\n"
-		"-t mime_type[1: html, 2: plain, 3: alternative, 4: relative\r\n",
+		"-t mime_type[1: html, 2: plain, 3: alternative, 4: relative, 5: mixed_relative, 6: mixed_relative2, 7: mixed, 8: mixed_html, 9: mixed_plain\r\n",
 		procname);
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -513,17 +515,21 @@ int main(int argc, char* argv[])
 		build_mixed_relative2();
 	else if (mime_type == 7)
 		build_mixed();
+	else if (mime_type == 8)
+		build_mixed_html();
+	else if (mime_type == 9)
+		build_mixed_plain();
 	else
 	{
 		build_html();
 		build_plain();
-		build_mixed();
 		build_mixed_html();
 		build_mixed_plain();
 		build_alternative();
 		build_relative();
 		build_mixed_relative();
 		build_mixed_relative2();
+		build_mixed();
 	}
 
 #if defined(_WIN32) || defined(_WIN64)
