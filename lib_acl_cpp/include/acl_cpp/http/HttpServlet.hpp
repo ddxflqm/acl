@@ -149,6 +149,27 @@ public:
 	}
 
 	/**
+	 * 当 HTTP 请求为 PROPFIND 方式时的虚函数
+	 */
+	virtual bool doPropfind(HttpServletRequest&, HttpServletResponse&)
+	{
+		logger_error("child not implement doPurge yet!");
+		return false;
+	}
+
+	/**
+	 * 当 HTTP 请求方法未知时的虚函数
+	 * @param method {const char*} 其它未知的请求方法
+	 */
+	virtual bool doOther(HttpServletRequest&, HttpServletResponse&,
+		const char* method)
+	{
+		(void) method;
+		logger_error("child not implement doOther yet!");
+		return false;
+	}
+
+	/**
 	 * 当 HTTP 请求方法未知时的虚函数
 	 */
 	virtual bool doUnknown(HttpServletRequest&, HttpServletResponse&)

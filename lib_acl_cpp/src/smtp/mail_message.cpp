@@ -376,7 +376,7 @@ bool mail_message::append_header(ofstream& fp)
 
 void mail_message::create_boundary(const char* id, string& out)
 {
-	out.format("====_%s_aclPart_%lu_%lu_%lu_====",
+	out.format("====_%s_acl_part_%lu_%lu_%lu_====",
 		id, (unsigned long) PID(), thread::thread_self(),
 		(unsigned long) time(NULL));
 }

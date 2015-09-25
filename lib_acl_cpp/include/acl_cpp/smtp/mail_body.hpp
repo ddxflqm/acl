@@ -192,7 +192,13 @@ private:
 	size_t tlen_;
 	const std::vector<mail_attach*>* attachments_;
 
-	bool build(const char* in, size_t len, string& out) const;
+	bool build(const char* in, size_t len, const char* content_type,
+		const char* charset, mime_code& coder, string& out) const;
+	bool build_html(const char* in, size_t len,
+		const char* charset, string& out) const;
+	bool build_plain(const char* in, size_t len,
+		const char* charset, string& out) const;
+
 	void set_content_type(const char* content_type);
 };
 

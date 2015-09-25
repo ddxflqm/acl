@@ -53,9 +53,10 @@ public:
 
 	/**
 	 * 获得 HTTP 客户端请求方法：GET, POST, PUT, CONNECT, PURGE
+	 * @param method_s {string*} 非空时存储字符串方式的请求方法
 	 * @return {http_method_t}
 	 */
-	http_method_t getMethod(void) const;
+	http_method_t getMethod(string* method_s = NULL) const;
 
 	/**
 	 * 获得 HTTP 客户端请求的所有 cookie 对象集合
@@ -350,7 +351,7 @@ private:
 	xml* xml_;
 
 	bool readHeaderCalled_;
-	bool readHeader(void);
+	bool readHeader(string* method_s);
 
 	void parseParameters(const char* str);
 };

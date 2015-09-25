@@ -77,7 +77,7 @@ HttpServletRequest::~HttpServletRequest(void)
 	delete http_session_;
 }
 
-http_method_t HttpServletRequest::getMethod(void) const
+http_method_t HttpServletRequest::getMethod(string* method_s /* = NULL */) const
 {
 	// HttpServlet 类对象的 doRun 运行时 readHeader 必须先被调用，
 	// 而 HttpSevlet 类在初始化请求时肯定会调用 getMethod 方法，
@@ -87,7 +87,7 @@ http_method_t HttpServletRequest::getMethod(void) const
 	// 类声明本类的友元类
 
 	if (readHeaderCalled_ == false)
-		const_cast<HttpServletRequest*>(this)->readHeader();
+		const_cast<HttpServletRequest*>(this)->readHeader(method_s);
 	return method_;
 }
 
@@ -507,7 +507,7 @@ void HttpServletRequest::parseParameters(const char* str)
 // Content-Type: multipart/form-data; boundary=---------------------------41184676334
 // Content-Type: application/octet-stream
 
-bool HttpServletRequest::readHeader(void)
+bool HttpServletRequest::readHeader(string* method_s)
 {
 	acl_assert(readHeaderCalled_ == false);
 	readHeaderCalled_ = true;
@@ -546,6 +546,10 @@ bool HttpServletRequest::readHeader(void)
 		logger_error("method null");
 		return false;
 	}
+
+	// 缓存字符串类型的请求方法
+	method_s->copy(method);
+
 	if (strcasecmp(method, "GET") == 0)
 		method_ = HTTP_METHOD_GET;
 	else if (strcasecmp(method, "POST") == 0)
@@ -562,13 +566,10 @@ bool HttpServletRequest::readHeader(void)
 		method_ = HTTP_METHOD_HEAD;
 	else if (strcasecmp(method, "OPTIONS") == 0)
 		method_ = HTTP_METHOD_OPTION;
+	else if (strcasecmp(method, "PROPFIND") == 0)
+		method_ = HTTP_METHOD_PROPFIND;
 	else
-	{
-		logger_error("unkown method: %s", method);
-		method_ = HTTP_METHOD_UNKNOWN;
-		req_error_ = HTTP_REQ_ERR_METHOD;
-		return false;
-	}
+		method_ = HTTP_METHOD_OTHER;
 
 	const char* ptr = getQueryString();
 	if (ptr && *ptr)

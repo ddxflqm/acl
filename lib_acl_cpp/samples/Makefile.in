@@ -139,7 +139,9 @@ all: RM $(OBJ)
 rebuild rb: clean all
 RM:
 	rm -f $(PROG)
-clean:
+clean cl:
 	rm -f $(PROG)
 	rm -f $(OBJ)
+
+rebuild rb: clean all
 ###########################################################

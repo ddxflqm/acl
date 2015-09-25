@@ -97,7 +97,8 @@ bool HttpServlet::doRun(session& session, socket_stream* stream /* = NULL */)
 
 	res.setCgiMode(cgi_mode);
 
-	http_method_t method = req.getMethod();
+	string method_s(32);
+	http_method_t method = req.getMethod(&method_s);
 
 	// 根据请求的值自动设定是否需要保持长连接
 	if (!cgi_mode)
@@ -130,6 +131,12 @@ bool HttpServlet::doRun(session& session, socket_stream* stream /* = NULL */)
 		break;
 	case HTTP_METHOD_OPTION:
 		ret = doOptions(req, res);
+		break;
+	case HTTP_METHOD_PROPFIND:
+		ret = doPropfind(req, res);
+		break;
+	case HTTP_METHOD_OTHER:
+		ret = doOther(req, res, method_s.c_str());
 		break;
 	default:
 		ret = false; // 有可能是IO失败或未知方法

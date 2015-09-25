@@ -85,15 +85,30 @@ mail_body& mail_body::set_relative(const char* html, size_t hlen,
 	return *this;
 }
 
-bool mail_body::build(const char* in, size_t len, string& out) const
+bool mail_body::build(const char* in, size_t len, const char* content_type,
+	const char* charset, mime_code& coder, string& out) const
 {
-	out.format_append("Content-Type: %s;\r\n", content_type_.c_str());
-	out.format_append("\tcharset=\"%s\"\r\n", charset_.c_str());
+	out.format_append("Content-Type: %s;\r\n", content_type);
+	out.format_append("\tcharset=\"%s\"\r\n", charset);
 	out.format_append("Content-Transfer-Encoding: %s\r\n\r\n",
-		transfer_encoding_.c_str());
-	coder_->encode_update(in, (int) len, &out);
-	coder_->encode_finish(&out);
+		coder.get_encoding_type());
+	coder.encode_update(in, (int) len, &out);
+	coder.encode_finish(&out);
 	return true;
+}
+
+bool mail_body::build_html(const char* in, size_t len,
+	const char* charset, string& out) const
+{
+	mime_quoted_printable coder(true, true);
+	return build(in, len, "text/html", charset, coder, out);
+}
+
+bool mail_body::build_plain(const char* in, size_t len,
+	const char* charset, string& out) const
+{
+	mime_base64 coder(true, true);
+	return build(in, len, "text/plain", charset, coder, out);
 }
 
 bool mail_body::save_to(string& out) const
@@ -130,8 +145,9 @@ bool mail_body::save_html(const char* html, size_t len, string& out) const
 		return false;
 	}
 
-	const_cast<mail_body*>(this)->set_content_type("text/html");
-	return build(html, len, out);
+	const_cast<mail_body*>(this)->set_content_type(content_type_.c_str());
+
+	return build_html(html, len, charset_.c_str(), out);
 }
 
 bool mail_body::save_text(const char* text, size_t len, string& out) const
@@ -142,8 +158,9 @@ bool mail_body::save_text(const char* text, size_t len, string& out) const
 		return false;
 	}
 
-	const_cast<mail_body*>(this)->set_content_type("text/plain");
-	return build(text, len, out);
+	const_cast<mail_body*>(this)->set_content_type(content_type_.c_str());
+
+	return build_plain(text, len, charset_.c_str(), out);
 }
 
 bool mail_body::save_relative(const char* html, size_t hlen,
@@ -209,21 +226,13 @@ bool mail_body::save_alternative(const char* html, size_t hlen,
 
 	out.format_append("Content-Type: %s\r\n\r\n", content_type_.c_str());
 	out.format_append("--%s\r\n", boundary_.c_str());
-	out.format_append("Content-Type: text/plain;\r\n");
-	out.format_append("\tcharset=\"%s\"\r\n", charset_.c_str());
-	out.format_append("Content-Transfer-Encoding: %s\r\n\r\n",
-		transfer_encoding_.c_str());
-	coder_->encode_update(text, (int) tlen, &out);
-	coder_->encode_finish(&out);
+	if (build_plain(text, tlen, charset_.c_str(), out) == false)
+		return false;
 	out.append("\r\n\r\n");
 
 	out.format_append("--%s\r\n", boundary_.c_str());
-	out.format_append("Content-Type: text/html;\r\n");
-	out.format_append("\tcharset=\"%s\"\r\n", charset_.c_str());
-	out.format_append("Content-Transfer-Encoding: %s\r\n\r\n",
-		transfer_encoding_.c_str());
-	coder_->encode_update(html, (int) hlen, &out);
-	coder_->encode_finish(&out);
+	if (build_html(html, hlen, charset_.c_str(), out) == false)
+		return false;
 	out.append("\r\n\r\n");
 
 	out.format_append("--%s--\r\n", boundary_.c_str());
