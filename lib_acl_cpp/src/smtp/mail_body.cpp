@@ -30,8 +30,8 @@ mail_body::mail_body(const char* charset /* = "utf-8" */,
 
 	html_ = NULL;
 	hlen_ = 0;
-	text_ = NULL;
-	tlen_ = 0;
+	plain_ = NULL;
+	plen_ = 0;
 	attachments_ = NULL;
 	mime_stype_ = MIME_STYPE_OTHER;
 }
@@ -50,35 +50,35 @@ mail_body& mail_body::set_html(const char* html, size_t len)
 	return *this;
 }
 
-mail_body& mail_body::set_text(const char* text, size_t len)
+mail_body& mail_body::set_plain(const char* plain, size_t len)
 {
-	text_ = text;
-	tlen_ = len;
+	plain_ = plain;
+	plen_ = len;
 	mime_stype_ = MIME_STYPE_PLAIN;
 
 	return *this;
 }
 
 mail_body& mail_body::set_alternative(const char* html, size_t hlen,
-	const char* text, size_t tlen)
+	const char* plain, size_t plen)
 {
 	html_ = html;
 	hlen_ = hlen;
-	text_ = text;
-	tlen_ = tlen;
+	plain_ = plain;
+	plen_ = plen;
 	mime_stype_ = MIME_STYPE_ALTERNATIVE;
 
 	return *this;
 }
 
 mail_body& mail_body::set_relative(const char* html, size_t hlen,
-	const char* text, size_t tlen,
+	const char* plain, size_t plen,
 	const std::vector<mail_attach*>& attachments)
 {
 	html_ = html;
 	hlen_ = hlen;
-	text_ = text;
-	tlen_ = tlen;
+	plain_ = plain;
+	plen_ = plen;
 	attachments_ = &attachments;
 	mime_stype_ = MIME_STYPE_RELATED;
 
@@ -118,12 +118,12 @@ bool mail_body::save_to(string& out) const
 	case MIME_STYPE_HTML:
 		return save_html(html_, hlen_, out);
 	case MIME_STYPE_PLAIN:
-		return save_text(text_, tlen_, out);
+		return save_plain(plain_, plen_, out);
 	case MIME_STYPE_ALTERNATIVE:
-		return save_alternative(html_, hlen_, text_, tlen_, out);
+		return save_alternative(html_, hlen_, plain_, plen_, out);
 	case MIME_STYPE_RELATED:
 		acl_assert(attachments_);
-		return save_relative(html_, hlen_, text_, tlen_,
+		return save_relative(html_, hlen_, plain_, plen_,
 			*attachments_, out);
 	default:
 		logger_error("unknown mime_stype: %d", mime_stype_);
@@ -150,9 +150,9 @@ bool mail_body::save_html(const char* html, size_t len, string& out) const
 	return build_html(html, len, charset_.c_str(), out);
 }
 
-bool mail_body::save_text(const char* text, size_t len, string& out) const
+bool mail_body::save_plain(const char* plain, size_t len, string& out) const
 {
-	if (!text || !len)
+	if (!plain || !len)
 	{
 		logger_error("invalid input!");
 		return false;
@@ -160,15 +160,15 @@ bool mail_body::save_text(const char* text, size_t len, string& out) const
 
 	const_cast<mail_body*>(this)->set_content_type(content_type_.c_str());
 
-	return build_plain(text, len, charset_.c_str(), out);
+	return build_plain(plain, len, charset_.c_str(), out);
 }
 
 bool mail_body::save_relative(const char* html, size_t hlen,
-	const char* text, size_t tlen,
+	const char* plain, size_t plen,
 	const std::vector<mail_attach*>& attachments,
 	string& out) const
 {
-	if (!html || !hlen || !text || !tlen || attachments.empty())
+	if (!html || !hlen || !plain || !plen || attachments.empty())
 	{
 		logger_error("invalid input!");
 		return false;
@@ -188,7 +188,7 @@ bool mail_body::save_relative(const char* html, size_t hlen,
 
 	// 递归一层，调用生成 alternative 格式数据
 	mail_body body(charset_.c_str(), transfer_encoding_.c_str());
-	bool ret = body.save_alternative(html, hlen, text, tlen, out);
+	bool ret = body.save_alternative(html, hlen, plain, plen, out);
 	if (ret == false)
 		return ret;
 
@@ -209,9 +209,9 @@ bool mail_body::save_relative(const char* html, size_t hlen,
 }
 
 bool mail_body::save_alternative(const char* html, size_t hlen,
-	const char* text, size_t tlen, string& out) const
+	const char* plain, size_t plen, string& out) const
 {
-	if (!html || !hlen || !text || !tlen)
+	if (!html || !hlen || !plain || !plen)
 	{
 		logger_error("invalid input!");
 		return false;
@@ -226,7 +226,7 @@ bool mail_body::save_alternative(const char* html, size_t hlen,
 
 	out.format_append("Content-Type: %s\r\n\r\n", content_type_.c_str());
 	out.format_append("--%s\r\n", boundary_.c_str());
-	if (build_plain(text, tlen, charset_.c_str(), out) == false)
+	if (build_plain(plain, plen, charset_.c_str(), out) == false)
 		return false;
 	out.append("\r\n\r\n");
 
