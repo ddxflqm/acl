@@ -12,10 +12,34 @@
 namespace acl
 {
 
-HttpServlet::HttpServlet(session& session, socket_stream* stream)
-: session_(session)
-, stream_(stream)
+HttpServlet::HttpServlet(socket_stream* stream, session* session)
+: stream_(stream)
 {
+	if (session == NULL)
+	{
+		session_ = NEW memcache_session("127.0.0.1");
+		session_ptr_ = session_;
+	}
+	else
+	{
+		session_ = session;
+		session_ptr_ = NULL;
+	}
+
+	first_ = true;
+	local_charset_[0] = 0;
+	rw_timeout_ = 60;
+	parse_body_enable_ = true;
+	parse_body_limit_ = 0;
+}
+
+HttpServlet::HttpServlet(socket_stream* stream,
+	const char* memcache_addr /* = "127.0.0.1:11211" */)
+: stream_(stream)
+{
+	session_ = NEW memcache_session(memcache_addr);
+	session_ptr_ = session_;
+
 	first_ = true;
 	local_charset_[0] = 0;
 	rw_timeout_ = 60;
@@ -25,6 +49,7 @@ HttpServlet::HttpServlet(session& session, socket_stream* stream)
 
 HttpServlet::~HttpServlet(void)
 {
+	delete session_ptr_;
 }
 
 #define COPY(x, y) ACL_SAFE_STRNCPY((x), (y), sizeof((x)))
@@ -87,7 +112,7 @@ bool HttpServlet::doRun()
 	// req/res 采用栈变量，减少内存分配次数
 
 	HttpServletResponse res(*out);
-	HttpServletRequest req(res, session_, *in, local_charset_,
+	HttpServletRequest req(res, *session_, *in, local_charset_,
 		parse_body_enable_, parse_body_limit_);
 
 	// 设置 HttpServletRequest 对象

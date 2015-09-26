@@ -1,8 +1,8 @@
 #include "stdafx.h"
 #include "http_servlet.h"
 
-http_servlet::http_servlet(acl::session& session, acl::socket_stream* stream)
-: acl::HttpServlet(session, stream)
+http_servlet::http_servlet(acl::socket_stream* stream, acl::session* session)
+: acl::HttpServlet(stream, session)
 {
 
 }
@@ -10,6 +10,22 @@ http_servlet::http_servlet(acl::session& session, acl::socket_stream* stream)
 http_servlet::~http_servlet(void)
 {
 
+}
+
+bool http_servlet::doError(acl::HttpServletRequest&,
+	acl::HttpServletResponse& res)
+{
+	res.setStatus(400);
+	res.setContentType("text/html; charset=$<CHARSET>");
+	// 发送 http 响应头
+	if (res.sendHeader() == false)
+		return false;
+
+	// 发送 http 响应体
+	acl::string buf;
+	buf.format("<root error='some error happened!' />\r\n");
+	(void) res.getOutputStream().write(buf);
+	return false;
 }
 
 bool http_servlet::doOther(acl::HttpServletRequest&,

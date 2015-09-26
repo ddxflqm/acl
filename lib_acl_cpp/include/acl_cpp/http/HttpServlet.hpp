@@ -18,14 +18,36 @@ class ACL_CPP_API HttpServlet
 public:
 	/**
 	 * 构造函数
-	 * @param session {session&} 每一个 HttpServlet 对象一个 session 对象
 	 * @param stream {socket_stream*} 当在 acl_master 服务器框架控制下
 	 *  运行时，该参数必须非空；当在 apache 下以 CGI 方式运行时，该参数
 	 *  设为 NULL；另外，该函数内部不会关闭流连接，应用应自行处理流对象
 	 *  的关闭情况，这样可以方便与 acl_master 架构结合
+	 * @param session {session*} 每一个 HttpServlet 对象一个 session 对象
 	 */
-	HttpServlet(session& session, socket_stream* stream);
+	HttpServlet(socket_stream* stream, session* session);
+
+	/**
+	 * 构造函数
+	 * @param stream {socket_stream*} 当在 acl_master 服务器框架控制下
+	 *  运行时，该参数必须非空；当在 apache 下以 CGI 方式运行时，该参数
+	 *  设为 NULL；另外，该函数内部不会关闭流连接，应用应自行处理流对象
+	 *  的关闭情况，这样可以方便与 acl_master 架构结合
+	 * @param memcache_addr {const char*}
+	 */
+	HttpServlet(socket_stream* stream,
+		const char* memcache_addr = "127.0.0.1:11211");
+
 	virtual ~HttpServlet(void) = 0;
+
+	session& getSession() const
+	{
+		return *session_;
+	}
+
+	socket_stream* getStream() const
+	{
+		return stream_;
+	}
 
 	/**
 	 * 设置本地字符集，如果设置了本地字符集，则在接收 HTTP 请求数据时，会
@@ -181,7 +203,8 @@ public:
 	}
 
 private:
-	session& session_;
+	session* session_;
+	session* session_ptr_;
 	socket_stream* stream_;
 	bool first_;
 	char local_charset_[32];

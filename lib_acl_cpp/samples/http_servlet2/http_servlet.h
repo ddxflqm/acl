@@ -3,7 +3,7 @@
 class http_servlet : public acl::HttpServlet
 {
 public:
-	http_servlet(acl::socket_stream* stream);
+	http_servlet(acl::socket_stream* stream, acl::session* session);
 	~http_servlet();
 
 protected:
@@ -15,7 +15,4 @@ protected:
 		acl::HttpServletResponse& res);
 	virtual bool doPost(acl::HttpServletRequest& req,
 		acl::HttpServletResponse& res);
-
-private:
-	acl::memcache_session session_;
 };

@@ -1,9 +1,8 @@
 #include "stdafx.h"
 #include "http_servlet.h"
 
-http_servlet::http_servlet(acl::socket_stream* stream)
-	: session_("127.0.0.1:11211")
-	, acl::HttpServlet(session_, stream)
+http_servlet::http_servlet(acl::socket_stream* stream, acl::session* session)
+	: acl::HttpServlet(stream, session)
 {
 
 }

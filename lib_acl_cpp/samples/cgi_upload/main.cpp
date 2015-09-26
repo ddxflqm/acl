@@ -12,8 +12,8 @@ using namespace acl;
 class http_servlet : public HttpServlet
 {
 public:
-	http_servlet(session& session, socket_stream* stream)
-		: HttpServlet(session, stream)
+	http_servlet(socket_stream* stream, session& session)
+		: HttpServlet(stream, &session)
 	{
 		param1_ = NULL;
 		param2_ = NULL;
@@ -288,7 +288,7 @@ private:
 static void do_run(socket_stream* stream)
 {
 	memcache_session session("127.0.0.1:11211");
-	http_servlet servlet(session, stream);
+	http_servlet servlet(stream, session);
 	servlet.setLocalCharset("gb2312");
 	servlet.doRun();
 }
