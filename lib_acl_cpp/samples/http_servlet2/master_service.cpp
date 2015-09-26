@@ -49,7 +49,7 @@ bool master_service::thread_on_read(acl::socket_stream* conn)
 	if (servlet == NULL)
 		logger_fatal("servlet null!");
 
-	return servlet->doRun("127.0.0.1:11211", conn);
+	return servlet->doRun();
 }
 
 bool master_service::thread_on_accept(acl::socket_stream* conn)
@@ -58,7 +58,7 @@ bool master_service::thread_on_accept(acl::socket_stream* conn)
 		conn->sock_handle());
 	conn->set_rw_timeout(5);
 
-	http_servlet* servlet = new http_servlet();
+	http_servlet* servlet = new http_servlet(conn);
 	conn->set_ctx(servlet);
 
 	return true;

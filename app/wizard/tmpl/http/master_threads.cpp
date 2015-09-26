@@ -55,9 +55,9 @@ bool master_service::thread_on_read(acl::socket_stream* conn)
 		logger_fatal("servlet null!");
 
 	if (var_cfg_use_redis_session)
-		return servlet->doRun(*session_, conn);
+		return servlet->doRun();
 	else
-		return servlet->doRun("127.0.0.1:11211", conn);
+		return servlet->doRun();
 }
 
 bool master_service::thread_on_accept(acl::socket_stream* conn)
@@ -66,7 +66,13 @@ bool master_service::thread_on_accept(acl::socket_stream* conn)
 		conn->sock_handle());
 	conn->set_rw_timeout(var_cfg_rw_timeout);
 
-	http_servlet* servlet = new http_servlet();
+	acl::session* session;
+	if (var_cfg_use_redis_session)
+		session = new acl::redis_session(*redis_, var_cfg_max_threads);
+	else
+		session = new acl::memcache_session("127.0.0.1:11211");
+
+	http_servlet* servlet = new http_servlet(session, conn);
 	conn->set_ctx(servlet);
 
 	return true;
@@ -85,8 +91,9 @@ void master_service::thread_on_close(acl::socket_stream* conn)
 		conn->sock_handle());
 
 	http_servlet* servlet = (http_servlet*) conn->get_ctx();
-	if (servlet)
-		delete servlet;
+	acl::session* session = servlet->get_session();
+	delete session;
+	delete servlet;
 }
 
 void master_service::thread_on_init()
@@ -103,9 +110,6 @@ void master_service::proc_on_init()
 	cluster_ = new acl::redis_client_cluster(var_cfg_conn_timeout,
 			var_cfg_rw_timeout);
 	cluster_->init(NULL, var_cfg_redis_addrs, var_cfg_max_threads);
-
-	// create session cluster
-	session_ = new acl::redis_session(*cluster_, var_cfg_max_threads);
 }
 
 void master_service::proc_on_exit()

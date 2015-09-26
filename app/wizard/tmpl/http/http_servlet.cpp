@@ -1,7 +1,8 @@
 #include "stdafx.h"
 #include "http_servlet.h"
 
-http_servlet::http_servlet(void)
+http_servlet::http_servlet(acl::session& session, acl::socket_stream* stream)
+: acl::HttpServlet(session, stream)
 {
 
 }
@@ -11,8 +12,8 @@ http_servlet::~http_servlet(void)
 
 }
 
-bool http_servlet::doUnknown(acl::HttpServletRequest&,
-	acl::HttpServletResponse& res)
+bool http_servlet::doOther(acl::HttpServletRequest&,
+	acl::HttpServletResponse& res, const char* method)
 {
 	res.setStatus(400);
 	res.setContentType("text/html; charset=$<CHARSET>");
@@ -20,7 +21,8 @@ bool http_servlet::doUnknown(acl::HttpServletRequest&,
 	if (res.sendHeader() == false)
 		return false;
 	// ∑¢ÀÕ http œÏ”¶ÃÂ
-	acl::string buf("<root error='unkown request method' />\r\n");
+	acl::string buf;
+	buf.format("<root error='unkown request method %s' />\r\n", method);
 	(void) res.getOutputStream().write(buf);
 	return false;
 }

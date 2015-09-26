@@ -16,7 +16,15 @@ class HttpServletResponse;
 class ACL_CPP_API HttpServlet
 {
 public:
-	HttpServlet(void);
+	/**
+	 * 构造函数
+	 * @param session {session&} 每一个 HttpServlet 对象一个 session 对象
+	 * @param stream {socket_stream*} 当在 acl_master 服务器框架控制下
+	 *  运行时，该参数必须非空；当在 apache 下以 CGI 方式运行时，该参数
+	 *  设为 NULL；另外，该函数内部不会关闭流连接，应用应自行处理流对象
+	 *  的关闭情况，这样可以方便与 acl_master 架构结合
+	 */
+	HttpServlet(session& session, socket_stream* stream);
 	virtual ~HttpServlet(void) = 0;
 
 	/**
@@ -56,24 +64,9 @@ public:
 
 	/**
 	 * HttpServlet 对象开始运行，接收 HTTP 请求，并回调以下 doXXX 虚函数
-	 * @param session {session&} 存储 session 数据的对象
-	 * @param stream {socket_stream*} 当在 acl_master 服务器框架控制下
-	 *  运行时，该参数必须非空；当在 apache 下以 CGI 方式运行时，该参数
-	 *  设为 NULL；另外，该函数内部不会关闭流连接，应用应自行处理流对象
-	 *  的关闭情况，这样可以方便与 acl_master 架构结合
 	 * @return {bool} 返回处理结果
 	 */
-	bool doRun(session& session, socket_stream* stream = NULL);
-
-	/**
-	 * HttpServlet 对象开始运行，接收 HTTP 请求，并回调以下 doXXX 虚函数，
-	 * 调用本函数意味着采用 memcached 来存储 session 数据
-	 * @param memcached_addr {const char*} memcached 服务器地址，格式：IP:PORT
-	 * @param stream {socket_stream*} 含义同上
-	 * @return {bool} 返回处理结果
-	 */
-	bool doRun(const char* memcached_addr = "127.0.0.1:11211",
-		socket_stream* stream = NULL);
+	bool doRun();
 
 	/**
 	 * 当 HTTP 请求为 GET 方式时的虚函数
@@ -188,6 +181,8 @@ public:
 	}
 
 private:
+	session& session_;
+	socket_stream* stream_;
 	bool first_;
 	char local_charset_[32];
 	int  rw_timeout_;

@@ -12,7 +12,9 @@
 namespace acl
 {
 
-HttpServlet::HttpServlet(void)
+HttpServlet::HttpServlet(session& session, socket_stream* stream)
+: session_(session)
+, stream_(stream)
 {
 	first_ = true;
 	local_charset_[0] = 0;
@@ -25,11 +27,12 @@ HttpServlet::~HttpServlet(void)
 {
 }
 
+#define COPY(x, y) ACL_SAFE_STRNCPY((x), (y), sizeof((x)))
+
 HttpServlet& HttpServlet::setLocalCharset(const char* charset)
 {
 	if (charset && *charset)
-		safe_snprintf(local_charset_, sizeof(local_charset_),
-			"%s", charset);
+		COPY(local_charset_, charset);
 	else
 		local_charset_[0] =0;
 	return *this;
@@ -54,7 +57,7 @@ HttpServlet& HttpServlet::setParseBodyLimit(int length)
 	return *this;
 }
 
-bool HttpServlet::doRun(session& session, socket_stream* stream /* = NULL */)
+bool HttpServlet::doRun()
 {
 	socket_stream* in;
 	socket_stream* out;
@@ -64,29 +67,27 @@ bool HttpServlet::doRun(session& session, socket_stream* stream /* = NULL */)
 	if (first_)
 		first_ = false;
 
-	if (stream == NULL)
+	if (stream_ == NULL)
 	{
 		// 数据流为空，则当 CGI 模式处理，将标准输入输出
 		// 作为数据流
-		stream = NEW socket_stream();
-		(void) stream->open(ACL_VSTREAM_IN);
-		in = stream;
+		in = NEW socket_stream();
+		in->open(ACL_VSTREAM_IN);
 
-		stream = NEW socket_stream();
-		(void) stream->open(ACL_VSTREAM_OUT);
-		out = stream;
+		out = NEW socket_stream();
+		out->open(ACL_VSTREAM_OUT);
 		cgi_mode = true;
 	}
 	else
 	{
-		in = out = stream;
+		in = out = stream_;
 		cgi_mode = false;
 	}
 
 	// req/res 采用栈变量，减少内存分配次数
 
 	HttpServletResponse res(*out);
-	HttpServletRequest req(res, session, *in, local_charset_,
+	HttpServletRequest req(res, session_, *in, local_charset_,
 		parse_body_enable_, parse_body_limit_);
 
 	// 设置 HttpServletRequest 对象
@@ -161,13 +162,6 @@ bool HttpServlet::doRun(session& session, socket_stream* stream /* = NULL */)
 	// 返回给上层调用者：true 表示继续保持长连接，否则表示需断开连接
 	return ret && req.isKeepAlive()
 		&& res.getHttpHeader().get_keep_alive();
-}
-
-bool HttpServlet::doRun(const char* memcached_addr /* = "127.0.0.1:11211" */,
-	socket_stream* stream /* = NULL */)
-{
-	memcache_session session(memcached_addr);
-	return doRun(session, stream);
 }
 
 } // namespace acl
