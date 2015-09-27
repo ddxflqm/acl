@@ -15,6 +15,8 @@ namespace acl
 HttpServlet::HttpServlet(socket_stream* stream, session* session)
 : stream_(stream)
 {
+	init();
+
 	if (session == NULL)
 	{
 		session_ = NEW memcache_session("127.0.0.1");
@@ -25,8 +27,6 @@ HttpServlet::HttpServlet(socket_stream* stream, session* session)
 		session_ = session;
 		session_ptr_ = NULL;
 	}
-
-	init();
 }
 
 HttpServlet::HttpServlet(socket_stream* stream,
