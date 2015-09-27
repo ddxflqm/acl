@@ -232,6 +232,8 @@ private:
 	int  rw_timeout_;
 	bool parse_body_enable_;
 	int  parse_body_limit_;
+
+	void init();
 };
 
 } // namespace acl

@@ -26,33 +26,30 @@ HttpServlet::HttpServlet(socket_stream* stream, session* session)
 		session_ptr_ = NULL;
 	}
 
-	first_ = true;
-	local_charset_[0] = 0;
-	rw_timeout_ = 60;
-	parse_body_enable_ = true;
-	parse_body_limit_ = 0;
+	init();
 }
 
 HttpServlet::HttpServlet(socket_stream* stream,
 	const char* memcache_addr /* = "127.0.0.1:11211" */)
 : stream_(stream)
 {
+	init();
+
 	session_ = NEW memcache_session(memcache_addr);
 	session_ptr_ = session_;
-
-	first_ = true;
-	local_charset_[0] = 0;
-	rw_timeout_ = 60;
-	parse_body_enable_ = true;
-	parse_body_limit_ = 0;
 }
 
 HttpServlet::HttpServlet()
 {
+	init();
+
 	stream_ = NULL;
 	session_ = NULL;
 	session_ptr_ = NULL;
+}
 
+void HttpServlet::init()
+{
 	first_ = true;
 	local_charset_[0] = 0;
 	rw_timeout_ = 60;
