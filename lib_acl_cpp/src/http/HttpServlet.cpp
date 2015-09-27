@@ -47,6 +47,19 @@ HttpServlet::HttpServlet(socket_stream* stream,
 	parse_body_limit_ = 0;
 }
 
+HttpServlet::HttpServlet()
+{
+	stream_ = NULL;
+	session_ = NULL;
+	session_ptr_ = NULL;
+
+	first_ = true;
+	local_charset_[0] = 0;
+	rw_timeout_ = 60;
+	parse_body_enable_ = true;
+	parse_body_limit_ = 0;
+}
+
 HttpServlet::~HttpServlet(void)
 {
 	delete session_ptr_;
@@ -187,6 +200,19 @@ bool HttpServlet::doRun()
 	// 返回给上层调用者：true 表示继续保持长连接，否则表示需断开连接
 	return ret && req.isKeepAlive()
 		&& res.getHttpHeader().get_keep_alive();
+}
+
+bool HttpServlet::doRun(session& session, socket_stream* stream /* = NULL */)
+{
+	stream_ = stream;
+	session_ = &session;
+	return doRun();
+}
+
+bool HttpServlet::doRun(const char* memcached_addr, socket_stream* stream)
+{
+	memcache_session session(memcached_addr);
+	return doRun(session, stream);
 }
 
 } // namespace acl
