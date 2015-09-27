@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
 	{
 		format = (void (*)(const char*, ...)) printf;
 		printf("listen: 0.0.0.0:8888 ...\r\n");
-		service.run_alone("0.0.0.0:8888", NULL, 1);  // 单独运行方式
+		service.run_alone("0.0.0.0:8888", NULL, 0);  // 单独运行方式
 	}
 	else
 	{
