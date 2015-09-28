@@ -77,8 +77,10 @@ static void rfc2047_test(acl::rfc2047& rfc2047, const char* s)
 {
 	acl::string out;
 
-	printf("\n");
-	printf("------------------ charset to gb2312 begin -------------\n");
+	printf("\r\n\r\n");
+	printf("------------------ src --------------------------------\r\n");
+	printf("%s\r\n", s);
+	printf("------------------ charset to gb2312 begin ------------\r\n");
 	rfc2047.reset(true);
 	rfc2047.decode_update(s, (int) strlen(s));
 	if (rfc2047.decode_finish("gb18030", &out))
@@ -321,8 +323,26 @@ int main(int argc, char* argv[])
 
 	/////////////////////////////////////////////////////////////////////
 	
+	printf("\r\n\r\n");
+	printf("///////////////////////////////////////////////////////\r\n");
+
 	const char* s6 = "=?utf-8?B?6LaF57qn5L2O5Lu377yB57ud5a+55aSn54mM77yB5LuFNDblhYPmiqLotK0=?=  =?utf-8?B?5paw54mI5YWw6JS75rC05Lu957yY6IiS57yT5p+U6IKk5ZWr5Zax5Lit5qC3?=  =?utf-8?B?77yBM+aKmOaKoui0rei2hee7j+WFuOmbhemhv+aZmuWuieWlveecoOa7iw==?=  =?utf-8?B?5YW76Zyc5ZCM5pyf6L+b6KGM77yB?=";
 	rfc2047_test(rfc2047, s6);
+
+	const char* s61 = "=?utf-8?B?6LaF57qn5L2O5Lu377yB57ud5a+55aSn54mM77yB5LuFNDblhYPmiqLotK0=?=";
+	rfc2047_test(rfc2047, s61);
+
+	const char* s62 = "=?utf-8?B?5paw54mI5YWw6JS75rC05Lu957yY6IiS57yT5p+U6IKk5ZWr5Zax5Lit5qC3?=";
+	rfc2047_test(rfc2047, s62);
+
+	const char* s63 = "=?utf-8?B?77yBM+aKmOaKoui0rei2hee7j+WFuOmbhemhv+aZmuWuieWlveecoOa7iw==?=";
+	rfc2047_test(rfc2047, s63);
+	
+	const char* s64 = "=?utf-8?B?5YW76Zyc5ZCM5pyf6L+b6KGM77yB?=";
+	rfc2047_test(rfc2047, s64);
+
+	printf("///////////////////////////////////////////////////////\r\n");
+	printf("\r\n\r\n");
 
 	/////////////////////////////////////////////////////////////////////
 
