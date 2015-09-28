@@ -85,11 +85,13 @@ static void rfc2047_test(acl::rfc2047& rfc2047, const char* s)
 	rfc2047.decode_update(s, (int) strlen(s));
 	if (rfc2047.decode_finish("gb18030", &out))
 	{
+		printf(">>>before valid |%s|, len(%d)\r\n", out.c_str(), (int) out.size());
+
 		char buf[50];
 
 		get_valid_string(out.c_str(), (unsigned) out.length(),
 			buf, (unsigned) sizeof(buf) - 3);
-		printf(">>> |%s|, len(%d)\n", buf, (int) strlen(buf));
+		printf(">>>after valid |%s|, len(%d)\n", buf, (int) strlen(buf));
 
 		rfc2047.debug_rfc2047();
 	}
