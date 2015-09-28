@@ -1,5 +1,18 @@
 #include "stdafx.h"
 
+static void test_type(acl::json& json, const char* name)
+{
+	const std::vector<acl::json_node*>& nodes1 = json.getElementsByTagName(name);
+	if (!nodes1.empty())
+	{
+		printf("%s: type is %s, value is %s\r\n", name,
+			nodes1[0]->get_type(),
+			nodes1[0]->get_text() ? nodes1[0]->get_text() : "NULL");
+	}
+	else
+		printf("%s not found\r\n", name);
+}
+
 int main()
 {
 #if 1
@@ -50,5 +63,16 @@ int main()
 		exit (1);
 	}
 	
+
+	test_type(json, "hello world");
+	test_type(json, "name");
+	test_type(json, "age");
+	test_type(json, "member");
+	test_type(json, "DataKey1");
+	test_type(json, "DataValue");
+	test_type(json, "null_key");
+	test_type(json, "string");
+	test_type(json, "waittime");
+
 	return 0;
 }

@@ -58,6 +58,68 @@ json_node* json_node::get_obj(void) const
 	return obj_;
 }
 
+bool json_node::is_string() const
+{
+	return node_me_->type == ACL_JSON_T_A_STRING
+		|| node_me_->type == ACL_JSON_T_STRING;
+}
+
+bool json_node::is_number() const
+{
+	return node_me_->type == ACL_JSON_T_A_NUMBER
+		|| node_me_->type == ACL_JSON_T_NUMBER;
+}
+
+bool json_node::is_bool() const
+{
+	return node_me_->type == ACL_JSON_T_A_BOOL
+		|| node_me_->type == ACL_JSON_T_BOOL;
+}
+
+bool json_node::is_null() const
+{
+	return node_me_->type == ACL_JSON_T_A_NULL
+		|| node_me_->type == ACL_JSON_T_NULL;
+}
+
+bool json_node::is_object() const
+{
+	if (node_me_->tag_node == NULL)
+		return false;
+	if (node_me_->tag_node->type == ACL_JSON_T_OBJ)
+		return true;
+	else
+		return false;
+}
+
+bool json_node::is_array() const
+{
+	if (node_me_->tag_node == NULL)
+		return false;
+	if (node_me_->tag_node->type == ACL_JSON_T_ARRAY)
+		return true;
+	else
+		return false;
+}
+
+const char* json_node::get_type() const
+{
+	if (is_string())
+		return "string";
+	else if (is_number())
+		return "number";
+	else if (is_bool())
+		return "bool";
+	else if (is_null())
+		return "null";
+	else if (is_object())
+		return "object";
+	else if (is_array())
+		return "array";
+	else
+		return "unknown";
+}
+
 bool json_node::set_tag(const char* name)
 {
 	if (name == NULL || *name == 0)
