@@ -1110,38 +1110,22 @@ string& string::strip(const char* needle, bool each /* false */)
 {
 	char* src = STR(vbf_);
 	char* ptr;
-	ACL_VSTRING* pVbf = NULL;
 
 	if (each)
 	{
-		const char* last;
+		ACL_VSTRING* pVbf = acl_vstring_alloc(LEN(vbf_) + 1);
 
-		while (true)
-		{
-			last = src;
-			if ((ptr = acl_mystrtok(&src, needle)) == NULL)
-			{
-				if (*last == 0)
-					break;
-				if (pVbf != NULL)
-					SCAT(pVbf, last);
-				break;
-			}
-			// –¥ ±∑÷≈‰
-			if (pVbf == NULL)
-				pVbf = acl_vstring_alloc(LEN(vbf_));
+		while ((ptr = acl_mystrtok(&src, needle)) != NULL)
 			SCAT(pVbf, ptr);
-		}
 		
-		if (pVbf != NULL)
-		{
-			FREE(vbf_);
-			vbf_ = pVbf;
-		}
+		FREE(vbf_);
+		vbf_ = pVbf;
+
 		return *this;
 	}
 
 	size_t len = strlen(needle), n;
+	ACL_VSTRING* pVbf = NULL;
 
 	while (true)
 	{

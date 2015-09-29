@@ -68,6 +68,17 @@ static bool test(const char* in, const char* tag, bool once,
 
 int main()
 {
+#if 0
+	acl::string bf;
+	const char* p = "\r\nhello\r\nworld\rzsx\nxsz\r\nzsxxsz\r\n\r\n\r\r\r";
+	bf = p;
+	bf.strip("\r\n", true);
+	bf.strip("l", true);
+	printf("src: |%s|\r\n", p);
+	printf("str:{%s}, len: %d\r\n", bf.c_str(), (int) bf.size());
+	return 0;
+#endif
+
 	const char* ptr =
 		"{\r\n"
 		"	\"data\" : \"dGVzdHFxcQ==\", \r\n"
@@ -78,17 +89,22 @@ int main()
 		"	\"group_id\" : \"\"\r\n"
 		"}\r\n";
 
-	acl::string buf;
+	acl::string buf1, buf2;
 
-	if (test(ptr, "receiver_id", false, buf) == false)
+	buf1 = ptr;
+
+	if (test(ptr, "receiver_id", false, buf2) == false)
 		return 1;
 
-	const char* s = "{\"data\": \"dGVzdHFxcQ==\", \"receiver_id\": [\"1442365683\"], \"extra\": \"\", \"group_id\": \"\"}";
-	if (buf == s)
+	buf1.trim_space().trim_line();
+	buf2.trim_space().trim_line().trim_line();
+
+	if (buf1 == buf2)
 		printf("----OK----\r\n");
 	else
 	{
 		printf("----Error----\r\n");
+		printf("|%s|\r\n|%s|\r\n", buf1.c_str(), buf2.c_str());
 		return 1;
 	}
 
@@ -96,66 +112,59 @@ int main()
 	fflush(stdout);
 	getchar();
 
-	ptr =   "{ 'forward': [\r\n"
-		"  { 'disable': 'false' },\r\n"
-		"  { 'disable': false },\r\n"
-		"  { 'status': [ true, false, true ]},\r\n"
-		"  { 'status': [ 'true', 'false', 'true' ]},\r\n"
-		"  { 'status': [ 'true', false, 'true' ]},\r\n"
-		"  { 'number': 123456 },\r\n"
-		"  { 'number': '123456' },\r\n"
-		"  { 'number': [ 1, 2, 3, 4, 5, 6 ]},\r\n"
-		"  { 'number': [ '1', '2', '3', '4', '5', '6' ]},\r\n"
-		"  { 'number': [ '1', 2, '3', 4, '5', 6 ]},\r\n"
-		"  { 'url' : 'http://127.0.0.1/' },\r\n"
+	ptr =   "{ \"forward\": [\r\n"
+		"  { \"disable\": \"false\" },\r\n"
+		"  { \"disable\": false },\r\n"
+		"  { \"status\": [ true, false, true ]},\r\n"
+		"  { \"status\": [ \"true\", \"false\", \"true\" ]},\r\n"
+		"  { \"status\": [ \"true\", false, \"true\" ]},\r\n"
+		"  { \"number\": 123456 },\r\n"
+		"  { \"number\": \"123456\" },\r\n"
+		"  { \"number\": [ 1, 2, 3, 4, 5, 6 ]},\r\n"
+		"  { \"number\": [ \"1\", \"2\", \"3\", \"4\", \"5\", \"6\" ]},\r\n"
+		"  { \"number\": [ \"1\", 2, \"3\", 4, \"5\", 6 ]},\r\n"
+		"  { \"url\" : \"http://127.0.0.1/\" },\r\n"
 		"  {\r\n"
-		"    'deny': [\r\n"
+		"    \"deny\": [\r\n"
 		"         {\r\n"
-		"           'host': [\r\n"
-		"              'baidu.com',\r\n"
-		"              'sina.com'\r\n"
+		"           \"host\": [\r\n"
+		"              \"baidu.com\",\r\n"
+		"              \"sina.com\"\r\n"
 		"           ]\r\n"
 		"         }\r\n"
 		"    ]\r\n"
 		"  },\r\n"
 		"  {\r\n"
-		"    'allow': [\r\n"
-		"         '111',\r\n"
-		"         '222'\r\n"
+		"    \"allow\": [\r\n"
+		"         \"111\",\r\n"
+		"         \"222\"\r\n"
 		"      ]\r\n"
 		"  }\r\n"
-		"]}\r\n"
-		"{ 'user': { 'name': 'test', age: 111, male: true }\r\n";
+		"]}\r\n";
+		//"{ \"user\": { \"name\": \"test\", age: 111, male: true }\r\n";
 
 	acl::string left;
 
-	if (test(ptr, "number", true, buf, &left) == false)
+	buf1 = ptr;
+
+	if (test(ptr, "number", true, buf2, &left) == false)
 		return 1;
 
-	s = "{\"forward\": [{\"disable\": \"false\"}, "
-		"{\"disable\": false}, "
-		"{\"status\": [true, false, true]}, "
-		"{\"status\": [\"true\", \"false\", \"true\"]}, "
-		"{\"status\": [\"true\", false, \"true\"]}, "
-		"{\"number\": 123456}, "
-		"{\"number\": \"123456\"}, "
-		"{\"number\": [1, 2, 3, 4, 5, 6]}, "
-		"{\"number\": [\"1\", \"2\", \"3\", \"4\", \"5\", \"6\"]}, "
-		"{\"number\": [\"1\", 2, \"3\", 4, \"5\", 6]}, "
-		"{\"url\": \"http://127.0.0.1/\"}, "
-		"{\"deny\": [{\"host\": [\"baidu.com\", \"sina.com\"]}]}, "
-		"{\"allow\": [\"111\", \"222\"]}"
-	    "]}";
+	buf1.trim_space().trim_line();
+	buf2.trim_space().trim_line();
 
-	if (buf == s)
+	if (buf1 == buf2)
 		printf("----OK----\r\n");
 	else
 	{
 		printf("----Error----\r\n");
-		printf("%s\r\n", s);
-		printf("%s\r\n", buf.c_str());
+		printf("%s\r\n", buf1.c_str());
+		printf("%s\r\n", buf2.c_str());
 		return 1;
 	}
+
+	left.strip("\r\n", true).trim_space();
+	printf("left len: %d\r\n", (int) left.size());
 
 	if (!left.empty())
 	{
@@ -163,7 +172,9 @@ int main()
 		fflush(stdout);
 		getchar();
 
-		if (test(left.c_str(), "number", false, buf) == false)
+		buf1.clear();
+
+		if (test(left.c_str(), "number", false, buf1) == false)
 		{
 			printf("----Error----\r\n");
 			return 1;
