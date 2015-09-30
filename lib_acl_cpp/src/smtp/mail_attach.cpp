@@ -16,19 +16,28 @@ mail_attach::mail_attach(const char* filepath, const char* content_type,
 , cid_(64)
 , charset_(charset)
 {
-	string filename;
-	filename.basename(filepath);
-
-	// 文件名需要采用 rfc2047 编码
-	if (!rfc2047::encode(filename.c_str(), (int) filename.size(),
-		&filename_, charset, 'B', false))
-	{
-		filename_ = filename;
-	}
+	set_filename(filepath);
 }
 
 mail_attach::~mail_attach()
 {
+}
+
+mail_attach& mail_attach::set_filename(const char* name)
+{
+	string filename;
+	filename.basename(name);
+
+	// 文件名需要采用 rfc2047 编码
+	if (!rfc2047::encode(filename.c_str(), (int) filename.size(),
+		&filename_, charset_, 'B', false))
+	{
+		filename_ = filename;
+	}
+	else
+		filename_ = filename;
+
+	return *this;
 }
 
 mail_attach& mail_attach::set_content_id(const char* id)

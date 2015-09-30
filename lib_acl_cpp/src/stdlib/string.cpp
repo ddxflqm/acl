@@ -1113,13 +1113,41 @@ string& string::strip(const char* needle, bool each /* false */)
 
 	if (each)
 	{
-		ACL_VSTRING* pVbf = acl_vstring_alloc(LEN(vbf_) + 1);
+		ACL_VSTRING* pVbf = NULL;
 
-		while ((ptr = acl_mystrtok(&src, needle)) != NULL)
+		while (true)
+		{
+			if ((ptr = acl_mystrtok(&src, needle)) == NULL)
+			{
+				// 如果此时 pVbf 为 NULL，则说明源串内容
+				// 全部为匹配字符，在这种情况下，第一次
+				// 调用 acl_mystrtok 就会返回 NULL，此时
+				// 需要清空源缓冲区内容
+				if (pVbf == NULL)
+				{
+					RSET(vbf_);
+					TERM(vbf_);
+				}
+
+				break;
+			}
+
+			// 采用写时拷贝技术，当源缓冲区均不含任何匹配字符
+			// 时，不必分配临时缓冲区
+			if (pVbf == NULL)
+				pVbf = acl_vstring_alloc(LEN(vbf_) + 1);
+
+			// 拷贝不匹配的数据至新缓冲区
 			SCAT(pVbf, ptr);
+		}
 		
-		FREE(vbf_);
-		vbf_ = pVbf;
+		// 如果临时缓冲区非 NULL，则说明源数据存在部分匹配数据，
+		// 需要将临时缓冲区设为正式缓冲区并需释放源缓冲区
+		if (pVbf != NULL)
+		{
+			FREE(vbf_);
+			vbf_ = pVbf;
+		}
 
 		return *this;
 	}
@@ -1140,9 +1168,12 @@ string& string::strip(const char* needle, bool each /* false */)
 		// 采用写时延迟分配策略
 		if (pVbf == NULL)
 			pVbf = acl_vstring_alloc(LEN(vbf_));
+
 		n = ptr - src;
-		MCP(pVbf, src, n);
+		if (n > 0)
+			MCAT(pVbf, src, n);
 		TERM(pVbf);
+
 		src += n + len;
 	}
 
