@@ -36,8 +36,6 @@ static void test_int64(acl::json& json, const char* name)
 #include <iostream>
 int main()
 {
-	unsigned long long n = (unsigned long long) acl_atoll("18446744073709551615");
-	printf("max: %I64u\r\n", n);
 #if 1
 	const char* sss =
 		"[{\"DataKey1\": \"BindRule\", \"DataValue\": {\"waittime\": \"7\"}, \"null_key\": \"null\"},\r\n"
