@@ -1,6 +1,12 @@
 修改历史列表：
 
 ------------------------------------------------------------------------
+363) 2015.10.7
+363.1) feature: json 类添加了新方法 getFirstElementByTagName，该方法在遍历过程
+中当匹配到一个符合的节点后便立即返回，因而效率比 getElementsByTagName 更高
+363.2) performance: xml::getFirstElementByTag 使用 lib_acl 库中新加的函数
+acl_xml_getFirstElementByTagName，执行效率更高
+
 362) 2015.9.30
 362.1) bugfix: string 类中的方法 strip 当其中参数 each 为 false 时分析方式有误
 362.2) feature: string 类中的方法 strip 采用写时拷贝技术

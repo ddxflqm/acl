@@ -405,14 +405,26 @@ public:
 	void reset(void);
 
 	/**
+	 * 从 json 对象中取得某个标签名的第一个节点
+	 * @param tag {const char*} 标签名(不区分大小写)
+	 * @return {json_node*} 返回 json 节点对象，不存在则返回 NULL
+	 *  注：返回的 json_node 节点可以修改，但不能删除节点，内部有自动删除机制，
+	 *  当调用方法 clear/getElementsByTagName/getElementsByTags 后，节点
+	 *  不能再被引用，因为节点的内存被自动释放
+	 */
+	json_node* getFirstElementByTagName(const char* tag) const;
+
+	/**
 	 * 从 json 对象中取得某个标签名的所有节点集合
 	 * @param tag {const char*} 标签名(不区分大小写)
 	 * @return {const std::vector<json_node*>&} 返回结果集的对象引用，
 	 *  如果查询结果为空，则该集合为空，即：empty() == true
-	 *  注：返回的数组中的 json_node 节点数据可以修改，但不能删除该节点，
-	 *  因为该库内部有自动删除的机制
+	 *  注：返回的 json_node 节点可以修改，但不能删除节点，内部有自动删除机制，
+	 *  当调用方法 clear/getElementsByTagName/getElementsByTags 后，节点
+	 *  不能再被引用，因为节点的内存被自动释放
 	 */
-	const std::vector<json_node*>& getElementsByTagName(const char* tag) const;
+	const std::vector<json_node*>&
+		getElementsByTagName(const char* tag) const;
 
 	/**
 	 * 从 json 对象中获得所有的与给定多级标签名相同的 json 节点的集合
@@ -428,10 +440,12 @@ public:
 	 *  条件的节点
 	 * @return {const std::vector<json_node*>&} 符合条件的 json 节点集合, 
 	 *  如果查询结果为空，则该集合为空，即：empty() == true
-	 *  注：返回的数组中的 json_node 节点数据可以修改，但不能删除该节点，
-	 *  因为该库内部有自动删除的机制
+	 *  注：返回的 json_node 节点可以修改，但不能删除节点，内部有自动删除机制，
+	 *  当调用方法 clear/getElementsByTagName/getElementsByTags 后，节点
+	 *  不能再被引用，因为节点的内存被自动释放
 	 */
-	const std::vector<json_node*>& getElementsByTags(const char* tags) const;
+	const std::vector<json_node*>&
+		getElementsByTags(const char* tags) const;
 
 	/**
 	 * 取得 acl 库中的 ACL_JSON 对象

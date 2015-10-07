@@ -183,7 +183,7 @@ json_node& json_node::add_child(json_node* child,
 	bool return_child /* = false */)
 {
 	ACL_JSON_NODE* node = child->get_json_node();
-	// 先添加 child 至父结点中
+	// 先添加 child 至父节点中
 	acl_json_node_add_child(node_me_, node);
 	child->parent_ = this;
 	if (return_child)
@@ -411,6 +411,16 @@ const char* json::update(const char* data)
 bool json::finish(void)
 {
 	return acl_json_finish(json_) == 0 ? false : true;
+}
+
+json_node* json::getFirstElementByTagName(const char* tag) const
+{
+	ACL_JSON_NODE* n = acl_json_getFirstElementByTagName(json_, tag);
+	if (n == NULL)
+		return NULL;
+	json_node* node = NEW json_node(n, const_cast<json*>(this));
+	const_cast<json*>(this)->nodes_query_.push_back(node);
+	return node;
 }
 
 const std::vector<json_node*>& json::getElementsByTagName(const char* tag) const
