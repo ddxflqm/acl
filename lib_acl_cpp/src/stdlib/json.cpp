@@ -58,31 +58,59 @@ json_node* json_node::get_obj(void) const
 	return obj_;
 }
 
-bool json_node::is_string() const
+const char* json_node::get_string(void) const
+{
+	return get_text();
+}
+
+const acl_int64* json_node::get_int64(void) const
+{
+	if (!is_number())
+		return NULL;
+	const char* txt = get_text();
+	if (txt == NULL || *txt == 0)
+		return NULL;
+	const_cast<json_node*>(this)->node_val_.n = acl_atoi64(txt);
+	return &node_val_.n;
+}
+
+const bool* json_node::get_bool(void) const
+{
+	if (!is_bool())
+		return NULL;
+	const char* txt = get_text();
+	if (txt == NULL || *txt == 0)
+		return NULL;
+	const_cast<json_node*>(this)->node_val_.b =
+		strcasecmp(txt, "true") == 0 ? true : false;
+	return &node_val_.b;
+}
+
+bool json_node::is_string(void) const
 {
 	return node_me_->type == ACL_JSON_T_A_STRING
 		|| node_me_->type == ACL_JSON_T_STRING;
 }
 
-bool json_node::is_number() const
+bool json_node::is_number(void) const
 {
 	return node_me_->type == ACL_JSON_T_A_NUMBER
 		|| node_me_->type == ACL_JSON_T_NUMBER;
 }
 
-bool json_node::is_bool() const
+bool json_node::is_bool(void) const
 {
 	return node_me_->type == ACL_JSON_T_A_BOOL
 		|| node_me_->type == ACL_JSON_T_BOOL;
 }
 
-bool json_node::is_null() const
+bool json_node::is_null(void) const
 {
 	return node_me_->type == ACL_JSON_T_A_NULL
 		|| node_me_->type == ACL_JSON_T_NULL;
 }
 
-bool json_node::is_object() const
+bool json_node::is_object(void) const
 {
 	if (node_me_->tag_node == NULL)
 		return false;
@@ -92,7 +120,7 @@ bool json_node::is_object() const
 		return false;
 }
 
-bool json_node::is_array() const
+bool json_node::is_array(void) const
 {
 	if (node_me_->tag_node == NULL)
 		return false;
@@ -102,7 +130,7 @@ bool json_node::is_array() const
 		return false;
 }
 
-const char* json_node::get_type() const
+const char* json_node::get_type(void) const
 {
 	if (is_string())
 		return "string";
@@ -236,7 +264,7 @@ json_node& json_node::add_child(const char* tag, json_node& node,
 	return add_child(tag, &node, return_child);
 }
 
-json_node& json_node::get_parent() const
+json_node& json_node::get_parent(void) const
 {
 	if (parent_)
 		return *parent_;
@@ -292,7 +320,7 @@ int   json_node::children_count(void) const
 	return acl_ring_size(&node_me_->children);
 }
 
-void json_node::prepare_iter()
+void json_node::prepare_iter(void)
 {
 	if (children_ == NULL)
 	{
@@ -309,7 +337,7 @@ void json_node::prepare_iter()
 	}
 }
 
-void json_node::clear()
+void json_node::clear(void)
 {
 	if (children_)
 	{
@@ -380,7 +408,7 @@ const char* json::update(const char* data)
 	return acl_json_update(json_, data);
 }
 
-bool json::finish()
+bool json::finish(void)
 {
 	return acl_json_finish(json_) == 0 ? false : true;
 }
@@ -493,7 +521,7 @@ json_node& json::create_node(bool as_array /* = false */)
 	return *n;
 }
 
-json_node& json::create_array()
+json_node& json::create_array(void)
 {
 	ACL_JSON_NODE* node = acl_json_create_array(json_);
 	json_node* n = NEW json_node(node, this);

@@ -48,46 +48,68 @@ public:
 	json_node* get_obj(void) const;
 
 	/**
+	 * 当 json 节点为字符串类型时，该函数返回字符串内容
+	 * @return {const char*} 返回 NULL 表示该节点非字符串类型
+	 */
+	const char* get_string(void) const;
+
+	/**
+	 * 当 json 节点为长整型类型时，该函数返回长整型值的指针地址
+	 * @return {long long int*} 当返回 NULL 时表示该对象非长整型类型
+	 */
+#if defined(_WIN32) || defined(_WIN64)
+	const __int64* get_int64(void) const;
+#else
+	const long long int* get_int64(void) const;
+#endif
+
+	/**
+	 * 当 json 节点为布尔类型时，该函数返回布尔值的指针地址
+	 * @return {bool*} 当返回 NULL 时表示该对象非布尔类型
+	 */
+	const bool* get_bool(void) const;
+
+	/**
 	 * 判断本节点数据是否为字符串类型
 	 * @return {bool}
 	 */
-	bool is_string() const;
+	bool is_string(void) const;
 
 	/**
 	 * 判断本节点数据是否为数字类型
 	 * @return {bool}
 	 */
-	bool is_number() const;
+	bool is_number(void) const;
 
 	/**
 	 * 判断本节点数据是否为布尔类型
 	 * @return {bool}
 	 */
-	bool is_bool() const;
+	bool is_bool(void) const;
 
 	/**
 	 * 判断本节点数据是否为 null 类型
 	 * @return {bool}
 	 */
-	bool is_null() const;
+	bool is_null(void) const;
 
 	/**
 	 * 判断本节点是否为对象类型
 	 * @return {bool}
 	 */
-	bool is_object() const;
+	bool is_object(void) const;
 
 	/**
 	 * 判断本节点是否为数组类型
 	 * @return {bool}
 	 */
-	bool is_array() const;
+	bool is_array(void) const;
 
 	/**
 	 * 获得该节点类型的描述
 	 * @return {const char*}
 	 */
-	const char* get_type() const;
+	const char* get_type(void) const;
 
 	/**
 	 * 当该 json 节点有标签时，本函数用来新的标签值覆盖旧的标签名
@@ -135,7 +157,8 @@ public:
 	 *  否则返回本 json 节点对象的引用
 	 */
 	json_node& add_array(bool return_child = false);
-	json_node& add_child(bool as_array = false, bool return_child = false);
+	json_node& add_child(bool as_array = false,
+		bool return_child = false);
 
 	/**
 	 * 创建一个字符串类型的 json 节点对象，并将之添加为本 json 节点的子节点
@@ -186,7 +209,8 @@ public:
 	 * @return {json_node&} return_child 为 true 时创建的新节点的引用，
 	 *  否则返回本 json 节点对象的引用
 	 */
-	json_node& add_array_text(const char* text, bool return_child = false);
+	json_node& add_array_text(const char* text,
+		bool return_child = false);
 
 	ACL_CPP_DEPRECATED_FOR("add_text")
 	json_node& add_child(const char* text, bool return_child = false);
@@ -199,9 +223,11 @@ public:
 	 *  否则返回本 json 节点对象的引用
 	 */
 #if defined(_WIN32) || defined(_WIN64)
-	json_node& add_array_number(__int64 value, bool return_child = false);
+	json_node& add_array_number(__int64 value,
+		bool return_child = false);
 #else
-	json_node& add_array_number(long long int value, bool return_child = false);
+	json_node& add_array_number(long long int value,
+		bool return_child = false);
 #endif
 
 	/**
@@ -271,7 +297,7 @@ public:
 	 * 可以清空这些对象，一旦调用此函数进行了清除，则由 first_child/next_child
 	 * 返回的 json_node 节点对象将不再可用，否则会产生内存非法访问
 	 */
-	void clear();
+	void clear(void);
 
 	/**
 	 * 获得 json 对象的引用
@@ -283,7 +309,7 @@ public:
 	 * 取出对应于 ACL 库中的 json 节点对象
 	 * @return {ACL_JSON_NODE*} 返回节点对象，注：该节点用户不能单独释放
 	 */
-	ACL_JSON_NODE* get_json_node() const;
+	ACL_JSON_NODE* get_json_node(void) const;
 
 private:
 	friend class json;
@@ -314,7 +340,17 @@ private:
 	string* buf_;
 	json_node* obj_;
 
-	void prepare_iter();
+	union
+	{
+#if defined(_WIN32) || defined(_WIN64)
+		__int64 n;
+#else
+		long long int n;
+#endif
+		bool b;
+	} node_val_;
+
+	void prepare_iter(void);
 };
 
 class ACL_CPP_API json : public pipe_stream
@@ -359,7 +395,7 @@ public:
 	 * 判断是否解析完毕
 	 * @return {bool}
 	 */
-	bool finish();
+	bool finish(void);
 
 	/**
 	 * 重置 json 解析器状态，该 json 对象可以用来对多个 json 数据
@@ -487,7 +523,7 @@ public:
 	 *  不用时调用 reset 来释放这些 json_node 节点对象
 	 */
 	json_node& create_node(bool as_array = false);
-	json_node& create_array();
+	json_node& create_array(void);
 
 	/**
 	 * 创建一个 json_node 节点对象，该节点对象的格式为：tag_name: {}
@@ -531,7 +567,7 @@ public:
 	 * 获得根节点对象
 	 * @return {json_node&}
 	 */
-	json_node& get_root();
+	json_node& get_root(void);
 
 	/**
 	 * 开始遍历该 json 对象并获得第一个节点
@@ -559,7 +595,7 @@ public:
 	 * 将 json 对象树转换成 json 字符串
 	 * @return {const string&}
 	 */
-	const string& to_string();
+	const string& to_string(void);
 
 	// pipe_stream 虚函数重载
 
