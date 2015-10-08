@@ -415,6 +415,16 @@ public:
 	json_node* getFirstElementByTagName(const char* tag) const;
 
 	/**
+	 * 重载运算符，直接获得对应标签名的第一个节点
+	 * @param tag {const char*} 标签名(不区分大小写)
+	 * @return {json_node*} 返回 json 节点对象，不存在则返回 NULL
+	 *  注：返回的 json_node 节点可以修改，但不能删除节点，内部有自动删除机制，
+	 *  当调用方法 clear/getElementsByTagName/getElementsByTags 后，节点
+	 *  不能再被引用，因为节点的内存被自动释放
+	 */
+	json_node* operator[](const char* tag) const;
+
+	/**
 	 * 从 json 对象中取得某个标签名的所有节点集合
 	 * @param tag {const char*} 标签名(不区分大小写)
 	 * @return {const std::vector<json_node*>&} 返回结果集的对象引用，

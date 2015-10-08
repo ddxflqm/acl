@@ -423,6 +423,11 @@ json_node* json::getFirstElementByTagName(const char* tag) const
 	return node;
 }
 
+json_node* json::operator[](const char* tag) const
+{
+	return getFirstElementByTagName(tag);
+}
+
 const std::vector<json_node*>& json::getElementsByTagName(const char* tag) const
 {
 	const_cast<json*>(this)->clear();
