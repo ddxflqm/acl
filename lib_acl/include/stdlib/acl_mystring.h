@@ -25,13 +25,13 @@ extern "C" {
 } while (0)
 #else
 #define ACL_SAFE_STRNCPY(_obj, _src, _size) do {            \
-    if (_obj != NULL && _src != NULL && (int)_size >= 0) {  \
+    if (_size > 0) {  \
         strncpy(_obj, _src, _size);                         \
             if ((int)_size > 0)                             \
                 _obj[_size - 1] = 0;                        \
             else                                            \
                 _obj[_size] = 0;                            \
-	}                                                       \
+    }                                                       \
 } while (0)
 #endif
 #endif
