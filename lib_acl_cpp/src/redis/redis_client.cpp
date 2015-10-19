@@ -76,8 +76,10 @@ bool redis_client::open()
 		{
 			logger_error("auth error, addr: %s, passwd: %s",
 				addr_, pass_);
-			close();
-			return false;
+			// 此处返回 true，以便于上层使用该连接访问时
+			// 由 redis-server 直接给命令报未认证的错训，
+			// 从而免得在 redis_command 类中不断地重试连接
+			return true;
 		}
 	}
 
