@@ -16,6 +16,8 @@ redis_client_pool::redis_client_pool(const char* addr, size_t count,
 
 redis_client_pool::~redis_client_pool()
 {
+	if (pass_)
+		acl_myfree(pass_);
 }
 
 redis_client_pool& redis_client_pool::set_timeout(int conn_timeout,
