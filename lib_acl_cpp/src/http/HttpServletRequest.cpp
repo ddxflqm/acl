@@ -582,9 +582,7 @@ bool HttpServletRequest::readHeader(string* method_s)
 	}
 
 	acl_int64 len = getContentLength();
-	if (len < -1)
-		return false;
-	if (len == 0)
+	if (len <= 0)
 	{
 		request_type_ = HTTP_REQUEST_NORMAL;
 		return true;
