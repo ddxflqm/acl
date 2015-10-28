@@ -5,6 +5,8 @@
 368.1) performance: http 模块的相关类（HttpCookie, http_header, HttpServlet,
 HttpServletRequest, HttpServerResponse）通过引入会话内存池(dbuf_pool)进行内存
 管理，从而大大提高了处理性能
+368.2) feature: dbuf_pool::dbuf_reset 增加参数 reserve，从而允许应用在重置内存池
+时可以保留部分已经分配的缓冲区
 
 367) 2015.10.27
 367.1) bugfix: HttpServletRequest 类中方法 readHeader 当调用方法
