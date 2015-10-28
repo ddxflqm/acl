@@ -1,6 +1,11 @@
 修改历史列表：
 
 ------------------------------------------------------------------------
+368) 2015.10.28
+368.1) performance: http 模块的相关类（HttpCookie, http_header, HttpServlet,
+HttpServletRequest, HttpServerResponse）通过引入会话内存池(dbuf_pool)进行内存
+管理，从而大大提高了处理性能
+
 367) 2015.10.27
 367.1) bugfix: HttpServletRequest 类中方法 readHeader 当调用方法
 getContentLength 时返回 -1，则会造成下面调用 acl_mymalloc((size_t) len + 1)

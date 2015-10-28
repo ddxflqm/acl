@@ -32,9 +32,9 @@ void dbuf_pool::operator delete(void* ptr)
 	acl_dbuf_pool_destroy(dbuf->pool_);
 }
 
-void dbuf_pool::dbuf_reset()
+void dbuf_pool::dbuf_reset(size_t reserve /* = 0 */)
 {
-	acl_dbuf_pool_reset(pool_, mysize_);
+	acl_dbuf_pool_reset(pool_, mysize_ + reserve);
 }
 
 void* dbuf_pool::dbuf_alloc(size_t len)

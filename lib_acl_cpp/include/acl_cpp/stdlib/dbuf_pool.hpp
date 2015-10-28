@@ -34,8 +34,10 @@ public:
 
 	/**
 	 * 重置内存池的状态以便于重复使用该内存池对象
+	 * @param reserve {size_t} 当该值 > 0 时，则指定需要额外保留的内存大小，
+	 *  该大小必须小于等于已经在该内存池对象分配的大小
 	 */
-	void dbuf_reset();
+	void dbuf_reset(size_t reserve = 0);
 
 	/**
 	 * 分配指定长度的内存
