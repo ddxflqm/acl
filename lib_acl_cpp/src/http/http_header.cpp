@@ -103,7 +103,8 @@ void http_header::reset()
 	clear();
 	init();
 
-	dbuf_->dbuf_reset();
+	if (dbuf_internal_)
+		dbuf_internal_->dbuf_reset();
 }
 
 //////////////////////////////////////////////////////////////////////////
