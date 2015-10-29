@@ -23,6 +23,7 @@ typedef struct ACL_DBUF {
 
 struct ACL_DBUF_POOL {
         size_t block_size;
+	size_t off;
         ACL_DBUF *head;
 	char  buf_addr[1];
 };
@@ -60,6 +61,7 @@ ACL_DBUF_POOL *acl_dbuf_pool_create(size_t block_size)
 #endif
 
 	pool->block_size = size;
+	pool->off = 0;
 	pool->head = (ACL_DBUF*) pool->buf_addr;
 	pool->head->next = NULL;
 	pool->head->ptr = pool->head->buf_addr;
@@ -89,31 +91,53 @@ void acl_dbuf_pool_destroy(ACL_DBUF_POOL *pool)
 #endif
 }
 
-void acl_dbuf_pool_reset(ACL_DBUF_POOL *pool, size_t off)
+int acl_dbuf_pool_reset(ACL_DBUF_POOL *pool, size_t off)
 {
-	ACL_DBUF *iter = pool->head, *tmp;
+	size_t n;
+	ACL_DBUF *iter = pool->head, *tmp = (ACL_DBUF*) pool->buf_addr;
 
-	while (iter) {
+	if (off > pool->off) {
+		acl_msg_warn("warning: %s(%d) off(%ld) > pool->off(%ld)",
+			__FUNCTION__, __LINE__, off, pool->off);
+		return -1;
+	} else if (off == pool->off)
+		return 0;
+
+	while (1) {
+		n = iter->ptr - iter->buf_addr;
+		if (pool->off <= off + n) {
+			iter->ptr -= pool->off - off;
+			pool->off = off;
+			pool->head = iter;
+			break;
+		}
+
+		pool->off -=n;
 		tmp = iter;
 		iter = iter->next;
-		if ((char*) tmp == pool->buf_addr)
-			break;
+
 #ifdef	USE_VALLOC
 		free(tmp);
 #else
 		acl_myfree(tmp);
 #endif
+
+#if 0
+		printf(">>>free one\r\n");
+#endif
+		/*
+		if (iter == NULL || (char*) iter == pool->buf_addr) {
+			pool->head = (ACL_DBUF*) pool->buf_addr;
+			pool->head->ptr -= pool->off - off;
+			pool->off = off;
+			break;
+		}
+		*/
 	}
-	pool->head = (ACL_DBUF*) pool->buf_addr;
-	pool->head->next = NULL;
-
-	if (pool->head->buf_addr + off >= (char*) pool + pool->block_size)
-		acl_msg_fatal("%s(%d) off(%ld) too big, should < %ld",
-			__FUNCTION__, __LINE__, (long) off, (long)
-			((char*) pool + pool->block_size
-			 - pool->head->buf_addr));
-
-	pool->head->ptr = pool->head->buf_addr + off;
+#if 0
+	printf(">>Off: %ld\r\n", pool->off);
+#endif
+	return 0;
 }
 
 static ACL_DBUF *acl_dbuf_alloc(ACL_DBUF_POOL *pool, size_t length)
@@ -123,15 +147,11 @@ static ACL_DBUF *acl_dbuf_alloc(ACL_DBUF_POOL *pool, size_t length)
 #else
 	ACL_DBUF *dbuf = (ACL_DBUF*) acl_mymalloc(sizeof(ACL_DBUF) + length);
 #endif
-	dbuf->next = NULL;
-	dbuf->ptr = (void*) dbuf->buf_addr;
+	dbuf->ptr = (char*) dbuf->buf_addr;
 
-	if (pool->head == NULL)
-		pool->head = dbuf;
-	else {
-		dbuf->next = pool->head;
-		pool->head = dbuf;
-	}
+	dbuf->next = pool->head;
+	pool->head = dbuf;
+
 	return dbuf;
 }
 
@@ -156,6 +176,8 @@ void *acl_dbuf_pool_alloc(ACL_DBUF_POOL *pool, size_t length)
 
 	ptr = dbuf->ptr;
 	dbuf->ptr = (char*) dbuf->ptr + length;
+	pool->off += length;
+
 	return ptr;
 }
 
