@@ -54,9 +54,9 @@ ACL_DBUF_POOL *acl_dbuf_pool_create(size_t block_size)
 	if (size < (size_t) page_size)
 		size = page_size;
 
-	/* xxx: ä¸ºäº†å°½é‡ä¿è¯åœ¨è°ƒç”¨ acl_mymalloc åˆ†é…å†…å­˜æ—¶ä¸ºå†…å­˜é¡µçš„æ•´æ•°å€ï¼Œ
-	 * éœ€è¦å‡åŽ» sizeof(ACL_DBUF) å’Œ 16 å­—èŠ‚ï¼Œå…¶ä¸­ 16 å­—èŠ‚æ˜¯ acl_mymalloc
-	 * å†…éƒ¨ç»™æ¯ä¸ªå†…å­˜å—é¢å¤–æ·»åŠ çš„æŽ§åˆ¶å¤´ï¼Œåœ¨ acl_mymalloc å†…éƒ¨ 16 å­—èŠ‚ä¸ºï¼š
+	/* xxx: ÎªÁË¾¡Á¿±£Ö¤ÔÚµ÷ÓÃ acl_mymalloc ·ÖÅäÄÚ´æÊ±ÎªÄÚ´æÒ³µÄÕûÊý±¶£¬
+	 * ÐèÒª¼õÈ¥ sizeof(ACL_DBUF) ºÍ 16 ×Ö½Ú£¬ÆäÖÐ 16 ×Ö½ÚÊÇ acl_mymalloc
+	 * ÄÚ²¿¸øÃ¿¸öÄÚ´æ¿é¶îÍâÌí¼ÓµÄ¿ØÖÆÍ·£¬ÔÚ acl_mymalloc ÄÚ²¿ 16 ×Ö½ÚÎª£º
 	 * offsetof(MBLOCK, u.payload[0])
 	 */
 	size -= 16 + sizeof(ACL_DBUF);
