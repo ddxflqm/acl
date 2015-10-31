@@ -53,9 +53,24 @@ char* dbuf_pool::dbuf_strdup(const char* s)
 	return acl_dbuf_pool_strdup(pool_, s);
 }
 
-void* dbuf_pool::dbuf_memdup(const void* s, size_t len)
+void* dbuf_pool::dbuf_memdup(const void* addr, size_t len)
 {
-	return acl_dbuf_pool_memdup(pool_, s, len);
+	return acl_dbuf_pool_memdup(pool_, addr, len);
+}
+
+bool dbuf_pool::dbuf_free(const void* addr)
+{
+	return acl_dbuf_pool_free(pool_, addr) == 0 ? true : false;
+}
+
+bool dbuf_pool::dbuf_keep(const void* addr)
+{
+	return acl_dbuf_pool_keep(pool_, addr) == 0 ? true : false;
+}
+
+bool dbuf_pool::dbuf_unkeep(const void* addr)
+{
+	return acl_dbuf_pool_unkeep(pool_, addr) == 0 ? true : false;
 }
 
 } // namespace acl
