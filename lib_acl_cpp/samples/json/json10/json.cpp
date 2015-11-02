@@ -6,6 +6,7 @@ int main()
 	acl::json_node& root = json.get_root();
 
 
+	// Éú³É json ´®£º{"1": {"1": {"1": "aa"}}}
 	root.add_child("1", true).add_child("1", true).add_text("1", "aa");
 	printf("%s\r\n", json.to_string().c_str());
 
