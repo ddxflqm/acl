@@ -8,23 +8,48 @@ int main()
 	//////////////////////////////////////////////////////////////////////
 	// 方法一：
 
-	root.add_child("Para", json.create_node()
-				.add_text("xxx", "111")
-				.add_text("yyy", "222")
-				.add_bool("zzz", true)
-				.add_number("eee", 100));
+	root.add_text("cmd", "add")		// 添加 root 节点的子节点
+		.add_child("Para", true)	// 添加 root 节点的子节点
+			.add_text("xxx", "111")	// 添加 Para 节点的子节点
+			.add_text("yyy", "222")	// 添加 Para 节点的子节点
+			.add_bool("zzz", true)	// 添加 Para 节点的子节点
+			.add_number("eee", 100)	// 添加 Para 节点的子节点
+		.get_parent()			// 返回 Para 的父节点(root节点)
+		.add_bool("status", true)	// 添加 root 节点的子节点
+		.add_number("length", 100);	// 添加 root 节点的子节点
 
 	printf("%s\r\n", json.to_string().c_str());
 	acl::string buf1;
 	json.build_json(buf1);
 
 	//////////////////////////////////////////////////////////////////////
+	// 方法二：
 
 	// 在重新使用前需要重置 json 生成器状态
 	json.reset();
 
+	root.add_text("cmd", "add")
+		.add_child("Para",
+			json.create_node()
+				.add_text("xxx", "111")
+				.add_text("yyy", "222")
+				.add_bool("zzz", true)
+				.add_number("eee", 100))
+		.add_bool("status", true)
+		.add_number("length", 100);
+
+	printf("%s\r\n", json.to_string().c_str());
+	acl::string buf2;
+	json.build_json(buf2);
+
 	//////////////////////////////////////////////////////////////////////
-	// 方法二：
+	// 方法三：
+
+	// 在重新使用前需要重置 json 生成器状态
+	json.reset();
+
+	acl::json_node& cmd = json.create_node("cmd", "add");
+	root.add_child(cmd);
 
 	acl::json_node& node1 = json.create_node();
 	root.add_child("Para", node1);
@@ -41,11 +66,20 @@ int main()
 	acl::json_node& node14 = json.create_node("eee", (long long int) 100);
 	node1.add_child(node14);
 
-	printf("%s\r\n", json.to_string().c_str());
-	acl::string buf2;
-	json.build_json(buf2);
+	acl::json_node& status = json.create_node("status", true);
+	root.add_child(status);
 
-	if (buf2 == buf1)
+	acl::json_node& length = json.create_node("length", (long long int) 100);
+	root.add_child(length);
+
+	printf("%s\r\n", json.to_string().c_str());
+	acl::string buf3;
+	json.build_json(buf3);
+
+	//////////////////////////////////////////////////////////////////////
+	// 比较三种方法的结果是否相等
+
+	if (buf2 == buf1 && buf3 == buf2)
 		printf("OK\r\n");
 	else
 		printf("ERROR\r\n");

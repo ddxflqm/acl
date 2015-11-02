@@ -1,6 +1,9 @@
 修改历史列表：
 
 ------------------------------------------------------------------------
+369) 2015.11.1
+369.1) workaround: 整理 json_node 类
+
 368) 2015.10.28
 368.1) performance: http 模块的相关类（HttpCookie, http_header, HttpServlet,
 HttpServletRequest, HttpServerResponse）通过引入会话内存池(dbuf_pool)进行内存

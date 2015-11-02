@@ -159,9 +159,16 @@ public:
 	 *  否则返回本 json 节点对象的引用
 	 */
 	json_node& add_array(bool return_child = false);
-	json_node& add_child(bool as_array = false,
-		bool return_child = false);
-	json_node& add_child(const char* tag);
+	json_node& add_child(bool as_array = false, bool return_child = false);
+
+	/**
+	 * 创建一个 json 节点对象，并将之添加为本 json 节点的子节点
+	 * @param tag {const char*} 标签名
+	 * @param return_child {bool} 是否需要本函数返回新创建的子节点的引用
+	 * @return {json_node&} return_child 为 true 时创建的新节点的引用，
+	 *  否则返回本 json 节点对象的引用
+	 */
+	json_node& add_child(const char* tag, bool return_child = false);
 
 	/**
 	 * 创建一个 json 节点对象，并将之添加为本 json 节点的子节点
@@ -195,10 +202,6 @@ public:
 	 * 注：此处的 add_text 和 add_child 是同样的功能
 	 */
 	json_node& add_text(const char* tag, const char* value,
-		bool return_child = false);
-
-	ACL_CPP_DEPRECATED_FOR("add_text")
-	json_node& add_child(const char* tag, const char* value,
 		bool return_child = false);
 
 	/**

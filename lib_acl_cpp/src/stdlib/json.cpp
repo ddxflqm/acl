@@ -208,11 +208,6 @@ json_node& json_node::add_child(bool as_array /* = false */,
 	return add_child(json_->create_node(as_array), return_child);
 }
 
-json_node& json_node::add_child(const char* tag)
-{
-	return add_child(tag, json_->create_node(), true);
-}
-
 json_node& json_node::add_child(const char* tag, json_node* node,
 	bool return_child /* = false */)
 {
@@ -225,16 +220,18 @@ json_node& json_node::add_child(const char* tag, json_node& node,
 	return add_child(tag, &node, return_child);
 }
 
+json_node& json_node::add_child(const char* tag,
+	bool return_child /* = false */)
+{
+	json_node& node = json_->create_node();
+	(void) add_child(tag, node);
+	return return_child ? node : *this;
+}
+
 json_node& json_node::add_text(const char* tag, const char* value,
 	bool return_child /* = false */)
 {
 	return add_child(json_->create_node(tag, value), return_child);
-}
-
-json_node& json_node::add_child(const char* tag, const char* value,
-	bool return_child /* = false */)
-{
-	return add_text(tag, value, return_child);
 }
 
 json_node& json_node::add_number(const char* tag, acl_int64 value,
@@ -249,17 +246,20 @@ json_node& json_node::add_bool(const char* tag, bool value,
 	return add_child(json_->create_node(tag, value), return_child);
 }
 
-json_node& json_node::add_array_text(const char* text, bool return_child /* = false */)
+json_node& json_node::add_array_text(const char* text,
+	bool return_child /* = false */)
 {
 	return add_child(json_->create_array_text(text), return_child);
 }
 
-json_node& json_node::add_array_number(acl_int64 value, bool return_child /* = false */)
+json_node& json_node::add_array_number(acl_int64 value,
+	bool return_child /* = false */)
 {
 	return add_child(json_->create_array_number(value), return_child);
 }
 
-json_node& json_node::add_array_bool(bool value, bool return_child /* = false */)
+json_node& json_node::add_array_bool(bool value,
+	bool return_child /* = false */)
 {
 	return add_child(json_->create_array_bool(value), return_child);
 }
