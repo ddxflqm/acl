@@ -9,8 +9,8 @@ int main()
 	// ·½·¨Ò»£º
 
 	root.add_child("Para", json.create_node()
-				.add_child("xxx", "111")
-				.add_child("yyy", "222")
+				.add_text("xxx", "111")
+				.add_text("yyy", "222")
 				.add_bool("zzz", true)
 				.add_number("eee", 100));
 
