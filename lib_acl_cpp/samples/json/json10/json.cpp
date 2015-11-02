@@ -5,6 +5,13 @@ int main()
 	acl::json json;
 	acl::json_node& root = json.get_root();
 
+
+	root.add_child("1", true).add_child("1", true).add_text("1", "aa");
+	printf("%s\r\n", json.to_string().c_str());
+
+	json.reset();
+
+	//////////////////////////////////////////////////////////////////////
 	// 以下三种方法可以生成相同的 json 串如下：
 	// {"cmd": "add", "Para": {"xxx": "111", "yyy": "222", "zzz": true, "eee": 100}, "status": true, "length": 100}
 	
