@@ -161,6 +161,7 @@ public:
 	json_node& add_array(bool return_child = false);
 	json_node& add_child(bool as_array = false,
 		bool return_child = false);
+	json_node& add_child(const char* tag);
 
 	/**
 	 * 创建一个 json 节点对象，并将之添加为本 json 节点的子节点
@@ -467,6 +468,8 @@ public:
 	 */
 	ACL_JSON* get_json(void) const;
 
+	/////////////////////////////////////////////////////////////////////
+
 	/**
 	 * 创建一个 json_node 叶节点对象，该节点对象的格式为：
 	 * "tag_name": "tag_value"
@@ -513,9 +516,6 @@ public:
 	 *  不用时调用 reset 来释放这些 json_node 节点对象
 	 */
 	json_node& create_array_text(const char* text);
-
-	ACL_CPP_DEPRECATED_FOR("create_array_text")
-	json_node& create_node(const char* text);
 
 	/**
 	 * 创建一个 json_node 叶节点数值对象
@@ -573,6 +573,8 @@ public:
 	 *  不用时调用 reset 来释放这些 json_node 节点对象
 	 */
 	json_node& create_node(const char* tag, json_node& node);
+
+	/////////////////////////////////////////////////////////////////////
 
 	/**
 	 * 将一个 json 对象中的一个 json 节点复制至任一 json 对象中的一个
