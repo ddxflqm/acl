@@ -5,18 +5,21 @@ int main()
 	acl::json json;
 	acl::json_node& root = json.get_root();
 
+	// 以下三种方法可以生成相同的 json 串如下：
+	// {"cmd": "add", "Para": {"xxx": "111", "yyy": "222", "zzz": true, "eee": 100}, "status": true, "length": 100}
+	
 	//////////////////////////////////////////////////////////////////////
 	// 方法一：
 
-	root.add_text("cmd", "add")		// 添加 root 节点的子节点
-		.add_child("Para", true)	// 添加 root 节点的子节点
-			.add_text("xxx", "111")	// 添加 Para 节点的子节点
-			.add_text("yyy", "222")	// 添加 Para 节点的子节点
-			.add_bool("zzz", true)	// 添加 Para 节点的子节点
-			.add_number("eee", 100)	// 添加 Para 节点的子节点
-		.get_parent()			// 返回 Para 的父节点(root节点)
-		.add_bool("status", true)	// 添加 root 节点的子节点
-		.add_number("length", 100);	// 添加 root 节点的子节点
+	root.add_text("cmd", "add")	// 添加 root 节点的子节点并返回 root
+	  .add_child("Para", true)	// 添加 root 的子节点(Para)并返回 Para
+	    .add_text("xxx", "111")	// 添加 Para 的子节点并返回 Para
+	    .add_text("yyy", "222")	// 添加 Para 的子节点并返回 Para
+	    .add_bool("zzz", true)	// 添加 Para 的子节点并返回 Para
+	    .add_number("eee", 100)	// 添加 Para 的子节点并返回 Para
+	  .get_parent()			// 返回 Para 的父节点(root节点)
+	  .add_bool("status", true)	// 添加 root 节点的子节点 status
+	  .add_number("length", 100);	// 添加 root 节点的子节点 length
 
 	printf("%s\r\n", json.to_string().c_str());
 	acl::string buf1;
