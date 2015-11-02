@@ -237,9 +237,6 @@ public:
 	json_node& add_array_text(const char* text,
 		bool return_child = false);
 
-	ACL_CPP_DEPRECATED_FOR("add_array_text")
-	json_node& add_child(const char* text, bool return_child = false);
-
 	/**
 	 * 创建一个 json 数字对象，并将之添加为本 json 节点的子节点
 	 * @param value {acl_int64} 数字值
