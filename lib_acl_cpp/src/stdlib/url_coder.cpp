@@ -43,9 +43,8 @@ url_coder::url_coder(const url_coder& coder, dbuf_pool* dbuf /* = NULL */)
 
 url_coder::~url_coder()
 {
-	delete buf_;
-
 	reset();
+	delete buf_;
 
 	if (dbuf_internal_)
 		dbuf_internal_->destroy();
