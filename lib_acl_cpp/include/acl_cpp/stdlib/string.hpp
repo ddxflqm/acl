@@ -588,6 +588,14 @@ public:
 	/**
 	 * 比较两个字符串对象的内容是否相同（区分大小写）
 	 * @param s {const string&} 输入的字符串对象的引用
+	 * @param case_sensitive {bool} 为 true 表示区分大小写
+	 * @return {bool} 返回 true 表示二者相等
+	 */
+	bool equal(const string& s, bool case_sensitive = true) const;
+
+	/**
+	 * 比较两个字符串对象的内容是否相同（区分大小写）
+	 * @param s {const string&} 输入的字符串对象的引用
 	 * @return {int} 0：表示二者相同； > 0：当前字符串内容大于输入的内容；
 	 *  < 0 ：当前字符串内容小于输入的内容
 	 */

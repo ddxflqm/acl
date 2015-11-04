@@ -743,6 +743,20 @@ string::operator const void *() const
 	return (void*) STR(vbf_);
 }
 
+bool string::equal(const string& s, bool case_sensitive /* = true */) const
+{
+	size_t n1 = LEN(vbf_), n2 = LEN(s.vbf_);
+	if (n1 != n2)
+		return false;
+
+	size_t n = n1 > n2 ? n2 : n1;
+
+	if (case_sensitive)
+		return memcmp(STR(vbf_), STR(s.vbf_), n) == 0 ? true : false;
+
+	return acl_strcasecmp(STR(vbf_), STR(s.vbf_)) == 0 ? true : false;
+}
+
 int string::compare(const string& s) const
 {
 	size_t n = LEN(vbf_) > LEN(s.vbf_) ? LEN(s.vbf_) : LEN(vbf_);
