@@ -72,7 +72,7 @@ clean:
 	@(cd unit_test; make clean)
 	@(cd lib_acl/samples; make clean)
 	@(cd lib_protocol/samples; make clean)
-	@(rm -f lib_acl_all.a lib_acl_all.so)
+	@(rm -f lib_acl.a lib_acl.so)
 #	@(cd lib_dict; make clean)
 #	@(cd lib_tls; make clean)
 
@@ -222,16 +222,16 @@ build_one: all_lib
 	@(cd $(RELEASE_PATH)/acl; ar -x lib_acl.a)
 	@(cd $(RELEASE_PATH)/protocol; ar -x lib_protocol.a)
 	@(cd $(RELEASE_PATH)/acl_cpp; ar -x lib_acl_cpp.a)
-	$(AR) $(ARFL) $(RELEASE_PATH)/lib_acl_all.a $(RELEASE_PATH)/acl/*.o \
+	$(AR) $(ARFL) $(RELEASE_PATH)/lib_acl.a $(RELEASE_PATH)/acl/*.o \
 		$(RELEASE_PATH)/protocol/*.o $(RELEASE_PATH)/acl_cpp/*.o
-	$(RANLIB) $(RELEASE_PATH)/lib_acl_all.a
-	$(CC) -shared -o $(RELEASE_PATH)/lib_acl_all.so $(RELEASE_PATH)/acl_cpp/*.o \
+	$(RANLIB) $(RELEASE_PATH)/lib_acl.a
+	$(CC) -shared -o $(RELEASE_PATH)/lib_acl.so $(RELEASE_PATH)/acl_cpp/*.o \
 		$(RELEASE_PATH)/protocol/*.o $(RELEASE_PATH)/acl/*.o \
 		-lrt -lz -lpthread -ldl
-	@(cp $(RELEASE_PATH)/lib_acl_all.so $(RELEASE_PATH)/lib_acl_all.a .)
+	@(cp $(RELEASE_PATH)/lib_acl.so $(RELEASE_PATH)/lib_acl.a .)
 	@(rm -rf $(RELEASE_PATH))
 	@echo ""
-	@echo "Over, lib_acl_all.a and lib_acl_all.so were built ok!"
+	@echo "Over, lib_acl.a and lib_acl.so were built ok!"
 	@echo ""
 
 check:

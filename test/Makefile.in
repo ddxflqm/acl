@@ -104,7 +104,7 @@ else
 endif
 
 CFLAGS += -I. -I$(BASE_PATH)/lib_acl_cpp/include -I$(BASE_PATH)/lib_acl/include -I$(BASE_PATH)/lib_protocol/include
-LDFLAGS = -L$(BASE_PATH) -l_acl_all -Wl,-rpath,$(BASE_PATH) \
+LDFLAGS = -L$(BASE_PATH) -l_acl -Wl,-rpath,$(BASE_PATH) \
 	  $(EXTLIBS) $(SYSLIB)
 
 COMPILE = $(CC) $(CFLAGS)
