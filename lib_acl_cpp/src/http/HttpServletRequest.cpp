@@ -486,8 +486,8 @@ void HttpServletRequest::parseParameters(const char* str)
 			continue;
 		*value++ = 0;
 
-		name = acl_url_decode(name);
-		value = acl_url_decode(value);
+		name = acl_url_decode(name, NULL);
+		value = acl_url_decode(value, NULL);
 
 		HTTP_PARAM* param = (HTTP_PARAM*)
 			dbuf_->dbuf_calloc(sizeof(HTTP_PARAM));

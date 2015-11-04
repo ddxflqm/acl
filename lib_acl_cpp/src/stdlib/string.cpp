@@ -1,6 +1,7 @@
 #include "acl_stdafx.hpp"
 #include <utility>
 #include <stdarg.h>
+#include "acl_cpp/stdlib/dbuf_pool.hpp"
 #include "acl_cpp/stdlib/string.hpp"
 
 #define ALLOC(n) acl_vstring_alloc((n))
@@ -1390,20 +1391,23 @@ string& string::base64_decode(const void* ptr, size_t len)
 	return *this;
 }
 
-string& string::url_encode(const char* s)
+string& string::url_encode(const char* s, dbuf_pool* dbuf /* = NULL */)
 {
-	char *ptr = acl_url_encode(s);
+	char *ptr = acl_url_encode(s, dbuf ? dbuf->get_dbuf() : NULL);
+
 	(*this) = ptr;
-	acl_myfree(ptr);
+	if (dbuf == NULL)
+		acl_myfree(ptr);
 	return *this;
 }
 
-string& string::url_decode(const char* s)
+string& string::url_decode(const char* s, dbuf_pool* dbuf /* = NULL */)
 {
-	char *ptr = acl_url_decode(s);
+	char *ptr = acl_url_decode(s, dbuf ? dbuf->get_dbuf() : NULL);
 
 	(*this) = ptr;
-	acl_myfree(ptr);
+	if (dbuf == NULL)
+		acl_myfree(ptr);
 	return *this;
 }
 

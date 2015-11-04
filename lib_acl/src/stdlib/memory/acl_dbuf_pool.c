@@ -73,7 +73,10 @@ ACL_DBUF_POOL *acl_dbuf_pool_create(size_t block_size)
 	pool->off = 0;
 	pool->head = (ACL_DBUF*) pool->buf_addr;
 	pool->head->next = NULL;
+	pool->head->keep = 0;
+	pool->head->used = 0;
 	pool->head->ptr = pool->head->buf_addr;
+
 	return pool;
 }
 
@@ -239,6 +242,19 @@ char *acl_dbuf_pool_strdup(ACL_DBUF_POOL *pool, const char *s)
 
 	memcpy(ptr, s, len);
 	ptr[len] = 0;
+	return ptr;
+}
+
+char *acl_dbuf_pool_strndup(ACL_DBUF_POOL *pool, const char *s, size_t len)
+{
+	char *ptr;
+	size_t n = strlen(s);
+
+	if (n > len)
+		n = len;
+	ptr = (char*) acl_dbuf_pool_alloc(pool, n + 1);
+	memcpy(ptr, s, n);
+	ptr[n] = 0;
 	return ptr;
 }
 

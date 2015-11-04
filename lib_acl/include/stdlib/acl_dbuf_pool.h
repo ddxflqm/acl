@@ -53,6 +53,16 @@ ACL_API void *acl_dbuf_pool_calloc(ACL_DBUF_POOL *pool, size_t len);
 ACL_API char *acl_dbuf_pool_strdup(ACL_DBUF_POOL *pool, const char *s);
 
 /**
+ * 根据输入的字符串动态创建新的内存并将字符串进行复制，类似于 strdup
+ * @param pool {ACL_DBUF_POOL*} 对象池对象
+ * @param s {const char*} 源字符串
+ * @param len {size_t} 限定的最大字符串长度
+ * @return {char*} 新复制的字符串地址
+ */
+ACL_API char *acl_dbuf_pool_strndup(ACL_DBUF_POOL *pool,
+	const char *s, size_t len);
+
+/**
  * 根据输入的内存数据动态创建内存并将数据进行复制
  * @param pool {ACL_DBUF_POOL*} 对象池对象
  * @param addr {const void*} 源数据内存地址

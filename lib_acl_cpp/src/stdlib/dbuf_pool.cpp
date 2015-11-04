@@ -53,6 +53,11 @@ char* dbuf_pool::dbuf_strdup(const char* s)
 	return acl_dbuf_pool_strdup(pool_, s);
 }
 
+char* dbuf_pool::dbuf_strndup(const char* s, size_t len)
+{
+	return acl_dbuf_pool_strndup(pool_, s, len);
+}
+
 void* dbuf_pool::dbuf_memdup(const void* addr, size_t len)
 {
 	return acl_dbuf_pool_memdup(pool_, addr, len);

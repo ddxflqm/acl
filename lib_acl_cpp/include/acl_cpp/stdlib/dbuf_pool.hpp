@@ -65,6 +65,14 @@ public:
 	char* dbuf_strdup(const char* s);
 
 	/**
+	 * 根据输入的字符串动态创建新的内存并将字符串进行复制，类似于 strdup
+	 * @param s {const char*} 源字符串
+	 * @param len {size_t} 限制所复制字符串的最大长度
+	 * @return {char*} 新复制的字符串地址
+	 */
+	char* dbuf_strndup(const char* s, size_t len);
+
+	/**
 	 * 根据输入的内存数据动态创建内存并将数据进行复制
 	 * @param addr {const void*} 源数据内存地址
 	 * @param len {size_t} 源数据长度
@@ -92,6 +100,15 @@ public:
 	 * @return {bool} 如果该内存地址非内存池分配，则返回 false
 	 */
 	bool dbuf_unkeep(const void* addr);
+
+	/**
+	 * 获得内部 ACL_DBUF_POOL 对象，以便于操作 C 接口的内存池对象
+	 * @return {ACL_DBUF_POOL*}
+	 */
+	ACL_DBUF_POOL *get_dbuf()
+	{
+		return pool_;
+	}
 
 private:
 	ACL_DBUF_POOL* pool_;
