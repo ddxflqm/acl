@@ -34,7 +34,7 @@ public:
 	 * @param nblock {size_t} 内部采用的内存块（4096）的倍数
 	 */
 	void *operator new(size_t size, size_t nblock = 2);
-	void operator delete(void* ptr);
+	void operator delete(void* ptr, size_t);
 
 	/**
 	 * 重置内存池的状态以便于重复使用该内存池对象
@@ -191,7 +191,7 @@ public:
 	 * @param reserve {size_t}
 	 * @return {bool}
 	 */
-	bool reset(size_t reserve = 0)
+	bool dbuf_reset(size_t reserve = 0)
 	{
 		return dbuf_->dbuf_reset(reserve);
 	}
@@ -201,7 +201,7 @@ public:
 	 * @param len {size_t}
 	 * @return {void*}
 	 */
-	void* alloc(size_t len)
+	void* dbuf_alloc(size_t len)
 	{
 		return dbuf_->dbuf_alloc(len);
 	}
@@ -211,7 +211,7 @@ public:
 	 * @param len {size_t}
 	 * @return {void*}
 	 */
-	void* calloc(size_t len)
+	void* dbuf_calloc(size_t len)
 	{
 		return dbuf_->dbuf_calloc(len);
 	}
@@ -221,7 +221,7 @@ public:
 	 * @param s {const char*}
 	 * @return {char*}
 	 */
-	char* strdup(const char* s)
+	char* dbuf_strdup(const char* s)
 	{
 		return dbuf_->dbuf_strdup(s);
 	}
@@ -232,7 +232,7 @@ public:
 	 * @param len {size_t}
 	 * @return {char*}
 	 */
-	char* strndup(const char* s, size_t len)
+	char* dbuf_strndup(const char* s, size_t len)
 	{
 		return dbuf_->dbuf_strndup(s, len);
 	}
@@ -243,7 +243,7 @@ public:
 	 * @param len {size_t}
 	 * @return {void*}
 	 */
-	void* memdup(const void* addr, size_t len)
+	void* dbuf_memdup(const void* addr, size_t len)
 	{
 		return dbuf_->dbuf_memdup(addr, len);
 	}
@@ -253,7 +253,7 @@ public:
 	 * @param addr {const void*}
 	 * @return {bool}
 	 */
-	bool free(const void* addr)
+	bool dbuf_free(const void* addr)
 	{
 		return dbuf_->dbuf_free(addr);
 	}
@@ -263,7 +263,7 @@ public:
 	 * @param addr {const void*}
 	 * @return {bool}
 	 */
-	bool keep(const void* addr)
+	bool dbuf_keep(const void* addr)
 	{
 		return dbuf_->dbuf_keep(addr);
 	}
@@ -273,7 +273,7 @@ public:
 	 * @param addr {const void*}
 	 * @return {bool}
 	 */
-	bool unkeep(const void* addr)
+	bool dbuf_unkeep(const void* addr)
 	{
 		return dbuf_->dbuf_unkeep(addr);
 	}

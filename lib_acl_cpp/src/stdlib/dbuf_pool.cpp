@@ -29,7 +29,7 @@ void *dbuf_pool::operator new(size_t size, size_t nblock /* = 2 */)
 	return dbuf;
 }
 
-void dbuf_pool::operator delete(void* ptr)
+void dbuf_pool::operator delete(void* ptr, size_t)
 {
 	dbuf_pool* dbuf = (dbuf_pool*) ptr;
 	acl_dbuf_pool_destroy(dbuf->pool_);
