@@ -38,7 +38,7 @@ int main(int argc, char* argv[])
 
 	acl::log::stdout_open(true);
 
-	acl::dbuf_pool* dbuf = new acl::dbuf_pool;
+	acl::dbuf_pool* dbuf = new (100) acl::dbuf_pool;
 
 	for (int i = 0; i < 102400; i++)
 		dbuf->dbuf_alloc(10);

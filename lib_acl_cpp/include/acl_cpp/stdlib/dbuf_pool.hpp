@@ -30,8 +30,10 @@ public:
 	/**
 	 * 重载 new/delete 操作符，使 dbuf_pool 对象本身也创建在内存池上，
 	 * 从而减少了 malloc/free 的次数
+	 * @param size {size_t} 由编译传入的 dbuf_pool 对象的长度大小
+	 * @param nblock {size_t} 内部采用的内存块（4096）的倍数
 	 */
-	void *operator new(size_t size);
+	void *operator new(size_t size, size_t nblock = 2);
 	void operator delete(void* ptr);
 
 	/**
@@ -119,6 +121,29 @@ public:
 	~dbuf_pool();
 };
 
+/**
+ * sample:
+ *  void test()
+ *  {
+ *      acl::dbuf_pool* dbuf = new acl::dbuf_pool;
+ *      for (int i = 0; i < 1000; i++)
+ *      {
+ *          char* ptr = dbuf->dbuf_strdup("hello world!");
+ *          printf("%s\r\n", p);
+ *      }
+ *      dbuf->destroy();
+ *
+ *      // 创建 dbuf 对象时，指定了内部分配内存块的位数
+ *      dbuf = new(8) acl::dbuf_pool;
+ *      for (int i = 0; i < 1000; i++)
+ *      {
+ *          ptr = dbuf->dbuf_strdup("hello world!");
+ *          printf("%s\r\n", p);
+ *      }
+ *      dbuf->destroy();
+ *  }
+ *
+ */
 //////////////////////////////////////////////////////////////////////////////
 
 class dbuf_guard;
@@ -151,8 +176,10 @@ public:
 	 * 构造函数
 	 * @param dbuf {dbuf_pool*} 当该内存池对象非空时，dbuf 将由 dbuf_guard
 	 *  接管，如果为空，则本构造函数内部将会自动创建一个 dbuf_pool 对象
+	 * @param nblock {size_t} 当 dbuf 参数为 NULL 时，本类对象内部创建
+	 *  dbuf_pool 对象时，本参数指定了内存块(4096)的倍数
 	 */
-	dbuf_guard(dbuf_pool* dbuf = NULL);
+	dbuf_guard(dbuf_pool* dbuf = NULL, size_t nblock = 2);
 
 	/**
 	 * 析构函数，在析构函数内部将会自动销毁由构造函数传入的 dbuf_pool 对象
@@ -300,7 +327,7 @@ private:
 };
 
 /**
- * samples:
+ * sample:
  *
  * class myobj : public acl::dbuf_obj
  * {

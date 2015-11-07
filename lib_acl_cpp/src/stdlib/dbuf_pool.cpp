@@ -17,12 +17,15 @@ void dbuf_pool::destroy()
 	delete this;
 }
 
-void *dbuf_pool::operator new(size_t size)
+void *dbuf_pool::operator new(size_t size, size_t nblock /* = 2 */)
 {
-	ACL_DBUF_POOL* pool = acl_dbuf_pool_create(8192);
-	dbuf_pool* dbuf = (dbuf_pool*) acl_dbuf_pool_alloc(pool, size);
-	dbuf->pool_ = pool;
-	dbuf->mysize_ = size;
+	if (nblock == 0)
+		nblock = 2;
+	ACL_DBUF_POOL* pool = acl_dbuf_pool_create(4096 * nblock);
+	dbuf_pool* dbuf     = (dbuf_pool*) acl_dbuf_pool_alloc(pool, size);
+	dbuf->pool_         = pool;
+	dbuf->mysize_       = size;
+
 	return dbuf;
 }
 
@@ -86,10 +89,10 @@ dbuf_obj::dbuf_obj(dbuf_guard* guard /* = NULL */)
 		guard->push_back(this);
 }
 
-dbuf_guard::dbuf_guard(acl::dbuf_pool* dbuf /* = NULL */)
+dbuf_guard::dbuf_guard(acl::dbuf_pool* dbuf /* = NULL */, size_t nblock /* = 2 */)
 {
 	if (dbuf == NULL)
-		dbuf_ = new acl::dbuf_pool;
+		dbuf_ = new (nblock) acl::dbuf_pool;
 	else
 		dbuf_ = dbuf;
 }

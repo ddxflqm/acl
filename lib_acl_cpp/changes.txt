@@ -4,6 +4,7 @@
 371) 2015.11.7
 371.1) feature: dbuf_pool.cpp 中增加了内存池管理类 dbuf_guard 及内存池对象类
 dbuf_obj，以方便使用 dbuf_pool 内存池
+371.2) feature: dbuf_pool 类重载的 new 允许调用者指定所分配的内存块的倍数
 
 370) 2015.11.3
 370.1) feature: url_coder 类内部采用 dbuf_pool 内存对象进行分配管理
