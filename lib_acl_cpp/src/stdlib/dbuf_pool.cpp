@@ -78,4 +78,45 @@ bool dbuf_pool::dbuf_unkeep(const void* addr)
 	return acl_dbuf_pool_unkeep(pool_, addr) == 0 ? true : false;
 }
 
+//////////////////////////////////////////////////////////////////////////////
+
+dbuf_obj::dbuf_obj(dbuf_guard* guard /* = NULL */)
+{
+	if (guard)
+		guard->push_back(this);
+}
+
+dbuf_guard::dbuf_guard(acl::dbuf_pool* dbuf /* = NULL */)
+{
+	if (dbuf == NULL)
+		dbuf_ = new acl::dbuf_pool;
+	else
+		dbuf_ = dbuf;
+}
+
+dbuf_guard::~dbuf_guard()
+{
+	for (std::vector<dbuf_obj*>::iterator it = objs_.begin();
+		it != objs_.end(); ++it)
+	{
+		(*it)->~dbuf_obj();
+	}
+
+	dbuf_->destroy();
+}
+
+int dbuf_guard::push_back(dbuf_obj* obj)
+{
+	objs_.push_back(obj);
+	return (int) objs_.size() - 1;
+}
+
+dbuf_obj* dbuf_guard::operator[](size_t pos) const
+{
+	if (pos >= objs_.size())
+		return NULL;
+
+	return objs_[pos];
+}
+
 } // namespace acl
