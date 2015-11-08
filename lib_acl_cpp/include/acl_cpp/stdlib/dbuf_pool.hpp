@@ -144,6 +144,8 @@ public:
  *          ptr = dbuf->dbuf_strdup("hello world!");
  *          printf("%s\r\n", p);
  *      }
+ *
+ *	// 销毁 dbuf 对象
  *      dbuf->destroy();
  *  }
  *
@@ -332,10 +334,11 @@ private:
 
 /**
  * sample:
- *
+ * // 继承 acl::dbuf_obj 的子类
  * class myobj : public acl::dbuf_obj
  * {
  * public:
+ * 	// 将 guard 对象传递给基类对象，基类将本对象加入 guard 的对象集合中
  * 	myobj(acl::dbuf_guard* guard) : dbuf_obj(guard) {}
  *
  * 	void doit()
@@ -350,12 +353,16 @@ private:
  * void test()
  * {
  * 	acl::dbuf_guard guard;
+ *
+ *	// 在 dbuf_guard 对象上创建动态 100 个 myobj 对象
  * 	for (int i = 0; i < 100; i++)
  * 	{
- * 		myobj* obj = new (guard.get_dbuf().dbuf_alloc(sizeof(myobj)))
- * 			myobj(&guard);
+ * 		// 在 guard 对象上创建动态 myobj 对象，且将 guard 作为构造参数
+ * 		myobj* obj = new (guard.dbuf_alloc(sizeof(myobj))) myobj(&guard);
  * 		obj->doit();
  * 	}
+ *
+ *	// 当 guard 销毁时，在其上面创建的动态对象自动销毁
  * }
  */
 } // namespace acl
