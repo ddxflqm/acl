@@ -227,7 +227,7 @@ build_one: all_lib
 	$(RANLIB) $(RELEASE_PATH)/lib_acl.a
 	$(CC) -shared -o $(RELEASE_PATH)/lib_acl.so $(RELEASE_PATH)/acl_cpp/*.o \
 		$(RELEASE_PATH)/protocol/*.o $(RELEASE_PATH)/acl/*.o \
-		-lrt -lz -lpthread -ldl
+		-lrt -lz -lpthread
 	@(cp $(RELEASE_PATH)/lib_acl.so $(RELEASE_PATH)/lib_acl.a .)
 	@(rm -rf $(RELEASE_PATH))
 	@echo ""
