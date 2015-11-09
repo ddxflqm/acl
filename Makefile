@@ -25,9 +25,8 @@ RPATH =
 DATE_NOW = 20`date +%y`.`date +%m`.`date +%d`
 MAKE_ARGS =
 
-ifeq ($(findstring FreeBSD, $(OSNAME)), FreeBSD)
-	RPATH = freebsd
-endif
+SYSLIB = -lpthread -lz
+LDFLAGS = -shared
 
 ifeq ($(findstring Linux, $(OSNAME)), Linux)
 	ifeq ($(findstring i686, $(OSTYPE)), i686)
@@ -38,11 +37,26 @@ ifeq ($(findstring Linux, $(OSNAME)), Linux)
 	endif
 	n = `cat /proc/cpuinfo | grep processor | wc -l`
 	MAKE_ARGS = -j $(n)
+	SYSLIB += -lrt -ldl
 endif
+
+# For Darwin
+ifeq ($(findstring Darwin, $(OSNAME)), Darwin)
+	RPATH = macos
+	SYSLIB +=  -rdynamic -L/usr/lib -liconv
+	LDFLAGS = -dynamiclib -shared
+endif
+
+ifeq ($(findstring FreeBSD, $(OSNAME)), FreeBSD)
+	RPATH = freebsd
+	SYSLIB += -L/usr/local/lib -liconv
+endif
+
 ifeq ($(findstring SunOS, $(OSNAME)), SunOS)
 	ifeq ($(findstring i386, $(OSTYPE)), i386)
 		RPATH = sunos_x86
 	endif
+	SYSLIB += -liconv
 endif
 ##############################################################################
 
@@ -222,13 +236,12 @@ build_one: all_lib
 	@(cd $(RELEASE_PATH)/acl; ar -x lib_acl.a)
 	@(cd $(RELEASE_PATH)/protocol; ar -x lib_protocol.a)
 	@(cd $(RELEASE_PATH)/acl_cpp; ar -x lib_acl_cpp.a)
-	$(AR) $(ARFL) $(RELEASE_PATH)/lib_acl.a $(RELEASE_PATH)/acl/*.o \
+	$(AR) $(ARFL) ./lib_acl.a $(RELEASE_PATH)/acl/*.o \
 		$(RELEASE_PATH)/protocol/*.o $(RELEASE_PATH)/acl_cpp/*.o
-	$(RANLIB) $(RELEASE_PATH)/lib_acl.a
-	$(CC) -shared -o $(RELEASE_PATH)/lib_acl.so $(RELEASE_PATH)/acl_cpp/*.o \
+	$(RANLIB) ./lib_acl.a
+	$(CC) $(LDFLAGS) -o ./lib_acl.so $(RELEASE_PATH)/acl_cpp/*.o \
 		$(RELEASE_PATH)/protocol/*.o $(RELEASE_PATH)/acl/*.o \
-		-lrt -lz -lpthread
-	@(cp $(RELEASE_PATH)/lib_acl.so $(RELEASE_PATH)/lib_acl.a .)
+		$(SYSLIB)
 	@(rm -rf $(RELEASE_PATH))
 	@echo ""
 	@echo "Over, lib_acl.a and lib_acl.so were built ok!"

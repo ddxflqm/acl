@@ -15,6 +15,10 @@ CFLAGS = -c -g -W \
 #-Wcast-qual
 # -Wcast-align
 #-Waggregate-return
+
+LDFLAGS = -Wl,-rpath,$(BASE_PATH) -L$(BASE_PATH) -l_acl \
+	  $(EXTLIBS) $(SYSLIB)
+
 ###########################################################
 #Check system:
 #       Linux, SunOS, Solaris, BSD variants, AIX, HP-UX
@@ -37,6 +41,8 @@ endif
 ifeq ($(findstring FreeBSD, $(OSNAME)), FreeBSD)
 	CFLAGS += -DFREEBSD
 	SYSLIB = -lcrypt -lpthread -rdynamic
+	LDFLAGS = -R$(BASE_PATH) -L$(BASE_PATH) -l_acl \
+		  $(EXTLIBS) $(SYSLIB)
 endif
 
 # For Darwin
@@ -45,6 +51,8 @@ ifeq ($(findstring Darwin, $(UNIXNAME)), Darwin)
 		  -Wno-extended-offsetof
 	SYSLIB +=  -rdynamic
 	UNIXTYPE = MACOSX
+	LDFLAGS = -Wl,-rpath,$(BASE_PATH) -R$(BASE_PATH) -L$(BASE_PATH) -l_acl \
+		  $(EXTLIBS) $(SYSLIB)
 endif
 
 #Path for Linux
@@ -104,8 +112,6 @@ else
 endif
 
 CFLAGS += -I. -I$(BASE_PATH)/lib_acl_cpp/include -I$(BASE_PATH)/lib_acl/include -I$(BASE_PATH)/lib_protocol/include
-LDFLAGS = -L$(BASE_PATH) -l_acl -Wl,-rpath,$(BASE_PATH) \
-	  $(EXTLIBS) $(SYSLIB)
 
 COMPILE = $(CC) $(CFLAGS)
 LINK = $(CC) $(OBJ) $(LDFLAGS)
