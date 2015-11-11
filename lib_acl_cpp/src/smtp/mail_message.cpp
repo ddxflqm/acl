@@ -270,14 +270,22 @@ bool mail_message::append_addrs(const char* name,
 	out.format_append("%s: ", name);
 	if (append_addr(**cit, out) == false)
 		return false;
-	out.append(";\r\n");
-	++cit;
 
-	while (true)
+	++cit;
+	if (cit == addrs.end())
+	{
+		out.append("\r\n");
+		return true;
+	}
+
+	out.append(";\r\n");
+
+	for (; cit != addrs.end();)
 	{
 		out.append("\t");
 		if (append_addr(**cit, out) == false)
 			return false;
+
 		++cit;
 		if (cit == addrs.end())
 		{
