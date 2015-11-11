@@ -241,10 +241,10 @@ bool mail_message::append_addr(const rfc822_addr& addr, string& out)
 				addr.comment);
 			return false;
 		}
-		out.append("\"");
+		out.append("\" ");
 	}
 
-	out.format_append(" <%s>", addr.addr);
+	out.format_append("<%s>", addr.addr);
 	return true;
 }
 
@@ -280,14 +280,13 @@ bool mail_message::append_addrs(const char* name,
 
 	out.append(";\r\n");
 
-	for (; cit != addrs.end();)
+	while (true)
 	{
 		out.append("\t");
 		if (append_addr(**cit, out) == false)
 			return false;
 
-		++cit;
-		if (cit == addrs.end())
+		if (++cit == addrs.end())
 		{
 			out.append("\r\n");
 			break;
