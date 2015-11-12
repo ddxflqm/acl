@@ -92,8 +92,8 @@ dbuf_obj::dbuf_obj(dbuf_guard* guard /* = NULL */)
 {
 	if (guard)
 	{
-		guard->push_back(this);
 		nrefer_ = 1;
+		guard->push_back(this);
 	}
 	else
 		nrefer_ = 0;
