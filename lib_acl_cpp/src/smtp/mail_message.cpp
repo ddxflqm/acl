@@ -271,14 +271,13 @@ bool mail_message::append_addrs(const char* name,
 	if (append_addr(**cit, out) == false)
 		return false;
 
-	++cit;
-	if (cit == addrs.end())
+	if (++cit == addrs.end())
 	{
 		out.append("\r\n");
 		return true;
 	}
 
-	out.append(";\r\n");
+	out.append(",\r\n");
 
 	while (true)
 	{
@@ -291,7 +290,7 @@ bool mail_message::append_addrs(const char* name,
 			out.append("\r\n");
 			break;
 		}
-		out.append(";\r\n");
+		out.append(",\r\n");
 	}
 
 	return true;
