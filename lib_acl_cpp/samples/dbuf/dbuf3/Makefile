@@ -1,5 +1,3 @@
-UTIL = $(wildcard ../*.cpp)
-base_path = ../..
+base_path = ../../..
 PROG = dbuf
-CFLAGS += -I../
-include ../Makefile.in
+include ../../Makefile.in
