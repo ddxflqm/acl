@@ -21,8 +21,11 @@ public:
 	* 构造函数
 	* @param addr {const char*} memcached 服务器监听地址，格式为：
 	*  ip:port，如: 127.0.0.1:11211
+	* @param conn_timeout {int} 连接服务器的超时时间(秒)
+	* @param rw_timeout {int} 网络 IO 超时时间(秒)
 	*/
-	memcache(const char* addr = "127.0.0.1:11211");
+	memcache(const char* addr = "127.0.0.1:11211", int conn_timeout = 30,
+		int rw_timeout = 10);
 
 	~memcache();
 
