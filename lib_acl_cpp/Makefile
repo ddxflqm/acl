@@ -1,12 +1,12 @@
 SHELL = /bin/sh
-CC	= ${MY_ENV_CC}
+CC	= ${ENV_CC}
 #CC      = g++
 AR      = ar
 ARFL    = rv
 #ARFL    = cru
 RANLIB  = ranlib
 
-EFLAGS   =
+FLAGS   = ${ENV_FLAGS}
 
 CFLAGS = -c -g -W \
 -O3 \
@@ -39,7 +39,7 @@ ifeq ($(CC),)
         CC = g++
 endif
 
-ifeq ($(findstring HAS_POLARSSL, $(EFLAGS)), HAS_POLARSSL)
+ifeq ($(findstring HAS_POLARSSL, $(FLAGS)), HAS_POLARSSL)
 	CFLAGS += -DHAS_POLARSSL
 endif
 
