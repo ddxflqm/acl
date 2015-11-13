@@ -33,6 +33,18 @@ connect_manager::~connect_manager()
 	lock_.unlock();
 }
 
+void connect_manager::set_timeout(int conn_timeout, int rw_timeout)
+{
+	conn_timeout_ = conn_timeout;
+	rw_timeout_ = rw_timeout;
+
+	for (std::vector<connect_pool*>::iterator it = pools_.begin();
+		it != pools_.end(); ++it)
+	{
+		(*it)->set_timeout(conn_timeout, rw_timeout);
+	}
+}
+
 // 分析一个服务器地址，格式：IP:PORT[:MAX_CONN]
 // 返回值 < 0 表示非法的地址
 static int check_addr(const char* addr, string& buf, size_t default_count)

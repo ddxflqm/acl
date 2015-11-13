@@ -27,6 +27,13 @@ public:
 	virtual ~connect_manager();
 
 	/**
+	 * 设置网络连接及网络 IO 超时时间
+	 * @param conn_timeout {int} 网络连接时间(秒)
+	 * @param rw_timeout {int} 网络 IO 超时时间(秒)
+	 */
+	void set_timeout(int conn_timeout, int rw_timeout);
+
+	/**
 	 * 初始化所有服务器的连接池，该函数内部调用 set 过程添加每个服务的连接池
 	 * @param default_addr {const char*} 缺省的服务器地址，如果非空，
 	 *  则在查询时优先使用此服务器

@@ -10,12 +10,9 @@
 namespace acl
 {
 
-memcache::memcache(const char* addr /* = "127.0.0.1:11211" */,
-	int conn_timeout /* = 180 */, int rw_timeout /* = 300 */)
+memcache::memcache(const char* addr /* = "127.0.0.1:11211" */)
 : keypre_(NULL)
 , coder_(false, false)
-, conn_timeout_(conn_timeout)
-, rw_timeout_(rw_timeout)
 , encode_key_(false)
 , opened_(false)
 , retry_(true)
