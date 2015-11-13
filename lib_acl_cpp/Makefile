@@ -6,6 +6,8 @@ ARFL    = rv
 #ARFL    = cru
 RANLIB  = ranlib
 
+EFLAGS   =
+
 CFLAGS = -c -g -W \
 -O3 \
 -Wall \
@@ -35,6 +37,10 @@ UNIXTYPE = LINUX
 
 ifeq ($(CC),)
         CC = g++
+endif
+
+ifeq ($(findstring HAS_POLARSSL, $(EFLAGS)), HAS_POLARSSL)
+	CFLAGS += -DHAS_POLARSSL
 endif
 
 ifeq ($(findstring clang++, $(CC)), clang++)
