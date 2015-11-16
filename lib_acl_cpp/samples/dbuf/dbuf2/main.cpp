@@ -186,6 +186,54 @@ static void test5()
 	dbuf->~dbuf_guard();
 }
 
+class myobj2 : public acl::dbuf_obj
+{
+public:
+	myobj2() {}
+
+	void run()
+	{
+		printf("hello world\r\n");
+	}
+
+private:
+	~myobj2() {}
+};
+
+class myobj3 : public acl::dbuf_obj
+{
+public:
+	myobj3(int i) : i_(i) {}
+
+	void run()
+	{
+		printf("hello world: %d\r\n", i_);
+	}
+
+private:
+	~myobj3() {}
+
+private:
+	int i_;
+};
+
+static void test6()
+{
+	acl::dbuf_guard dbuf;
+
+	myobj* o1 = dbuf.create<myobj>(&dbuf);
+	o1->run();
+
+	myobj2* o2 = dbuf.create<myobj2>();
+	o2->run();
+
+	for (int i = 0; i < 10; i++)
+	{
+		myobj3* o3 = dbuf.create<myobj3>(i);
+		o3->run();
+	}
+}
+
 int main(void)
 {
 	acl::log::stdout_open(true);
@@ -203,5 +251,8 @@ int main(void)
 	wait_pause();
 
 	test5();
+	wait_pause();
+
+	test6();
 	return 0;
 }
