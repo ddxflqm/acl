@@ -9,7 +9,7 @@
 class myobj : public acl::dbuf_obj
 {
 public:
-	myobj(acl::dbuf_guard* guard) : dbuf_obj(guard)
+	myobj(acl::dbuf_guard* guard = NULL) : dbuf_obj(guard)
 	{
 		ptr_ = strdup("hello");
 	}
@@ -234,6 +234,9 @@ private:
 static void test6()
 {
 	acl::dbuf_guard dbuf;
+
+	myobj* o = dbuf.create<myobj>();
+	o->run();
 
 	myobj* o1 = dbuf.create<myobj>(&dbuf);
 	o1->run();
