@@ -217,6 +217,20 @@ private:
 	int i_;
 };
 
+class myobj_dummy // : public acl::dbuf_obj
+{
+public:
+	myobj_dummy() {}
+
+	void run()
+	{
+		printf("can't be compiled\r\n");
+	}
+
+private:
+	~myobj_dummy() {}
+};
+
 static void test6()
 {
 	acl::dbuf_guard dbuf;
@@ -232,6 +246,11 @@ static void test6()
 		myobj3* o3 = dbuf.create<myobj3>(i);
 		o3->run();
 	}
+
+	// below codes can't be compiled, because myobj_dummy isn't
+	// acl::dbuf_obj's subclass
+	// myobj_dummy* dummy = dbuf.create<myobj_dummy>();
+	// dummy->run();
 }
 
 int main(void)
