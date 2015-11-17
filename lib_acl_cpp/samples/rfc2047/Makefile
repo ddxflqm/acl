@@ -9,5 +9,4 @@ endif
 ifeq ($(findstring Darwin, $(UNIXNAME)), Darwin)
 	EXTLIBS += -L/usr/lib -liconv
 endif
-	EXTLIBS = -liconv
 PROG = rfc2047
