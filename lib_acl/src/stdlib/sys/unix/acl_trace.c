@@ -7,7 +7,7 @@
 #include "stdlib/unix/acl_trace.h"
 #endif
 
-#if defined(HAS_EXECINFO_HEAD)
+#if defined(HAS_TRACE)
 
 #include <unistd.h>
 #include <execinfo.h>
