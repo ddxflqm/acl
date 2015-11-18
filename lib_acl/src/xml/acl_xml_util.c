@@ -338,19 +338,18 @@ void acl_xml_node_set_text(ACL_XML_NODE *node, const char *text)
 		acl_vstring_strcpy(node->text, text);
 }
 
-static void xml_escape_append(ACL_VSTRING *buf, const char *src, int quoted)
+static void xml_escape_append(ACL_VSTRING *buf, const char *src,
+	int quoted, ACL_VSTRING* tmp)
 {
-	const unsigned char *ptr = (const unsigned char*) src;
+	ACL_VSTRING_RESET(tmp);
+	(void) acl_xml_encode(src, tmp);
 
 	if (quoted)
 		ACL_VSTRING_ADDCH(buf, '"');
 
-	while (*ptr) {
-		if (*ptr == '"' || *ptr == '\\' || *ptr == '<' || *ptr == '>')
-			ACL_VSTRING_ADDCH(buf, '\\');
-		ACL_VSTRING_ADDCH(buf, *ptr);
-		ptr++;
-	}
+	if (ACL_VSTRING_LEN(tmp) > 0)
+		acl_vstring_strcat(buf, STR(tmp));
+
 	if (quoted)
 		ACL_VSTRING_ADDCH(buf, '"');
 	ACL_VSTRING_TERMINATE(buf);
@@ -361,6 +360,7 @@ ACL_VSTRING *acl_xml_build(ACL_XML *xml, ACL_VSTRING *buf)
 	ACL_XML_ATTR *attr;
 	ACL_XML_NODE *node;
 	ACL_ITER iter1, iter2;
+	ACL_VSTRING *tmp = acl_vstring_alloc(128);
 
 	if (buf == NULL)
 		buf = acl_vstring_alloc(256);
@@ -394,13 +394,13 @@ ACL_VSTRING *acl_xml_build(ACL_XML *xml, ACL_VSTRING *buf)
 			ACL_VSTRING_ADDCH(buf, ' ');
 			acl_vstring_strcat(buf, STR(attr->name));
 			ACL_VSTRING_ADDCH(buf, '=');
-			xml_escape_append(buf, STR(attr->value), 1);
+			xml_escape_append(buf, STR(attr->value), 1, tmp);
 		}
 
 		if (acl_ring_size(&node->children) > 0) {
-			acl_vstring_strcat(buf, ">");
+			ACL_VSTRING_ADDCH(buf, '>');
 			if (LEN(node->text) > 0)
-				acl_vstring_strcat(buf, STR(node->text));
+				xml_escape_append(buf, STR(node->text), 0, tmp);
 			continue;
 		}
 		if (ACL_XML_IS_COMMENT(node)) {
@@ -412,27 +412,34 @@ ACL_VSTRING *acl_xml_build(ACL_XML *xml, ACL_VSTRING *buf)
 			continue;
 		}
 		if (node->flag & ACL_XML_F_META_EM) {
-			acl_vstring_strcat(buf, ">");
+			ACL_VSTRING_ADDCH(buf, '>');
 			continue;
 		}
 		if (LEN(node->text) == 0) {
 			acl_vstring_strcat(buf, "></");
-			acl_vstring_strcat(buf, STR(node->ltag));
-			acl_vstring_strcat(buf, ">");
-		} else
-			acl_vstring_sprintf_append(buf, ">%s</%s>",
-				STR(node->text), STR(node->ltag));
+			xml_escape_append(buf, STR(node->ltag), 0, tmp);
+			ACL_VSTRING_ADDCH(buf, '>');
+		} else {
+			ACL_VSTRING_ADDCH(buf, '>');
+			xml_escape_append(buf, STR(node->text), 0, tmp);
+			acl_vstring_strcat(buf, "</");
+			xml_escape_append(buf, STR(node->ltag), 0, tmp);
+			ACL_VSTRING_ADDCH(buf, '>');
+		}
 
 		while (node->parent != node->xml->root
 			&& acl_xml_node_next(node) == NULL)
 		{
-			acl_vstring_sprintf_append(buf, "</%s>",
-				STR(node->parent->ltag));
+			acl_vstring_strcat(buf, "</");
+			xml_escape_append(buf, STR(node->parent->ltag), 0, tmp);
+			ACL_VSTRING_ADDCH(buf, '>');
 			node = node->parent;
 		}
 	}
 
-	return (buf);
+	acl_vstring_free(tmp);
+	ACL_VSTRING_TERMINATE(buf);
+	return buf;
 }
 
 void acl_xml_dump(ACL_XML *xml, ACL_VSTREAM *fp)
