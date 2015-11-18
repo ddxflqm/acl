@@ -458,6 +458,23 @@ void acl_xml_slash(ACL_XML *xml, int ignore)
 {
 	if (ignore)
 		xml->flag |= ACL_XML_FLAG_IGNORE_SLASH;
+	else
+		xml->flag &=~ACL_XML_FLAG_IGNORE_SLASH;
+}
+
+void acl_xml_decode_enable(ACL_XML *xml, int on)
+{
+	if (on) {
+		if (xml->decode_buf == NULL)
+			xml->decode_buf = acl_vstring_alloc(256);
+		xml->flag |= ACL_XML_FLAG_XML_DECODE;
+	} else {
+		if (xml->decode_buf != NULL) {
+			acl_vstring_free(xml->decode_buf);
+			xml->decode_buf = NULL;
+		}
+		xml->flag &= ~ACL_XML_FLAG_XML_DECODE;
+	}
 }
 
 void acl_xml_cache(ACL_XML *xml, int max_cache)
@@ -502,10 +519,15 @@ int acl_xml_free(ACL_XML *xml)
 	if (xml->node_cache != NULL)
 		acl_array_free(xml->node_cache,
 			(void (*)(void*)) acl_xml_node_free);
+
+	if (xml->decode_buf)
+		acl_vstring_free(xml->decode_buf);
+
 	if (xml->slice)
 		acl_slice_pool_free(__FILE__, __LINE__, xml);
 	else
 		acl_myfree(xml);
+
 	return (n);
 }
 

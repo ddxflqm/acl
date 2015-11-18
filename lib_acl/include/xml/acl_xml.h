@@ -104,7 +104,8 @@ struct ACL_XML {
 	unsigned flag;              /**< 标志位: ACL_XML_FLAG_xxx */ 
 #define	ACL_XML_FLAG_PART_WORD		(1 << 0) /**< 是否兼容后半个汉字为转义符 '\' 的情况 */
 #define	ACL_XML_FLAG_IGNORE_SLASH	(1 << 1) /**< 是否兼容单节点中没有 '/' 情况 */
-
+#define	ACL_XML_FLAG_XML_DECODE		(1 << 2) /**< 是否需要对文本数据进行 xml 解码  */
+	ACL_VSTRING *decode_buf;    /**< 当需要进行 xml 解码时非空 */
 	/* public: for acl_iterator, 通过 acl_foreach 可以列出所有子节点 */
 
 	/* 取迭代器头函数 */
@@ -175,6 +176,13 @@ ACL_API void acl_xml_foreach_init(ACL_XML *xml, ACL_XML_NODE *node);
  * @param ignore {int} 如果非 0 表示单节点必须有 /
  */
 ACL_API void acl_xml_slash(ACL_XML *xml, int ignore);
+
+/**
+ * 设置是否需要对 xml 对象中的属性值及文本值进行 xml 解码，内部缺省为不解
+ * @param xml {ACL_XML*}
+ * @param on {int} 非 0 表示进行 xml 解码
+ */
+ACL_API void acl_xml_decode_enable(ACL_XML *xml, int on);
 
 /**
  * 打开或关闭XML的缓存功能，当复用 ACL_XML 对象时打开XML的节点缓存功能有利提高效率
