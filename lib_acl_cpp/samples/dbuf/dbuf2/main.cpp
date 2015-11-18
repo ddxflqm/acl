@@ -1,5 +1,3 @@
-// xml.cpp : 定义控制台应用程序的入口点。
-//
 #include "stdafx.h"
 #include <sys/time.h>
 
@@ -67,7 +65,7 @@ static void test_dbuf(acl::dbuf_guard& dbuf)
 		// 动态分配 dbuf_obj 子类对象，并通过将 dbuf_guard 对象传入
 		// dbuf_obj 的构造函数，从而将之由 dbuf_guard 统一管理，
 
-		myobj* obj = new (dbuf.dbuf_alloc(sizeof(myobj))) myobj(&dbuf);
+		myobj* obj = dbuf.create<myobj>(&dbuf);
 
 		// 验证 dbuf_obj 对象在 dbuf_guard 中的在在一致性
 		assert(obj == dbuf[obj->pos()]);
@@ -79,10 +77,9 @@ static void test_dbuf(acl::dbuf_guard& dbuf)
 
 	for (int i = 0; i < 10000; i++)
 	{
-		myobj* obj = new (dbuf.dbuf_alloc(sizeof(myobj))) myobj(NULL);
+		myobj* obj = dbuf.create<myobj>();
 
-		int pos = dbuf.push_back(obj);
-		assert(dbuf[pos] == obj);
+		assert(dbuf[obj->pos()] == obj);
 
 		if (i < 10)
 			obj->run();
@@ -90,7 +87,7 @@ static void test_dbuf(acl::dbuf_guard& dbuf)
 
 	for (int i = 0; i < 10000; i++)
 	{
-		myobj* obj = new (dbuf.dbuf_alloc(sizeof(myobj))) myobj(&dbuf);
+		myobj* obj = dbuf.create<myobj>(&dbuf);
 
 		// 虽然多次将 dbuf_obj 对象置入 dbuf_guard 中，因为 dbuf_obj
 		// 内部的引用计数，所以可以防止被重复添加
@@ -99,24 +96,6 @@ static void test_dbuf(acl::dbuf_guard& dbuf)
 		(void) dbuf.push_back(obj);
 
 		assert(obj == dbuf[obj->pos()]);
-
-		if (i < 10)
-			obj->run();
-	}
-
-	for (int i = 0; i < 10000; i++)
-	{
-		myobj* obj = new (dbuf.dbuf_alloc(sizeof(myobj))) myobj(NULL);
-
-		(void) dbuf.push_back(obj);
-		(void) dbuf.push_back(obj);
-		(void) dbuf.push_back(obj);
-		(void) dbuf.push_back(obj);
-		(void) dbuf.push_back(obj);
-		(void) dbuf.push_back(obj);
-
-		int pos = dbuf.push_back(obj);
-		assert(dbuf[pos] == obj);
 
 		if (i < 10)
 			obj->run();
@@ -244,10 +223,13 @@ static void test6()
 	myobj2* o2 = dbuf.create<myobj2>();
 	o2->run();
 
+	myobj3* o3 = dbuf.create<myobj3>(10);
+	o3->run();
+
 	for (int i = 0; i < 10; i++)
 	{
-		myobj3* o3 = dbuf.create<myobj3>(i);
-		o3->run();
+		myobj3* o4 = dbuf.create<myobj3>(i);
+		o4->run();
 	}
 
 	// below codes can't be compiled, because myobj_dummy isn't
