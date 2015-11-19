@@ -1,6 +1,10 @@
 修改历史列表：
 
 ------------------------------------------------------------------------
+505) 2015.11.19
+505.1) feature & performance: acl_array.c, acl_xml.c 引入了 ACL_DBUF_POOL，
+从而提升了性能
+
 504) 2015.11.18
 504.1) bugfix: acl_xml_util.c 中 acl_xml_build 进行 xml 特殊字符转义时有误
 504.2) feature: acl_xml_parse.c 在解析时，允许进行 xml 数据格式的解码

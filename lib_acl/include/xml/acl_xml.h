@@ -11,7 +11,7 @@ extern "C" {
 #include "stdlib/acl_htable.h"
 #include "stdlib/acl_vstring.h"
 #include "stdlib/acl_iterator.h"
-#include "stdlib/acl_slice.h"
+#include "stdlib/acl_dbuf_pool.h"
 
 typedef struct ACL_XML	ACL_XML;
 typedef struct ACL_XML_NODE	ACL_XML_NODE;
@@ -97,10 +97,9 @@ struct ACL_XML {
 	/* private */
 	ACL_HTABLE *id_table;       /**< id 标识符哈希表 */
 	ACL_XML_NODE *curr_node;    /**< 当前正在处理的 XML 节点 */
-	ACL_SLICE_POOL *slice;      /**< 内存池对象 */
+	ACL_DBUF_POOL *dbuf;        /**< 内存池对象 */
+	size_t dbuf_keep;           /**< 内存池中保留的长度 */
 
-	ACL_ARRAY *node_cache;      /**< XML节点缓存池 */
-	int   max_cache;            /**< XML节点缓存池的最大容量 */
 	unsigned flag;              /**< 标志位: ACL_XML_FLAG_xxx */ 
 #define	ACL_XML_FLAG_PART_WORD		(1 << 0) /**< 是否兼容后半个汉字为转义符 '\' 的情况 */
 #define	ACL_XML_FLAG_IGNORE_SLASH	(1 << 1) /**< 是否兼容单节点中没有 '/' 情况 */
@@ -185,22 +184,9 @@ ACL_API void acl_xml_slash(ACL_XML *xml, int ignore);
 ACL_API void acl_xml_decode_enable(ACL_XML *xml, int on);
 
 /**
- * 打开或关闭XML的缓存功能，当复用 ACL_XML 对象时打开XML的节点缓存功能有利提高效率
- * @param xml {ACL_XML*} xml 对象
- * @param max_cache {int} 缓存的最大值，当该值 > 0 时会打开 xml 解析器对 xml 节点的
- *  缓存功能，否则会关闭 xml 解析器对 xml 节点的缓存功能
- */
-ACL_API void acl_xml_cache(ACL_XML *xml, int max_cache);
-
-/**
- * 释放 XML 缓存的 XML 节点对象
- * @param xml {ACL_XML*} xml 对象
- */
-ACL_API void acl_xml_cache_free(ACL_XML *xml);
-
-/**
  * 释放一个 xml 对象, 同时释放该对象里容纳的所有 xml 节点
  * @param xml {ACL_XML*} xml 对象
+ * @return {int} 返回释放的 xml 节点个数
  */
 ACL_API int acl_xml_free(ACL_XML *xml);
 
@@ -474,13 +460,6 @@ ACL_API void acl_xml_dump2(ACL_XML *xml, ACL_VSTRING *buf);
  * @return {ACL_XML_ATTR*} 新创建的节点属性
  */
 ACL_API ACL_XML_ATTR *acl_xml_attr_alloc(ACL_XML_NODE *node);
-
-/**
- * 释放 xml 节点的属性所占内存, 调用该函数前, 必须注意已经将该属性
- * 从其所从属的节点中删除
- * @param attr {ACL_XML_ATTR*} xml 节点的属性
- */
-ACL_API void acl_xml_attr_free(ACL_XML_ATTR *attr);
 
 /**
  * 创建一个 xml 节点
