@@ -32,7 +32,8 @@ struct ACL_XML_ATTR {
 struct ACL_XML_NODE {
 	ACL_VSTRING *ltag;          /**< 左标签名 */
 	ACL_VSTRING *rtag;          /**< 右标签名 */
-	const ACL_VSTRING *id;      /**< ID标识符, 只有在 xml->id_table 存在的节点的 id 才非空 */
+	const ACL_VSTRING *id;      /**< ID标识符, 只有在 xml->id_table 存在的
+				         节点的 id 才非空 */
 	ACL_VSTRING *text;          /**< 文本显示内容 */
 	ACL_ARRAY *attr_list;       /**< 属性(ACL_XML_ATTR)列表 */
 	ACL_XML_NODE *parent;       /**< 父节点 */
@@ -57,6 +58,8 @@ struct ACL_XML_NODE {
 /**< 是否是元数据 */
 #define	ACL_XML_F_META		\
 	(ACL_XML_F_META_QM | ACL_XML_F_META_CM | ACL_XML_F_META_EM)
+
+#define	ACL_XML_IS_COMMENT(x)	(((x)->flag & ACL_XML_F_META_CM))
 
 	int   status;               /**< 状态机当前解析状态 */
 #define ACL_XML_S_NXT	0       /**< 下一个节点 */
@@ -98,13 +101,21 @@ struct ACL_XML {
 	ACL_HTABLE *id_table;       /**< id 标识符哈希表 */
 	ACL_XML_NODE *curr_node;    /**< 当前正在处理的 XML 节点 */
 	ACL_DBUF_POOL *dbuf;        /**< 内存池对象 */
+	ACL_DBUF_POOL *dbuf_inner;  /**< 内部分布的内存池对象 */
 	size_t dbuf_keep;           /**< 内存池中保留的长度 */
 
 	unsigned flag;              /**< 标志位: ACL_XML_FLAG_xxx */ 
-#define	ACL_XML_FLAG_PART_WORD		(1 << 0) /**< 是否兼容后半个汉字为转义符 '\' 的情况 */
-#define	ACL_XML_FLAG_IGNORE_SLASH	(1 << 1) /**< 是否兼容单节点中没有 '/' 情况 */
-#define	ACL_XML_FLAG_XML_DECODE		(1 << 2) /**< 是否需要对文本数据进行 xml 解码  */
+
+	/**< 是否兼容后半个汉字为转义符 '\' 的情况 */
+#define	ACL_XML_FLAG_PART_WORD		(1 << 0)
+
+	/**< 是否兼容单节点中没有 '/' 情况 */
+#define	ACL_XML_FLAG_IGNORE_SLASH	(1 << 1)
+
+	/**< 是否需要对文本数据进行 xml 解码  */
+#define	ACL_XML_FLAG_XML_DECODE		(1 << 2)
 	ACL_VSTRING *decode_buf;    /**< 当需要进行 xml 解码时非空 */
+
 	/* public: for acl_iterator, 通过 acl_foreach 可以列出所有子节点 */
 
 	/* 取迭代器头函数 */
@@ -116,8 +127,6 @@ struct ACL_XML {
 	/* 取迭代器上一个函数 */
 	ACL_XML_NODE *(*iter_prev)(ACL_ITER*, ACL_XML*);
 };
-
-#define	ACL_XML_IS_COMMENT(x)	(((x)->flag & ACL_XML_F_META_CM))
 
 /***************************************************************************/
 /*                  公共函数接口，用户可以放心使用该接口集                 */
@@ -134,8 +143,8 @@ struct ACL_XML {
 ACL_API int acl_xml_is_closure(ACL_XML *xml);
 
 /**
- * 根据指定的标签名判断 xml 解析已经完成, 当该标签与 xml 对象中 root 一级子节点
- * 中的最后一个 xml 节点的标签相同时, 则认为 xml 解析完成, 为了保证判断的正确性,
+ * 根据指定标签名判断 xml 解析已经完成, 当该标签与 xml 对象中 root 一级子节点
+ * 中的最后一个 xml 节点的标签相同时, 则认为 xml 解析完成, 为保证判断的正确性,
  * 数据源应保证最外层的根节点只有一个, 即 xml->root 的一级子节点只有一个, 否则
  * 会造成误判
  * @param xml {ACL_XML*} xml 对象
@@ -152,14 +161,15 @@ ACL_API ACL_XML *acl_xml_alloc(void);
 
 /**
  * 创建一个 xml 对象，该 xml 对象及所有的内部内存分配都在该内存池上进行分配
- * @param slice {ACL_SLICE_POOL*} 内存池对象，可以为空指针，表明不用内存池
+ * @param dbuf {ACL_DBUF_POOL*} 内存池对象，当该针对非 NULL 时，则 xml 对象
+ *  及所属节点内存在其基础上进行分配，否则，内部自动创建隶属于 xml 的内存池
  * @return {ACL_XML*} 新创建的 xml 对象
  */
-ACL_API ACL_XML *acl_xml_alloc1(ACL_SLICE_POOL *slice);
+ACL_API ACL_XML *acl_xml_dbuf_alloc(ACL_DBUF_POOL *dbuf);
 
 /**
  * 将某一个 ACL_XML_NODE 节点作为一个 XML 对象的根节点，从而可以方便地遍历出该
- * 节点的各级子节点(在遍历过程中的所有节点不含本节点自身)，该遍历方式有别于单独
+ * 节点各级子节点(在遍历过程中的所有节点不含本节点自身)，该遍历方式有别于单独
  * 遍历某一个 ACL_XML_NODE 节点时仅能遍历其一级子节点的情形
  * @param xml {ACL_XML*} xml 对象
  * @param node {ACL_XML_NODE*} AXL_XML_NODE 节点

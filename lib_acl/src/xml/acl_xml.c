@@ -380,8 +380,21 @@ void acl_xml_decode_enable(ACL_XML *xml, int on)
 
 ACL_XML *acl_xml_alloc()
 {
-	ACL_DBUF_POOL *dbuf = acl_dbuf_pool_create(8192);
-	ACL_XML *xml = (ACL_XML*) acl_dbuf_pool_calloc(dbuf, sizeof(ACL_XML));
+	return acl_xml_dbuf_alloc(NULL);
+}
+
+ACL_XML *acl_xml_dbuf_alloc(ACL_DBUF_POOL *dbuf)
+{
+	ACL_XML *xml;
+
+	if (dbuf == NULL) {
+		dbuf = acl_dbuf_pool_create(8192);
+		xml = (ACL_XML*) acl_dbuf_pool_calloc(dbuf, sizeof(ACL_XML));
+		xml->dbuf_inner = dbuf;
+	} else {
+		xml = (ACL_XML*) acl_dbuf_pool_calloc(dbuf, sizeof(ACL_XML));
+		xml->dbuf_inner = NULL;
+	}
 
 	xml->dbuf = dbuf;
 	xml->dbuf_keep = sizeof(ACL_XML);
@@ -402,18 +415,24 @@ ACL_XML *acl_xml_alloc()
 int acl_xml_free(ACL_XML *xml)
 {
 	int  node_cnt = xml->node_cnt;
+
 	acl_htable_free(xml->id_table, NULL);
+
 	if (xml->decode_buf)
 		acl_vstring_free(xml->decode_buf);
 
-	acl_dbuf_pool_destroy(xml->dbuf);
+	if (xml->dbuf_inner != NULL)
+		acl_dbuf_pool_destroy(xml->dbuf_inner);
+
 	return node_cnt - 1;
 }
 
 void acl_xml_reset(ACL_XML *xml)
 {
 	acl_htable_reset(xml->id_table, NULL);
-	acl_dbuf_pool_reset(xml->dbuf, xml->dbuf_keep);
+
+	if (xml->dbuf_inner != NULL)
+		acl_dbuf_pool_reset(xml->dbuf_inner, xml->dbuf_keep);
 
 	xml->root = acl_xml_node_alloc(xml);
 	xml->node_cnt = 1;
