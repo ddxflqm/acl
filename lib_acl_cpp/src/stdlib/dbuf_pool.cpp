@@ -97,17 +97,28 @@ dbuf_obj::dbuf_obj(dbuf_guard* guard /* = NULL */)
 		guard->push_back(this);
 }
 
+//////////////////////////////////////////////////////////////////////////////
+
+#define	USE_ONE_DBUF
+
 dbuf_guard::dbuf_guard(acl::dbuf_pool* dbuf, size_t capacity /* = 100 */)
 	: nblock_(2)
 	, size_(0)
 	, capacity_(capacity == 0 ? 100 : capacity)
 	, incr_(100)
 {
+	capacity_ = 10000;
 	if (dbuf == NULL)
 		dbuf_ = new (nblock_) acl::dbuf_pool;
 	else
 		dbuf_ = dbuf;
+
+#ifdef	USE_ONE_DBUF
 	objs_ = (dbuf_obj**) dbuf_->dbuf_alloc(sizeof(dbuf_obj*) * capacity_);
+	dbuf_->dbuf_keep(objs_);
+#else
+	objs_ = (dbuf_obj**) acl_mycalloc(capacity_, sizeof(dbuf_obj*));
+#endif
 }
 
 dbuf_guard::dbuf_guard(size_t nblock /* = 2 */, size_t capacity /* = 100 */)
@@ -116,8 +127,15 @@ dbuf_guard::dbuf_guard(size_t nblock /* = 2 */, size_t capacity /* = 100 */)
 	, capacity_(capacity == 0 ? 100 : capacity)
 	, incr_(100)
 {
+	capacity_ = 10000;
 	dbuf_ = new (nblock_) acl::dbuf_pool;
+
+#ifdef	USE_ONE_DBUF
 	objs_ = (dbuf_obj**) dbuf_->dbuf_alloc(sizeof(dbuf_obj*) * capacity_);
+	dbuf_->dbuf_keep(objs_);
+#else
+	objs_ = (dbuf_obj**) acl_mycalloc(capacity_, sizeof(dbuf_obj*));
+#endif
 }
 
 dbuf_guard::~dbuf_guard()
@@ -125,17 +143,42 @@ dbuf_guard::~dbuf_guard()
 	for (size_t i = 0; i < size_; i++)
 		objs_[i]->~dbuf_obj();
 
+#ifndef	USE_ONE_DBUF
+	acl_myfree(objs_);
+#endif
+
 	dbuf_->destroy();
+}
+
+bool dbuf_guard::dbuf_reset(size_t reserve /* = 0 */)
+{
+	// 此处必须首先将在 dbuf_pool 上创建的对象进行析构，否则将会造成
+	// 内存泄露
+	for (size_t i = 0; i < size_; i++)
+		objs_[i]->~dbuf_obj();
+
+	// 重新初始化数组容器
+	size_ = 0;
+
+	// 此时才能重置内存状态
+	return dbuf_->dbuf_reset(reserve);
 }
 
 void dbuf_guard::extend_objs()
 {
-	dbuf_obj** old_objs = objs_;
 	capacity_ += incr_;
-	objs_ = (dbuf_obj**) dbuf_->dbuf_alloc(sizeof(dbuf_obj*) * capacity_);
 
+#ifdef	USE_ONE_DBUF
+	dbuf_obj** old_objs = objs_;
+	objs_ = (dbuf_obj**) dbuf_->dbuf_alloc(sizeof(dbuf_obj*) * capacity_);
 	for (size_t i = 0; i < size_; i++)
 		objs_[i] = old_objs[i];
+
+	dbuf_->dbuf_keep(objs_);
+	dbuf_->dbuf_unkeep(old_objs);
+#else
+	objs_ = (dbuf_obj**) acl_myrealloc(objs_, sizeof(dbuf_obj*) * capacity_);
+#endif
 }
 
 void dbuf_guard::set_increment(size_t incr)

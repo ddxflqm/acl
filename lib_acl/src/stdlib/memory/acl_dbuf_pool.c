@@ -106,7 +106,7 @@ void acl_dbuf_pool_destroy(ACL_DBUF_POOL *pool)
 int acl_dbuf_pool_reset(ACL_DBUF_POOL *pool, size_t off)
 {
 	size_t n;
-	ACL_DBUF *iter = pool->head, *tmp = (ACL_DBUF*) pool->buf_addr;
+	ACL_DBUF *iter = pool->head, *tmp;
 
 	if (off > pool->off) {
 		acl_msg_warn("warning: %s(%d) off(%ld) > pool->off(%ld)",
@@ -116,39 +116,52 @@ int acl_dbuf_pool_reset(ACL_DBUF_POOL *pool, size_t off)
 		return 0;
 
 	while (1) {
+		if (pool->off < pool->block_size)
+			break;
+
 		n = iter->ptr - iter->buf_addr;
+		/*
 		if (pool->off <= off + n) {
 			iter->ptr -= pool->off - off;
-			pool->off = off;
+			pool->off  = off;
 			pool->head = iter;
 			break;
 		}
+		*/
 
-		if (iter->keep == 0 || iter->used == 0) {
-			pool->off -=n;
-			tmp = iter;
-			iter = iter->next;
-			pool->head = iter;
+		if (pool->off <= off)
+			break;
+		if (pool->off -n <= off)
+		{
+		}
+
+		if (iter->keep)
+			break;
+
+		pool->off -=n;
+		printf(">>> pool->off: %ld, off: %ld, "
+				"block size: %ld\r\n", pool->off, off,
+				pool->block_size);
+		if (pool->off < pool->block_size)
+		{
+			printf(">>>>>>..break now\r\n");
+			break;
+		}
+
+		tmp = iter;
+		iter = iter->next;
+		pool->head = iter;
+
+#if 1
+		printf(">>>free one, pool->off: %ld, off: %ld, "
+			"block size: %ld\r\n", pool->off, off,
+			pool->block_size);
+#endif
 
 #ifdef	USE_VALLOC
-			free(tmp);
+		free(tmp);
 #else
-			acl_myfree(tmp);
-#endif
-
-#if 0
-			printf(">>>free one\r\n");
-#endif
-		} else
-			break;
-
-#if 0
-		if (iter == NULL || (char*) iter == pool->buf_addr) {
-			pool->head = (ACL_DBUF*) pool->buf_addr;
-			pool->head->ptr -= pool->off - off;
-			pool->off = off;
-			break;
-		}
+		acl_myfree(tmp);
 #endif
 	}
 #if 0
@@ -277,7 +290,7 @@ int acl_dbuf_pool_keep(ACL_DBUF_POOL *pool, const void *addr)
 			if (iter->keep <= iter->used)
 				return 0;
 
-			acl_msg_warn("warning: %s(%d), keep(%d) > used(%d)",
+			acl_msg_fatal("warning: %s(%d), keep(%d) > used(%d)",
 				__FUNCTION__, __LINE__,
 				iter->keep, iter->used);
 			return -1;
@@ -286,7 +299,7 @@ int acl_dbuf_pool_keep(ACL_DBUF_POOL *pool, const void *addr)
 		iter = iter->next;
 	}
 
-	acl_msg_warn("warning: %s(%d), not found addr: %p",
+	acl_msg_fatal("warning: %s(%d), not found addr: %p",
 		__FUNCTION__, __LINE__, addr);
 	return -1;
 }
