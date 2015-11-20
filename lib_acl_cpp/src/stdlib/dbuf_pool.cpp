@@ -128,6 +128,19 @@ dbuf_guard::~dbuf_guard()
 	dbuf_->destroy();
 }
 
+bool dbuf_guard::dbuf_reset(size_t reserve /* = 0 */)
+{
+	for (size_t i = 0; i < size_; i++)
+		objs_[i]->~dbuf_obj();
+
+	bool ret = dbuf_->dbuf_reset(reserve);
+
+	size_ = 0;
+	objs_ = (dbuf_obj**) dbuf_->dbuf_alloc(sizeof(dbuf_obj*) * capacity_);
+
+	return ret;
+}
+
 void dbuf_guard::extend_objs()
 {
 	dbuf_obj** old_objs = objs_;
