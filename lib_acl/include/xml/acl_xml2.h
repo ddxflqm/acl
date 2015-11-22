@@ -22,6 +22,9 @@ struct ACL_XML2_ATTR {
 	char *name;                  /**< 属性名 */
 	char *value;                 /**< 属性值 */
 
+	size_t name_size;            /**< 属性名长度 */
+	size_t value_size;           /**< 属性值长度 */
+
 	/* private */
 	int   quote;                /**< 非 0 表示 ' 或 " */
 	int   backslash;            /**< 转义字符 \ */
@@ -33,9 +36,13 @@ struct ACL_XML2_NODE {
 					
 	char *ltag;                     /**< 左标签名 */
 	char *rtag;                     /**< 右标签名 */
+	size_t ltag_size;               /**< 左标签名长度 */
+	size_t rtag_size;               /**< 右标签名长度 */
 	const char *id;                 /**< ID标识符, 只有在 xml->id_table
 					  存在的节点的 id 才非空 */
 	char *text;                     /**< 文本显示内容 */
+	size_t text_size;               /**< 文件数据长度 */
+
 	ACL_ARRAY *attr_list;           /**< 属性(ACL_XML2_ATTR)列表 */
 	ACL_XML2_NODE *parent;          /**< 父节点 */
 	ACL_RING children;              /**< 子节点集合 */

@@ -20,12 +20,14 @@ ACL_XML2_ATTR *acl_xml2_attr_alloc(ACL_XML2_NODE *node)
 	ACL_XML2_ATTR *attr = (ACL_XML2_ATTR*)
 		acl_dbuf_pool_calloc(node->xml->dbuf, sizeof(ACL_XML2_ATTR));
 
-	attr->node = node;
-	attr->name = node->xml->addr;
-	attr->value = node->xml->addr;
-	attr->quote = 0;
-	attr->backslash = 0;
-	attr->part_word = 0;
+	attr->node       = node;
+	attr->name       = node->xml->addr;
+	attr->name_size  = 0;
+	attr->value      = node->xml->addr;
+	attr->value_size = 0;
+	attr->quote      = 0;
+	attr->backslash  = 0;
+	attr->part_word  = 0;
 
 	acl_array_append(node->attr_list, attr);
 
@@ -122,7 +124,11 @@ ACL_XML2_NODE *acl_xml2_node_alloc(ACL_XML2 *xml)
 	node->status    = ACL_XML2_S_NXT;
 	node->ltag      = xml->addr;
 	node->rtag      = xml->addr;
+	node->ltag_size = 0;
+	node->rtag_size = 0;
+
 	node->text      = xml->addr;
+	node->text_size = 0;
 	node->attr_list = acl_array_dbuf_create(100, xml->dbuf);
 
 	node->iter_head = node_iter_head;
