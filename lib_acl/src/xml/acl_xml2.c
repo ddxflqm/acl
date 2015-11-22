@@ -399,15 +399,11 @@ ACL_XML2 *acl_xml2_dbuf_alloc(char *addr, ACL_DBUF_POOL *dbuf)
 		xml->dbuf_inner = NULL;
 	}
 
-	printf(">>>>>>%s:%d<<<<<<<\r\n", __FUNCTION__, __LINE__);
 	xml->dbuf      = dbuf;
 	xml->dbuf_keep = sizeof(ACL_XML2);
 	xml->addr      = addr;
-	printf(">>>>>>%s:%d<<<<<<<\r\n", __FUNCTION__, __LINE__);
 	xml->ptr       = xml->addr;
-	printf(">>>>>>%s:%d<<<<<<<\r\n", __FUNCTION__, __LINE__);
 	*xml->ptr++    = 0;
-	printf(">>>>>>%s:%d<<<<<<<\r\n", __FUNCTION__, __LINE__);
 
 	xml->iter_head = xml_iter_head;
 	xml->iter_next = xml_iter_next;

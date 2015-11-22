@@ -9,14 +9,16 @@
 #endif
 
 #define IS_DOCTYPE(ptr) ((*(ptr) == 'd' || *(ptr) == 'D')  \
-				&& (*(ptr + 1) == 'o' || *(ptr + 1) == 'O')  \
-				&& (*(ptr + 2) == 'c' || *(ptr + 2) == 'C')  \
-				&& (*(ptr + 3) == 't' || *(ptr + 3) == 'T')  \
-				&& (*(ptr + 4) == 'y' || *(ptr + 4) == 'Y')  \
-				&& (*(ptr + 5) == 'p' || *(ptr + 5) == 'P')  \
-				&& (*(ptr + 5) == 'E' || *(ptr + 6) == 'E'))
+	&& (*(ptr + 1) == 'o' || *(ptr + 1) == 'O')  \
+	&& (*(ptr + 2) == 'c' || *(ptr + 2) == 'C')  \
+	&& (*(ptr + 3) == 't' || *(ptr + 3) == 'T')  \
+	&& (*(ptr + 4) == 'y' || *(ptr + 4) == 'Y')  \
+	&& (*(ptr + 5) == 'p' || *(ptr + 5) == 'P')  \
+	&& (*(ptr + 5) == 'E' || *(ptr + 6) == 'E'))
+
 #define IS_ID(ptr) ((*(ptr) == 'i' || *(ptr) == 'I')  \
-				&& (*(ptr + 1) == 'd' || *(ptr + 1) == 'D'))
+	&& (*(ptr + 1) == 'd' || *(ptr + 1) == 'D'))
+
 #define IS_QUOTE(x) ((x) == '\"' || (x) == '\'')
 #define IS_SPACE(c) ((c) == ' ' || (c) == '\t' || (c) == '\r' || (c) == '\n')
 #define SKIP_WHILE(cond, ptr) { while(*(ptr) && (cond)) (ptr)++; }
@@ -74,6 +76,7 @@ static const char *xml_parse_left_gt(ACL_XML2 *xml, const char *data)
 {
 	xml->curr_node->last_ch = 0;
 	xml->curr_node->status = ACL_XML2_S_TXT;
+
 	return data;
 }
 
@@ -90,9 +93,8 @@ static const char *xml_parse_left_ch(ACL_XML2 *xml, const char *data)
 		xml->curr_node->flag |= ACL_XML2_F_META_QM;
 		xml->curr_node->status = ACL_XML2_S_MTAG;
 		data++;
-	} else {
+	} else
 		xml->curr_node->status = ACL_XML2_S_LTAG;
-	}
 
 	return data;
 }

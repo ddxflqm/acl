@@ -30,24 +30,26 @@ struct ACL_XML2_ATTR {
 };
 
 struct ACL_XML2_NODE {
-	char *ltag;                 /**< 左标签名 */
-	char *rtag;                 /**< 右标签名 */
-	const char *id;             /**< ID标识符, 只有在 xml->id_table 存在的
-				         节点的 id 才非空 */
-	char *text;                 /**< 文本显示内容 */
-	ACL_ARRAY *attr_list;       /**< 属性(ACL_XML2_ATTR)列表 */
-	ACL_XML2_NODE *parent;       /**< 父节点 */
-	ACL_RING children;          /**< 子节点集合 */
-	int  depth;                 /**< 当前节点的深度 */
+					
+	char *ltag;                     /**< 左标签名 */
+	char *rtag;                     /**< 右标签名 */
+	const char *id;                 /**< ID标识符, 只有在 xml->id_table
+					  存在的节点的 id 才非空 */
+	char *text;                     /**< 文本显示内容 */
+	ACL_ARRAY *attr_list;           /**< 属性(ACL_XML2_ATTR)列表 */
+	ACL_XML2_NODE *parent;          /**< 父节点 */
+	ACL_RING children;              /**< 子节点集合 */
+	int  depth;                     /**< 当前节点的深度 */
 
 	/* private */
-	ACL_XML2 *xml;               /**< xml 对象 */
-	ACL_RING node;              /**< 当前节点 */
-	ACL_XML2_ATTR *curr_attr;    /**< 当前正在解析的属性 */
-	int   quote;                /**< 非 0 表示 ' 或 " */
-	int   last_ch;              /**< 所记录本节点的前一个字节值 */
-	int   nlt;                  /**< '<' 个数 */
-	char  meta[3];              /**< 元数据临时缓冲区 */
+	ACL_XML2 *xml;                  /**< xml 对象 */
+	ACL_RING node;                  /**< 当前节点 */
+	ACL_XML2_ATTR *curr_attr;       /**< 当前正在解析的属性 */
+	int   quote;                    /**< 非 0 表示 ' 或 " */
+	int   last_ch;                  /**< 所记录本节点的前一个字节值 */
+	int   nlt;                      /**< '<' 个数 */
+	char  meta[3];                  /**< 元数据临时缓冲区 */
+
 	unsigned int flag;
 #define	ACL_XML2_F_META_QM	(1 << 0)    /**< '?' flag */
 #define	ACL_XML2_F_META_CM	(1 << 1)    /**< '!--' flag */
@@ -61,25 +63,25 @@ struct ACL_XML2_NODE {
 
 #define	ACL_XML2_IS_COMMENT(x)	(((x)->flag & ACL_XML2_F_META_CM))
 
-	int   status;               /**< 状态机当前解析状态 */
-#define ACL_XML2_S_NXT	0       /**< 下一个节点 */
-#define ACL_XML2_S_LLT	1       /**< 左边 '<' */
-#define ACL_XML2_S_LGT	2       /**< 右边 '>' */
-#define	ACL_XML2_S_LCH	3       /**< 左边 '<' 后第一个字节 */
-#define ACL_XML2_S_LEM	4       /**< 左边 '<' 后的 '!' */
-#define ACL_XML2_S_LTAG	5       /**< 左边的标签名 */
-#define ACL_XML2_S_RLT	6       /**< 右边的 '<' */
-#define ACL_XML2_S_RGT	7       /**< 右边的 '>' */
-#define ACL_XML2_S_RTAG	8       /**< 右边的标签名 */
-#define ACL_XML2_S_ATTR	9       /**< 标签属性名 */
-#define ACL_XML2_S_AVAL	10      /**< 标签属性值 */
-#define ACL_XML2_S_TXT	11      /**< 节点文本 */
-#define ACL_XML2_S_MTAG	12      /**< 元数据标签 */
-#define ACL_XML2_S_MTXT	13      /**< 元数据文本 */
-#define ACL_XML2_S_MCMT	14      /**< 元数据注释 */
-#define ACL_XML2_S_MEND	15      /**< 元数据结束 */
+	int   status;                   /**< 状态机当前解析状态 */
+#define ACL_XML2_S_NXT	0               /**< 下一个节点 */
+#define ACL_XML2_S_LLT	1               /**< 左边 '<' */
+#define ACL_XML2_S_LGT	2               /**< 右边 '>' */
+#define	ACL_XML2_S_LCH	3               /**< 左边 '<' 后第一个字节 */
+#define ACL_XML2_S_LEM	4               /**< 左边 '<' 后的 '!' */
+#define ACL_XML2_S_LTAG	5               /**< 左边的标签名 */
+#define ACL_XML2_S_RLT	6               /**< 右边的 '<' */
+#define ACL_XML2_S_RGT	7               /**< 右边的 '>' */
+#define ACL_XML2_S_RTAG	8               /**< 右边的标签名 */
+#define ACL_XML2_S_ATTR	9               /**< 标签属性名 */
+#define ACL_XML2_S_AVAL	10              /**< 标签属性值 */
+#define ACL_XML2_S_TXT	11              /**< 节点文本 */
+#define ACL_XML2_S_MTAG	12              /**< 元数据标签 */
+#define ACL_XML2_S_MTXT	13              /**< 元数据文本 */
+#define ACL_XML2_S_MCMT	14              /**< 元数据注释 */
+#define ACL_XML2_S_MEND	15              /**< 元数据结束 */
 
-	/* public: for acl_iterator, 通过 acl_foreach 列出该节点的一级子节点 */
+	/* for acl_iterator, 通过 acl_foreach 列出该节点的一级子节点 */
 
 	/* 取迭代器头函数 */
 	ACL_XML2_NODE *(*iter_head)(ACL_ITER*, ACL_XML2_NODE*);
@@ -93,20 +95,21 @@ struct ACL_XML2_NODE {
 
 struct ACL_XML2 {
 	/* public */
-	int   depth;                /**< 最大深度 */
-	int   node_cnt;             /**< 节点总数, 包括 root 节点 */
-	ACL_XML2_NODE *root;        /**< XML 根节点 */
+					
+	int   depth;                    /**< 最大深度 */
+	int   node_cnt;                 /**< 节点总数, 包括 root 节点 */
+	ACL_XML2_NODE *root;            /**< XML 根节点 */
 
 	/* private */
-	char *addr;                 /**< 内存映射起始地址 */
-	char *ptr;                  /**< 内存映射地址 */
-	ACL_HTABLE *id_table;       /**< id 标识符哈希表 */
-	ACL_XML2_NODE *curr_node;    /**< 当前正在处理的 XML 节点 */
-	ACL_DBUF_POOL *dbuf;        /**< 内存池对象 */
-	ACL_DBUF_POOL *dbuf_inner;  /**< 内部分布的内存池对象 */
-	size_t dbuf_keep;           /**< 内存池中保留的长度 */
+	char *addr;                     /**< 内存映射起始地址 */
+	char *ptr;                      /**< 内存映射地址 */
+	ACL_HTABLE *id_table;           /**< id 标识符哈希表 */
+	ACL_XML2_NODE *curr_node;       /**< 当前正在处理的 XML 节点 */
+	ACL_DBUF_POOL *dbuf;            /**< 内存池对象 */
+	ACL_DBUF_POOL *dbuf_inner;      /**< 内部分布的内存池对象 */
+	size_t dbuf_keep;               /**< 内存池中保留的长度 */
 
-	unsigned flag;              /**< 标志位: ACL_XML2_FLAG_xxx */ 
+	unsigned flag;                  /**< 标志位: ACL_XML2_FLAG_xxx */ 
 
 	/**< 是否兼容后半个汉字为转义符 '\' 的情况 */
 #define	ACL_XML2_FLAG_PART_WORD		(1 << 0)
@@ -115,10 +118,10 @@ struct ACL_XML2 {
 #define	ACL_XML2_FLAG_IGNORE_SLASH	(1 << 1)
 
 	/**< 是否需要对文本数据进行 xml 解码  */
-#define	ACL_XML2_FLAG_XML_DECODE		(1 << 2)
-	ACL_VSTRING *decode_buf;    /**< 当需要进行 xml 解码时非空 */
+#define	ACL_XML2_FLAG_XML_DECODE	(1 << 2)
+	ACL_VSTRING *decode_buf;        /**< 当需要进行 xml 解码时非空 */
 
-	/* public: for acl_iterator, 通过 acl_foreach 可以列出所有子节点 */
+	/* for acl_iterator, 通过 acl_foreach 可以列出所有子节点 */
 
 	/* 取迭代器头函数 */
 	ACL_XML2_NODE *(*iter_head)(ACL_ITER*, ACL_XML2*);
