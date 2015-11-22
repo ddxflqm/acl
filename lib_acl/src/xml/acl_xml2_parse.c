@@ -67,14 +67,6 @@ static void xml_parse_check_self_closed(ACL_XML2 *xml)
 	}
 }
 
-static const char *xml_parse_left_gt(ACL_XML2 *xml, const char *data)
-{
-	xml->curr_node->last_ch = 0;
-	xml->curr_node->status = ACL_XML2_S_TXT;
-
-	return data;
-}
-
 static const char *xml_parse_left_ch(ACL_XML2 *xml, const char *data)
 {
 	int  ch = *data;
@@ -155,18 +147,25 @@ static char *xml_meta_attr_name(ACL_XML2_ATTR *attr, char *data)
 	int   ch;
 	ACL_XML2 *xml = attr->node->xml;
 
+	SKIP_SPACE(data);
+	if (*data == 0)
+		return data;
+
 	if (attr->name == xml->addr)
 		attr->name = data;
 
 	while ((ch = *data) != 0) {
 		if (ch == '=') {
 			*data++ = 0;
-			attr->name_size = data - attr->name;
+			if (attr->name_size == 0)
+				attr->name_size = data - attr->name;
 			break;
 		}
-		if (IS_SPACE(ch))
-			*data = 0;
-		data++;
+		if (IS_SPACE(ch)) {
+			*data++ = 0;
+			attr->name_size = data - attr->name;
+		} else
+			data++;
 	}
 
 	return data;
@@ -194,6 +193,7 @@ static char *xml_meta_attr_value(ACL_XML2_ATTR *attr, char *data)
 			break;
 		} else if (IS_SPACE(ch)) {
 			*data++ = 0;
+			attr->value_size = data - attr->value;
 			break;
 		}
 
@@ -227,6 +227,9 @@ static void xml_meta_attr(ACL_XML2_NODE *node)
 		if (*ptr == 0)
 			break;
 	}
+
+	node->text = node->xml->addr;
+	node->text_size = 0;
 }
 
 static const char *xml_parse_meta_text(ACL_XML2 *xml, const char *data)
@@ -451,6 +454,8 @@ static const char *xml_parse_attr(ACL_XML2 *xml, const char *data)
 
 		xml->curr_node->curr_attr = NULL;
 		data++;
+		*xml->ptr++ = 0;
+
 		return data;
 	}
 
@@ -549,6 +554,7 @@ static const char *xml_parse_attr_val(ACL_XML2 *xml, const char *data)
 		data++;
 	}
 
+	/* 当状态发生改变时，则说明属性值已经完毕 */
 	if (xml->curr_node->status != ACL_XML2_S_AVAL) {
 		/*
 		if (LEN(attr->value) > 0 && xml->decode_buf != NULL) {
@@ -583,6 +589,14 @@ static const char *xml_parse_attr_val(ACL_XML2 *xml, const char *data)
 	return data;
 }
 
+static const char *xml_parse_left_gt(ACL_XML2 *xml, const char *data)
+{
+	xml->curr_node->last_ch = 0;
+	xml->curr_node->status = ACL_XML2_S_TXT;
+
+	return data;
+}
+
 static const char *xml_parse_text(ACL_XML2 *xml, const char *data)
 {
 	int   ch;
@@ -592,6 +606,18 @@ static const char *xml_parse_text(ACL_XML2 *xml, const char *data)
 
 	if (*data == 0)
 		return data;
+
+	if (*data == '<') {
+		data++;
+		if (xml->curr_node->text > xml->addr) {
+			*xml->ptr++ = 0;
+			xml->curr_node->text_size = xml->ptr
+				- xml->curr_node->text;
+			/* 此处可对文本内容进行 xml 解码 */
+		}
+		xml->curr_node->status = ACL_XML2_S_RLT;
+		return data;
+	}
 
 	if (xml->curr_node->text == xml->addr)
 		xml->curr_node->text = xml->ptr;
@@ -603,38 +629,13 @@ static const char *xml_parse_text(ACL_XML2 *xml, const char *data)
 			xml->curr_node->text_size = xml->ptr
 				- xml->curr_node->text;
 			xml->curr_node->status = ACL_XML2_S_RLT;
+			/* 此处可对文本内容进行 xml 解码 */
 			break;
 		}
 
 		*xml->ptr++ = ch;
 		data++;
 	}
-
-	/* 说明还未找到 < 标记 */
-	if (xml->curr_node->status != ACL_XML2_S_RLT)
-		return data;
-
-	/* 说明 xml 的该节点的文件区已经分析完毕 */
-
-	if ((xml->curr_node->flag & ACL_XML2_F_SELF_CL)) {
-		/* 如果该标签是自关闭类型，则应使父节点直接跳至右边 '/' 处理
-		 * 位置, 同时使本节点跳至右边 '>' 处理位置
-		 */
-		ACL_XML2_NODE *parent = acl_xml2_node_parent(xml->curr_node);
-		if (parent != xml->root)
-			parent->status = ACL_XML2_S_RLT;
-		xml->curr_node->status = ACL_XML2_S_RGT;
-	}
-
-	if (*xml->curr_node->text == 0 || xml->decode_buf == NULL)
-		return data;
-
-#if 0
-	/* ACL_VSTRING_RESET(xml->decode_buf); */
-	acl_xml_decode(STR(xml->curr_node->text), xml->decode_buf);
-	if (LEN(xml->decode_buf) > 0)
-		STRCPY(xml->curr_node->text, STR(xml->decode_buf));
-#endif
 
 	return data;
 }
@@ -647,12 +648,13 @@ static const char *xml_parse_right_lt(ACL_XML2 *xml, const char *data)
 	if (*data == 0)
 		return data; 
 
-	if (*data == '/') {  /* ==> </ */
+	if (*data == '/') {  /* get: "</" */
 		data++;
 		xml->curr_node->status = ACL_XML2_S_RTAG;
 
 		return data;
 	} else if ((xml->curr_node->flag & ACL_XML2_F_LEAF)) {
+		/* XXX: some error ? */
 		*xml->ptr++ = '<';
 		*xml->ptr++ = *data++;
 		xml->curr_node->status = ACL_XML2_S_TXT;
@@ -760,6 +762,8 @@ static const char *xml_parse_right_tag(ACL_XML2 *xml, const char *data)
 {
 	int   ch;
 	ACL_XML2_NODE *curr_node = xml->curr_node;
+
+	/* after: "</" */
 
 	if (curr_node->rtag == xml->addr)
 		SKIP_SPACE(data);
