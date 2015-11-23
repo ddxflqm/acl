@@ -66,7 +66,7 @@ static void __zlib_dll_load(void)
 #ifdef ACL_WINDOWS
 		path = "zlib1.dll";
 #else
-		path = "/usr/lib/libz.so";
+		path = "libz.so";
 #endif
 
 	__zlib_dll = acl_dlopen(path);
@@ -133,7 +133,7 @@ static void __zlib_dll_load(void)
 
 # else
 //#  define __deflateInit         deflateInit_
-#  define __deflateInit2        deflateInit2
+#  define __deflateInit2        deflateInit2_
 #  define __deflate             deflate
 #  define __deflateReset	deflateReset
 #  define __deflateEnd          deflateEnd
