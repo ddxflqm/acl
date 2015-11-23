@@ -271,20 +271,12 @@ static const char *xml_parse_meta_text(ACL_XML2 *xml, const char *data)
 			if ((xml->curr_node->flag & ACL_XML2_F_META_QM) == 0)
 				break;
 
-			/*
-			last = acl_vstring_end(xml->curr_node->text) - 1;
-			if (last < STR(xml->curr_node->text) || *last != '?')
-				break;
-			off = ACL_VSTRING_LEN(xml->curr_node->text) - 1;
-			if (off == 0)
-				break;
-			ACL_VSTRING_AT_OFFSET(xml->curr_node->text, (int) off);
-			ACL_VSTRING_TERMINATE(xml->curr_node->text);
-			*/
 			last = xml->ptr;
 			while (last > xml->curr_node->text) {
 				if (*last == '?') {
 					*last = 0;
+					xml->curr_node->text_size = last -
+						xml->curr_node->text;
 					break;
 				}
 				last--;
@@ -435,7 +427,7 @@ static const char *xml_parse_attr(ACL_XML2 *xml, const char *data)
 	ACL_XML2_ATTR *attr = xml->curr_node->curr_attr;
 
 	if (attr == NULL || attr->name == xml->addr) {
-		SKIP_SPACE(data);	/* 略过 ' ', '\t' */
+		SKIP_SPACE(data);
 		SKIP_WHILE(*data == '=', data);
 	}
 
@@ -794,6 +786,8 @@ static const char *xml_parse_right_tag(ACL_XML2 *xml, const char *data)
 	if (acl_strcasecmp(curr_node->ltag, curr_node->rtag) != 0) {
 		int   ret;
 
+		printf(">>ltag: %s, rtag:%s\r\n", curr_node->ltag, curr_node->rtag);
+
 		if ((xml->flag & ACL_XML2_FLAG_IGNORE_SLASH))
 			ret = search_match_node(xml);
 		else
@@ -803,12 +797,6 @@ static const char *xml_parse_right_tag(ACL_XML2 *xml, const char *data)
 			/* 如果节点标签名与开始标签名不匹配，
 			 * 则需要继续寻找真正的结束标签
 			 */ 
-			/*
-			acl_vstring_strcat(curr_node->text,
-				STR(curr_node->rtag));
-			ACL_VSTRING_RESET(curr_node->rtag);
-			ACL_VSTRING_TERMINATE(curr_node->rtag);
-			*/
 			curr_node->text = xml->ptr;
 			string_copy(xml->ptr, curr_node->rtag);
 
