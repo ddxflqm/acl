@@ -213,7 +213,7 @@ static void xml_meta_attr(ACL_XML2_NODE *node)
 		return;
 
 	ptr = node->text;
-	SKIP_SPACE(ptr);	/* 略过 ' ', '\t' */
+	SKIP_SPACE(ptr);
 
 	if (*ptr == 0)
 		return;
@@ -786,8 +786,6 @@ static const char *xml_parse_right_tag(ACL_XML2 *xml, const char *data)
 	if (acl_strcasecmp(curr_node->ltag, curr_node->rtag) != 0) {
 		int   ret;
 
-		printf(">>ltag: %s, rtag:%s\r\n", curr_node->ltag, curr_node->rtag);
-
 		if ((xml->flag & ACL_XML2_FLAG_IGNORE_SLASH))
 			ret = search_match_node(xml);
 		else
@@ -811,9 +809,13 @@ static const char *xml_parse_right_tag(ACL_XML2 *xml, const char *data)
 static const char *xml_parse_right_gt(ACL_XML2 *xml, const char *data)
 {
 	/* 当前节点分析完毕，需要弹出当前节点的父节点继续分析 */
-	xml->curr_node = acl_xml2_node_parent(xml->curr_node);
-	if (xml->curr_node == xml->root)
+	ACL_XML2_NODE *parent = acl_xml2_node_parent(xml->curr_node);
+	if (parent == xml->root) {
+		if ((xml->curr_node->flag & ACL_XML2_F_META) == 0)
+			xml->root_cnt++;
 		xml->curr_node = NULL;
+	} else
+		xml->curr_node = parent;
 
 	return data;
 }
@@ -837,15 +839,24 @@ static struct XML_STATUS_MACHINE status_tab[] = {
 	{ ACL_XML2_S_MEND, xml_parse_meta_end     },
 };
 
-void acl_xml2_update(ACL_XML2 *xml, const char *data)
+const char *acl_xml2_update(ACL_XML2 *xml, const char *data)
 {
 	/* XML 解析器状态机循环处理过程 */
 
+	if (!(xml->flag & ACL_XML2_FLAG_MULTI_ROOT) && xml->root_cnt > 0)
+		return data;
+
 	while (*data) {
 		if (xml->curr_node == NULL) {
+			if (!(xml->flag & ACL_XML2_FLAG_MULTI_ROOT)
+				&& xml->root_cnt > 0)
+			{
+				break;
+			}
+
 			SKIP_SPACE(data);
 			if (*data == 0)
-				return;
+				break;
 
 			xml->curr_node = acl_xml2_node_alloc(xml);
 			acl_xml2_node_add_child(xml->root, xml->curr_node);
@@ -856,4 +867,6 @@ void acl_xml2_update(ACL_XML2 *xml, const char *data)
 
 		data = status_tab[xml->curr_node->status].callback(xml, data);
 	}
+
+	return data;
 }

@@ -18,22 +18,20 @@ typedef struct ACL_XML2_NODE	ACL_XML2_NODE;
 typedef struct ACL_XML2_ATTR	ACL_XML2_ATTR;
 
 struct ACL_XML2_ATTR {
-	ACL_XML2_NODE *node;         /**< 所属节点 */
-	char *name;                  /**< 属性名 */
-	char *value;                 /**< 属性值 */
+	ACL_XML2_NODE *node;            /**< 所属节点 */
+	char *name;                     /**< 属性名 */
+	char *value;                    /**< 属性值 */
 
-	size_t name_size;            /**< 属性名长度 */
-	size_t value_size;           /**< 属性值长度 */
+	size_t name_size;               /**< 属性名长度 */
+	size_t value_size;              /**< 属性值长度 */
 
 	/* private */
-	int   quote;                /**< 非 0 表示 ' 或 " */
-	int   backslash;            /**< 转义字符 \ */
-	int   part_word;            /**< 半个汉字的情况处理标志位 */
-	int   slash;                /**< 是否有 '/' 标志位设定 */
+	int   quote;                    /**< 非 0 表示 ' 或 " */
+	int   backslash;                /**< 转义字符 \ */
+	int   slash;                    /**< 是否有 '/' 标志位设定 */
 };
 
 struct ACL_XML2_NODE {
-					
 	char *ltag;                     /**< 左标签名 */
 	char *rtag;                     /**< 右标签名 */
 	size_t ltag_size;               /**< 左标签名长度 */
@@ -105,6 +103,7 @@ struct ACL_XML2 {
 					
 	int   depth;                    /**< 最大深度 */
 	int   node_cnt;                 /**< 节点总数, 包括 root 节点 */
+	int   root_cnt;
 	ACL_XML2_NODE *root;            /**< XML 根节点 */
 
 	/* private */
@@ -118,8 +117,8 @@ struct ACL_XML2 {
 
 	unsigned flag;                  /**< 标志位: ACL_XML2_FLAG_xxx */ 
 
-	/**< 是否兼容后半个汉字为转义符 '\' 的情况 */
-#define	ACL_XML2_FLAG_PART_WORD		(1 << 0)
+	/**< 是否允许一个 xml 文档中有多个根节点，内部缺省为允许 */
+#define	ACL_XML2_FLAG_MULTI_ROOT	(1 << 0)
 
 	/**< 是否兼容单节点中没有 '/' 情况 */
 #define	ACL_XML2_FLAG_IGNORE_SLASH	(1 << 1)
@@ -191,6 +190,14 @@ ACL_API ACL_XML2 *acl_xml2_dbuf_alloc(char *addr, ACL_DBUF_POOL *dbuf);
 ACL_API void acl_xml2_foreach_init(ACL_XML2 *xml, ACL_XML2_NODE *node);
 
 /**
+ * 设置一个 xml 文档中是否允许有多个根 xml 节点
+ * @param xml {ACL_XML2*} xml 对象
+ * @param on {int} 非 0 则允许，为 0 表示不允许，当禁止有多个根 xml 节点时，
+ *  则在解析时当遇到第一个根节点结束时便返回剩余的数据
+ */
+ACL_API void acl_xml2_multi_root(ACL_XML2 *xml, int on);
+
+/**
  * 对于 XML 单节点的情况, 是否允许可以没有 /, 如:
  * <test id=111>, <test id=111 />, 当可以允许没有 / 则这两种写法
  * 都是合法的，否则只有第二个写法是合法的，如果允许这种兼容性，则
@@ -227,8 +234,12 @@ ACL_API void acl_xml2_reset(ACL_XML2 *xml);
  * @param xml {ACL_XML2*} xml 对象
  * @param data {const char*} 以 '\0' 结尾的数据字符串, 可以是完整的 xml 数据;
  *  也可以是不完整的 xml 数据, 允许循环调用此函数, 将不完整数据持续地输入
+ * @return {const char*} 当通过 acl_xml2_multi_root 允许一个 xml 文档中在在
+ *  多个根 xml 节点时，该函数返回的地址的字节为 '\0'; 否则返回剩余的数据地址
+ *  包含非空字符串
+ *  注：也可以通过 acl_xml2_is_complete 判断是否解析完毕
  */
-ACL_API void acl_xml2_update(ACL_XML2 *xml, const char *data);
+ACL_API const char *acl_xml2_update(ACL_XML2 *xml, const char *data);
 #define	acl_xml2_parse	acl_xml2_update
 
 /*------------------------- in acl_xml2_util.c -----------------------------*/

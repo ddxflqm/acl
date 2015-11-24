@@ -27,7 +27,6 @@ ACL_XML2_ATTR *acl_xml2_attr_alloc(ACL_XML2_NODE *node)
 	attr->value_size = 0;
 	attr->quote      = 0;
 	attr->backslash  = 0;
-	attr->part_word  = 0;
 
 	acl_array_append(node->attr_list, attr);
 
@@ -364,6 +363,14 @@ static ACL_XML2_NODE *xml_iter_prev(ACL_ITER *it, ACL_XML2 *xml)
 	return NULL;
 }
 
+void acl_xml2_multi_root(ACL_XML2 *xml, int on)
+{
+	if (on)
+		xml->flag |= ACL_XML2_FLAG_MULTI_ROOT;
+	else
+		xml->flag &= ~ACL_XML2_FLAG_MULTI_ROOT;
+}
+
 void acl_xml2_slash(ACL_XML2 *xml, int ignore)
 {
 	if (ignore)
@@ -410,6 +417,7 @@ ACL_XML2 *acl_xml2_dbuf_alloc(char *addr, ACL_DBUF_POOL *dbuf)
 	xml->addr      = addr;
 	xml->ptr       = xml->addr;
 	*xml->ptr++    = 0;
+	xml->flag     |= ACL_XML2_FLAG_MULTI_ROOT;
 
 	xml->iter_head = xml_iter_head;
 	xml->iter_next = xml_iter_next;
@@ -445,9 +453,11 @@ void acl_xml2_reset(ACL_XML2 *xml)
 	if (xml->dbuf_inner != NULL)
 		acl_dbuf_pool_reset(xml->dbuf_inner, xml->dbuf_keep);
 
-	xml->root = acl_xml2_node_alloc(xml);
-	xml->node_cnt = 1;
-
+	xml->ptr       = xml->addr;
+	xml->root      = acl_xml2_node_alloc(xml);
+	xml->depth     = 0;
+	xml->node_cnt  = 1;
+	xml->root_cnt  = 0;
 	xml->curr_node = NULL;
 }
 
@@ -490,33 +500,34 @@ int acl_xml2_is_closure(ACL_XML2 *xml)
 
 int acl_xml2_is_complete(ACL_XML2 *xml, const char *tag)
 {
-	ACL_RING *ring_ptr;
-	ACL_XML2_NODE *node;
+	ACL_XML2_NODE *last_node = NULL;
+	ACL_ITER iter;
 
-	/* 获得 xml->root 节点的最后一个一级子节点 */
-	ring_ptr = acl_ring_succ(&xml->root->children);
+	if (!(xml->flag & ACL_XML2_FLAG_MULTI_ROOT) && xml->root_cnt > 0)
+		return 1;
 
-	if (ring_ptr == &xml->root->children) {
+	acl_foreach_reverse(iter, xml->root) {
+		ACL_XML2_NODE *node = (ACL_XML2_NODE*) iter.data;
+		if (!(node->flag & ACL_XML2_F_META)) {
+			last_node = node;
+			break;
+		}
+	}
+
+	if (last_node == NULL)
 		/* 说明没有真实子节点 */
 		return 0;
-	}
 
-	node = acl_ring_to_appl(ring_ptr, ACL_XML2_NODE, node);
-
-	if ((node->flag & ACL_XML2_F_SELF_CL)) {
+	if ((last_node->flag & ACL_XML2_F_SELF_CL))
 		/* 说明该节点是自闭合节点 */
 		return 1;
-	}
 
-	if (node->status != ACL_XML2_S_RGT) {
+	if (last_node->status != ACL_XML2_S_RGT)
 		/* 说明最后一个一级子节点还未处理完毕 */
 		return 0;
-	}
 
-	/* if (strcasecmp(STR(node->rtag), tag) == 0) { */
-	if (strcasecmp(node->rtag, tag) == 0) {
+	if (strcasecmp(last_node->rtag, tag) == 0)
 		return 1;
-	}
 
 	/* 说明 xml 中的最后一个节点与所给标签不匹配 */
 	return 0;

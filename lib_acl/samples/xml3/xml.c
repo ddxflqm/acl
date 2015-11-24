@@ -83,7 +83,10 @@ static const char* __data4 = "<?xml version=\"1.0\" encoding=\"gb2312\"?>\r\n"
   "  <tag4>\r\n"
   "    <module name=\"mail_ud_user\"/>\r\n"
   "  </tag4>\r\n"
-  "</request>\r\n";
+  "</request>\r\n"
+  "<!-- <edition> -- 0.5 -- </edition> -->\r\n"
+  "<!-- <edition> -- 0.5 -- </edition> -->\r\n"
+  "<!-- <edition> -- 0.5 -- </edition> -->\r\n";
 
 static const char* __data5 = "<?xml version=\"1.0\" encoding=\"gb2312\"?>\r\n"
   "<request action=\"get_location\" sid=\"YOU_CAN_GEN_SID\" user=\"admin@test.com\">\r\n"
@@ -326,17 +329,27 @@ static ACL_XML2_NODE *test_getElementById(ACL_XML2 *xml, const char *id)
 	return node;
 }
 
-static ACL_XML2 *get_xml(int once, const char *data, const char* root)
+static ACL_XML2 *get_xml(int once, const char *data,
+	const char* root, int multi_root)
 {
 	char *addr = mmap_addr(81920);
 	ACL_XML2 *xml;
+	const char *left;
+
+	printf("--------------------- xml data ------------------------\r\n");
+	printf("{%s}\r\n", data);
+	printf("--------------------- xml data end --------------------\r\n");
+	printf("Enter any key to continue ...\r\n");
+	getchar();
 
 	xml = acl_xml2_alloc(addr);
+	acl_xml2_multi_root(xml, multi_root);
+	acl_xml2_slash(xml, 1);
 
 	if (once) {
 		/* 一次性地分析完整 xml 数据 */
 		ACL_METER_TIME("-------------once begin--------------");
-		acl_xml2_parse(xml, data);
+		left = acl_xml2_parse(xml, data);
 	} else {
 		/* 每次仅输入一个字节来分析 xml 数据 */
 		ACL_METER_TIME("-------------stream begin--------------");
@@ -345,12 +358,18 @@ static ACL_XML2 *get_xml(int once, const char *data, const char* root)
 
 			ch2[0] = *data;
 			ch2[1] = 0;
-			acl_xml2_parse(xml, ch2);
+			left = acl_xml2_parse(xml, ch2);
 			data++;
 		}
 	}
 
 	ACL_METER_TIME("-------------end--------------");
+	printf("---------------- left data ----------------------------\r\n");
+	printf("{%s}\r\n", left ? left : "empty");
+	printf("---------------- left data end ------------------------\r\n");
+
+	printf("Enter any key to continue ...\r\n");
+	getchar();
 
 	if (acl_xml2_is_complete(xml, root))
 		printf(">> Yes, the xml complete\n");
@@ -363,9 +382,10 @@ static ACL_XML2 *get_xml(int once, const char *data, const char* root)
 	return xml;
 }
 
-static void parse_xml(int once, const char *data, const char* root)
+static void parse_xml(int once, const char *data,
+	const char* root, int multi_root)
 {
-	ACL_XML2 *xml = get_xml(once, data, root);
+	ACL_XML2 *xml = get_xml(once, data, root, multi_root);
 	ACL_XML2_NODE *node;
 	int total = xml->node_cnt, left;
 
@@ -470,10 +490,11 @@ static void test1(void)
 
 static void usage(const char *procname)
 {
-	printf("usage: %s -h[help]"
-		" -s[parse once]\n"
-		" -p[print] data1|data2|data3|data4|data5|data6|data7\n"
-		" -d[which data] data1|data2|data3|data4|data5|data6|data7\n",
+	printf("usage: %s -h[help]\r\n"
+		" -s[parse once]\r\n"
+		" -m[if enable  multiple root xml node, default: no]\r\n"
+		" -p[print] data1|data2|data3|data4|data5|data6|data7\r\n"
+		" -d[parse] data1|data2|data3|data4|data5|data6|data7\r\n",
 		procname);
 }
 
@@ -483,7 +504,7 @@ static void usage(const char *procname)
 
 int main(int argc, char *argv[])
 {
-	int   ch, once = 0;
+	int   ch, once = 0, multi_root = 0;
 	const char *data = __data1;
 	const char* root = "root";
 
@@ -495,11 +516,14 @@ int main(int argc, char *argv[])
 		getchar();
 	}
 
-	while ((ch = getopt(argc, argv, "hsp:d:")) > 0) {
+	while ((ch = getopt(argc, argv, "hsp:d:m")) > 0) {
 		switch (ch) {
 		case 'h':
 			usage(argv[0]);
 			return (0);
+		case 'm':
+			multi_root = 1;
+			break;
 		case 's':
 			once = 1;
 			break;
@@ -545,7 +569,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	parse_xml(once, data, root);
+	parse_xml(once, data, root, multi_root);
 
 #ifdef	ACL_MS_WINDOWS
 	printf("ok, enter any key to exit ...\n");
