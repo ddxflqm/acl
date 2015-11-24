@@ -394,12 +394,12 @@ void acl_xml2_decode_enable(ACL_XML2 *xml, int on)
 	}
 }
 
-ACL_XML2 *acl_xml2_alloc(char *addr)
+ACL_XML2 *acl_xml2_alloc(char *addr, size_t size)
 {
-	return acl_xml2_dbuf_alloc(addr, NULL);
+	return acl_xml2_dbuf_alloc(addr, size, NULL);
 }
 
-ACL_XML2 *acl_xml2_dbuf_alloc(char *addr, ACL_DBUF_POOL *dbuf)
+ACL_XML2 *acl_xml2_dbuf_alloc(char *addr, size_t size, ACL_DBUF_POOL *dbuf)
 {
 	ACL_XML2 *xml;
 
@@ -415,6 +415,8 @@ ACL_XML2 *acl_xml2_dbuf_alloc(char *addr, ACL_DBUF_POOL *dbuf)
 	xml->dbuf      = dbuf;
 	xml->dbuf_keep = sizeof(ACL_XML2);
 	xml->addr      = addr;
+	xml->size      = size;
+	xml->len       = size;
 	xml->ptr       = xml->addr;
 	*xml->ptr++    = 0;
 	xml->flag     |= ACL_XML2_FLAG_MULTI_ROOT;
@@ -453,6 +455,7 @@ void acl_xml2_reset(ACL_XML2 *xml)
 	if (xml->dbuf_inner != NULL)
 		acl_dbuf_pool_reset(xml->dbuf_inner, xml->dbuf_keep);
 
+	xml->len       = xml->size;
 	xml->ptr       = xml->addr;
 	xml->root      = acl_xml2_node_alloc(xml);
 	xml->depth     = 0;

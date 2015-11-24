@@ -332,7 +332,8 @@ static ACL_XML2_NODE *test_getElementById(ACL_XML2 *xml, const char *id)
 static ACL_XML2 *get_xml(int once, const char *data,
 	const char* root, int multi_root)
 {
-	char *addr = mmap_addr(81920);
+	size_t size = strlen(data) * 2;
+	char *addr = mmap_addr(size);
 	ACL_XML2 *xml;
 	const char *left;
 
@@ -342,7 +343,7 @@ static ACL_XML2 *get_xml(int once, const char *data,
 	printf("Enter any key to continue ...\r\n");
 	getchar();
 
-	xml = acl_xml2_alloc(addr);
+	xml = acl_xml2_alloc(addr, size);
 	acl_xml2_multi_root(xml, multi_root);
 	acl_xml2_slash(xml, 1);
 
@@ -447,9 +448,10 @@ static void test1(void)
 	ACL_XML2 *xml;
 	ACL_XML2_NODE *node;
 	const char *encoding, *type, *href;
-	char *addr = mmap_addr(1024);
+	size_t size = strlen(data) * 2;
+	char *addr = mmap_addr(size);
 
-	xml = acl_xml2_alloc(addr);
+	xml = acl_xml2_alloc(addr, size);
 
 	printf("------------------------------------------------------\r\n");
 

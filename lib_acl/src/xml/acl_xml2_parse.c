@@ -34,6 +34,8 @@ struct XML_STATUS_MACHINE {
 	const char *(*callback) (ACL_XML2*, const char*);
 };
 
+#define	MIN_LEN	2
+
 static const char *xml_parse_next_left_lt(ACL_XML2 *xml, const char *data)
 {
 	SKIP_SPACE(data);
@@ -105,6 +107,9 @@ static const char *xml_parse_left_em(ACL_XML2 *xml, const char *data)
 			xml->curr_node->ltag = xml->ptr;
 
 		if (xml->curr_node->meta[1] == '-') {
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = '-';
 			xml->curr_node->meta[1] = 0;
 		}
@@ -129,6 +134,9 @@ static const char *xml_parse_meta_tag(ACL_XML2 *xml, const char *data)
 	while ((ch = *data) != 0) {
 		data++;
 		if (IS_SPACE(ch) || ch == '>') {
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = 0;
 			xml->curr_node->ltag_size =
 				xml->ptr - xml->curr_node->ltag;
@@ -136,6 +144,9 @@ static const char *xml_parse_meta_tag(ACL_XML2 *xml, const char *data)
 			break;
 		}
 
+		if (xml->len < MIN_LEN)
+			return data;
+		xml->len--;
 		*xml->ptr++ = ch;
 	}
 
@@ -249,20 +260,35 @@ static const char *xml_parse_meta_text(ACL_XML2 *xml, const char *data)
 		if (xml->curr_node->quote) {
 			if (ch == xml->curr_node->quote)
 				xml->curr_node->quote = 0;
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = ch;
 		} else if (IS_QUOTE(ch)) {
 			if (xml->curr_node->quote == 0)
 				xml->curr_node->quote = ch;
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = ch;
 		} else if (ch == '<') {
 			xml->curr_node->nlt++;
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = ch;
 		} else if (ch != '>') {
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = ch;
 		} else if (xml->curr_node->nlt == 0) {
 			char *last;
 
 			data++;
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = 0;
 			xml->curr_node->text_size = xml->ptr -
 				xml->curr_node->text;
@@ -288,6 +314,9 @@ static const char *xml_parse_meta_text(ACL_XML2 *xml, const char *data)
 			break;
 		} else {
 			xml->curr_node->nlt--;
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = ch;
 		}
 
@@ -314,15 +343,22 @@ static const char *xml_parse_meta_comment(ACL_XML2 *xml, const char *data)
 		if (xml->curr_node->quote) {
 			if (ch == xml->curr_node->quote)
 				xml->curr_node->quote = 0;
-			else
-				*xml->ptr++ = ch;
+			else if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
+			*xml->ptr++ = ch;
 		} else if (IS_QUOTE(ch)) {
 			if (xml->curr_node->quote == 0)
 				xml->curr_node->quote = ch;
-			else
-				*xml->ptr++ = ch;
+			else if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
+			*xml->ptr++ = ch;
 		} else if (ch == '<') {
 			xml->curr_node->nlt++;
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = ch;
 		} else if (ch == '>') {
 			if (xml->curr_node->nlt == 0
@@ -330,6 +366,9 @@ static const char *xml_parse_meta_comment(ACL_XML2 *xml, const char *data)
 				&& xml->curr_node->meta[1] == '-')
 			{
 				data++;
+				if (xml->len < MIN_LEN)
+					return data;
+				xml->len--;
 				*xml->ptr++ = 0;
 				xml->curr_node->text_size = xml->ptr -
 					xml->curr_node->text;
@@ -337,8 +376,15 @@ static const char *xml_parse_meta_comment(ACL_XML2 *xml, const char *data)
 				break;
 			}
 			xml->curr_node->nlt--;
+
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = ch;
 		} else if (xml->curr_node->nlt > 0) {
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = ch;
 		} else if (ch == '-') {
 			if (xml->curr_node->meta[0] != '-')
@@ -347,13 +393,23 @@ static const char *xml_parse_meta_comment(ACL_XML2 *xml, const char *data)
 				xml->curr_node->meta[1] = '-';
 		} else {
 			if (xml->curr_node->meta[0] == '-') {
+				if (xml->len < MIN_LEN)
+					return data;
+				xml->len--;
 				*xml->ptr++ = '-';
 				xml->curr_node->meta[0] = 0;
 			}
 			if (xml->curr_node->meta[1] == '-') {
+				if (xml->len < MIN_LEN)
+					return data;
+				xml->len--;
 				*xml->ptr++ = '-';
 				xml->curr_node->meta[1] = 0;
 			}
+
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = ch;
 		}
 
@@ -388,6 +444,9 @@ static const char *xml_parse_left_tag(ACL_XML2 *xml, const char *data)
 		data++;
 
 		if (ch == '>') {
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = 0;
 			xml->curr_node->ltag_size = xml->ptr -
 				xml->curr_node->ltag;
@@ -406,6 +465,9 @@ static const char *xml_parse_left_tag(ACL_XML2 *xml, const char *data)
 				xml->curr_node->status = ACL_XML2_S_LGT;
 			break;
 		} else if (IS_SPACE(ch)) {
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = 0;
 			xml->curr_node->ltag_size = xml->ptr -
 				xml->curr_node->ltag;
@@ -413,6 +475,9 @@ static const char *xml_parse_left_tag(ACL_XML2 *xml, const char *data)
 			xml->curr_node->last_ch = ch;
 			break;
 		} else {
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = ch;
 			xml->curr_node->last_ch = ch;
 		}
@@ -446,6 +511,9 @@ static const char *xml_parse_attr(ACL_XML2 *xml, const char *data)
 
 		xml->curr_node->curr_attr = NULL;
 		data++;
+		if (xml->len < MIN_LEN)
+			return data;
+		xml->len--;
 		*xml->ptr++ = 0;
 
 		return data;
@@ -472,12 +540,18 @@ static const char *xml_parse_attr(ACL_XML2 *xml, const char *data)
 		xml->curr_node->last_ch = ch;
 		if (ch == '=') {
 			data++;
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = 0;
 			attr->name_size = xml->ptr - attr->name;
 			xml->curr_node->status = ACL_XML2_S_AVAL;
 			break;
 		}
 		if (!IS_SPACE(ch))
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = ch;
 		data++;
 	}
@@ -506,6 +580,9 @@ static const char *xml_parse_attr_val(ACL_XML2 *xml, const char *data)
 		if (attr->quote) {
 			if (ch == attr->quote) {
 				data++;
+				if (xml->len < MIN_LEN)
+					return data;
+				xml->len--;
 				*xml->ptr++ = 0;
 				attr->value_size = xml->ptr - attr->value;
 				xml->curr_node->status = ACL_XML2_S_ATTR;
@@ -513,10 +590,16 @@ static const char *xml_parse_attr_val(ACL_XML2 *xml, const char *data)
 				break;
 			}
 
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = ch;
 			xml->curr_node->last_ch = ch;
 		} else if (ch == '>') {
 			data++;
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = 0;
 			attr->value_size = xml->ptr - attr->value;
 
@@ -533,12 +616,18 @@ static const char *xml_parse_attr_val(ACL_XML2 *xml, const char *data)
 			break;
 		} else if (IS_SPACE(ch)) {
 			data++;
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = 0;
 			attr->value_size = xml->ptr - attr->value;
 			xml->curr_node->status = ACL_XML2_S_ATTR;
 			xml->curr_node->last_ch = ch;
 			break;
 		} else {
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = ch;
 			xml->curr_node->last_ch = ch;
 		}
@@ -602,6 +691,9 @@ static const char *xml_parse_text(ACL_XML2 *xml, const char *data)
 	if (*data == '<') {
 		data++;
 		if (xml->curr_node->text > xml->addr) {
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = 0;
 			xml->curr_node->text_size = xml->ptr
 				- xml->curr_node->text;
@@ -617,6 +709,9 @@ static const char *xml_parse_text(ACL_XML2 *xml, const char *data)
 	while ((ch = *data) != 0) {
 		if (ch == '<') {
 			data++;
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = 0;
 			xml->curr_node->text_size = xml->ptr
 				- xml->curr_node->text;
@@ -625,6 +720,9 @@ static const char *xml_parse_text(ACL_XML2 *xml, const char *data)
 			break;
 		}
 
+		if (xml->len < MIN_LEN)
+			return data;
+		xml->len--;
 		*xml->ptr++ = ch;
 		data++;
 	}
@@ -647,7 +745,11 @@ static const char *xml_parse_right_lt(ACL_XML2 *xml, const char *data)
 		return data;
 	} else if ((xml->curr_node->flag & ACL_XML2_F_LEAF)) {
 		/* XXX: some error ? */
+		if (xml->len < MIN_LEN * 2)
+			return data;
+		xml->len--;
 		*xml->ptr++ = '<';
+		xml->len--;
 		*xml->ptr++ = *data++;
 		xml->curr_node->status = ACL_XML2_S_TXT;
 
@@ -769,14 +871,21 @@ static const char *xml_parse_right_tag(ACL_XML2 *xml, const char *data)
 	while ((ch = *data) != 0) {
 		if (ch == '>') {
 			data++;
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = 0;
 			curr_node->rtag_size = xml->ptr - curr_node->rtag;
 			curr_node->status = ACL_XML2_S_RGT;
 			break;
 		}
 
-		if (!IS_SPACE(ch))
+		if (!IS_SPACE(ch)) {
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->len--;
 			*xml->ptr++ = ch;
+		}
 		data++;
 	}
 
@@ -845,6 +954,8 @@ const char *acl_xml2_update(ACL_XML2 *xml, const char *data)
 
 	if (!(xml->flag & ACL_XML2_FLAG_MULTI_ROOT) && xml->root_cnt > 0)
 		return data;
+	if (xml->len < MIN_LEN)
+		return data;
 
 	while (*data) {
 		if (xml->curr_node == NULL) {
@@ -866,6 +977,8 @@ const char *acl_xml2_update(ACL_XML2 *xml, const char *data)
 		}
 
 		data = status_tab[xml->curr_node->status].callback(xml, data);
+		if (xml->len < MIN_LEN)
+			break;
 	}
 
 	return data;
