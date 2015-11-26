@@ -919,6 +919,7 @@ static const char *xml_parse_right_gt(ACL_XML2 *xml, const char *data)
 {
 	/* 当前节点分析完毕，需要弹出当前节点的父节点继续分析 */
 	ACL_XML2_NODE *parent = acl_xml2_node_parent(xml->curr_node);
+
 	if (parent == xml->root) {
 		if ((xml->curr_node->flag & ACL_XML2_F_META) == 0)
 			xml->root_cnt++;
@@ -950,12 +951,15 @@ static struct XML_STATUS_MACHINE status_tab[] = {
 
 const char *acl_xml2_update(ACL_XML2 *xml, const char *data)
 {
-	/* XML 解析器状态机循环处理过程 */
+	if (data == NULL || *data == 0)
+		return data;
 
 	if (!(xml->flag & ACL_XML2_FLAG_MULTI_ROOT) && xml->root_cnt > 0)
 		return data;
 	if (xml->len < MIN_LEN)
 		return data;
+
+	/* XML 解析器状态机循环处理过程 */
 
 	while (*data) {
 		if (xml->curr_node == NULL) {

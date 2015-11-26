@@ -103,7 +103,7 @@ struct ACL_XML2 {
 					
 	int   depth;                    /**< 最大深度 */
 	int   node_cnt;                 /**< 节点总数, 包括 root 节点 */
-	int   root_cnt;
+	int   root_cnt;                 /**< 根节点个数 */
 	ACL_XML2_NODE *root;            /**< XML 根节点 */
 
 	/* private */
