@@ -177,7 +177,7 @@ ACL_API ACL_XML *acl_xml_dbuf_alloc(ACL_DBUF_POOL *dbuf);
 ACL_API void acl_xml_foreach_init(ACL_XML *xml, ACL_XML_NODE *node);
 
 /**
- * 设置一个 xml 文档中是否允许有多个根 xml 节点
+ * 设置一个 xml 文档中是否允许有多个根 xml 节点，内部缺省支持多个根节点
  * @param xml {ACL_XML*} xml 对象
  * @param on {int} 非 0 则允许，为 0 表示不允许，当禁止有多个根 xml 节点时，
  *  则在解析时当遇到第一个根节点结束时便返回剩余的数据

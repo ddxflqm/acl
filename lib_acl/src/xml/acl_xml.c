@@ -405,6 +405,7 @@ ACL_XML *acl_xml_dbuf_alloc(ACL_DBUF_POOL *dbuf)
 
 	xml->dbuf = dbuf;
 	xml->dbuf_keep = sizeof(ACL_XML);
+	xml->flag     |= ACL_XML_FLAG_MULTI_ROOT;
 
 	xml->id_table = acl_htable_create(100, 0);
 

@@ -36,6 +36,22 @@ struct XML_STATUS_MACHINE {
 
 #define	MIN_LEN	2
 
+static void xml_parse_check_self_closed(ACL_XML2 *xml)
+{
+	if ((xml->curr_node->flag & ACL_XML2_F_LEAF) == 0) {
+		if (acl_xml2_tag_leaf(xml->curr_node->ltag))
+			xml->curr_node->flag |= ACL_XML2_F_LEAF;
+	}
+
+	if ((xml->curr_node->flag & ACL_XML2_F_SELF_CL) == 0) {
+		if (xml->curr_node->last_ch == '/'
+		    || acl_xml2_tag_selfclosed(xml->curr_node->ltag))
+		{
+			xml->curr_node->flag |= ACL_XML2_F_SELF_CL;
+		}
+	}
+}
+
 static const char *xml_parse_next_left_lt(ACL_XML2 *xml, const char *data)
 {
 	SKIP_SPACE(data);
@@ -51,22 +67,6 @@ static const char *xml_parse_left_lt(ACL_XML2 *xml, const char *data)
 {
 	xml->curr_node->status = ACL_XML2_S_LCH;
 	return data;
-}
-
-static void xml_parse_check_self_closed(ACL_XML2 *xml)
-{
-	if ((xml->curr_node->flag & ACL_XML2_F_LEAF) == 0) {
-		if (acl_xml2_tag_leaf(xml->curr_node->ltag))
-			xml->curr_node->flag |= ACL_XML2_F_LEAF;
-	}
-
-	if ((xml->curr_node->flag & ACL_XML2_F_SELF_CL) == 0) {
-		if (xml->curr_node->last_ch == '/'
-		    || acl_xml2_tag_selfclosed(xml->curr_node->ltag))
-		{
-			xml->curr_node->flag |= ACL_XML2_F_SELF_CL;
-		}
-	}
 }
 
 static const char *xml_parse_left_ch(ACL_XML2 *xml, const char *data)
@@ -103,12 +103,13 @@ static const char *xml_parse_left_em(ACL_XML2 *xml, const char *data)
 
 		data++;
 	} else {
-		if (xml->curr_node->ltag == xml->addr)
-			xml->curr_node->ltag = xml->ptr;
-
 		if (xml->curr_node->meta[1] == '-') {
 			if (xml->len < MIN_LEN)
 				return data;
+
+			if (xml->curr_node->ltag == xml->addr)
+				xml->curr_node->ltag = xml->ptr;
+
 			xml->len--;
 			*xml->ptr++ = '-';
 			xml->curr_node->meta[1] = 0;
@@ -132,10 +133,10 @@ static const char *xml_parse_meta_tag(ACL_XML2 *xml, const char *data)
 		xml->curr_node->ltag = xml->ptr;
 
 	while ((ch = *data) != 0) {
-		data++;
 		if (IS_SPACE(ch) || ch == '>') {
 			if (xml->len < MIN_LEN)
 				return data;
+			data++;
 			xml->len--;
 			*xml->ptr++ = 0;
 			xml->curr_node->ltag_size =
@@ -146,6 +147,8 @@ static const char *xml_parse_meta_tag(ACL_XML2 *xml, const char *data)
 
 		if (xml->len < MIN_LEN)
 			return data;
+
+		data++;
 		xml->len--;
 		*xml->ptr++ = ch;
 	}
@@ -258,23 +261,23 @@ static const char *xml_parse_meta_text(ACL_XML2 *xml, const char *data)
 
 	while ((ch = *data) != 0) {
 		if (xml->curr_node->quote) {
-			if (ch == xml->curr_node->quote)
-				xml->curr_node->quote = 0;
 			if (xml->len < MIN_LEN)
 				return data;
+			if (ch == xml->curr_node->quote)
+				xml->curr_node->quote = 0;
 			xml->len--;
 			*xml->ptr++ = ch;
 		} else if (IS_QUOTE(ch)) {
-			if (xml->curr_node->quote == 0)
-				xml->curr_node->quote = ch;
 			if (xml->len < MIN_LEN)
 				return data;
+			if (xml->curr_node->quote == 0)
+				xml->curr_node->quote = ch;
 			xml->len--;
 			*xml->ptr++ = ch;
 		} else if (ch == '<') {
-			xml->curr_node->nlt++;
 			if (xml->len < MIN_LEN)
 				return data;
+			xml->curr_node->nlt++;
 			xml->len--;
 			*xml->ptr++ = ch;
 		} else if (ch != '>') {
@@ -285,9 +288,10 @@ static const char *xml_parse_meta_text(ACL_XML2 *xml, const char *data)
 		} else if (xml->curr_node->nlt == 0) {
 			char *last;
 
-			data++;
 			if (xml->len < MIN_LEN)
 				return data;
+
+			data++;
 			xml->len--;
 			*xml->ptr++ = 0;
 			xml->curr_node->text_size = xml->ptr -
@@ -313,9 +317,9 @@ static const char *xml_parse_meta_text(ACL_XML2 *xml, const char *data)
 			xml_meta_attr(xml->curr_node);
 			break;
 		} else {
-			xml->curr_node->nlt--;
 			if (xml->len < MIN_LEN)
 				return data;
+			xml->curr_node->nlt--;
 			xml->len--;
 			*xml->ptr++ = ch;
 		}
@@ -341,23 +345,27 @@ static const char *xml_parse_meta_comment(ACL_XML2 *xml, const char *data)
 
 	while ((ch = *data) != 0) {
 		if (xml->curr_node->quote) {
-			if (ch == xml->curr_node->quote)
-				xml->curr_node->quote = 0;
-			else if (xml->len < MIN_LEN)
-				return data;
-			xml->len--;
-			*xml->ptr++ = ch;
-		} else if (IS_QUOTE(ch)) {
-			if (xml->curr_node->quote == 0)
-				xml->curr_node->quote = ch;
-			else if (xml->len < MIN_LEN)
-				return data;
-			xml->len--;
-			*xml->ptr++ = ch;
-		} else if (ch == '<') {
-			xml->curr_node->nlt++;
 			if (xml->len < MIN_LEN)
 				return data;
+			if (ch == xml->curr_node->quote)
+				xml->curr_node->quote = 0;
+			else {
+				xml->len--;
+				*xml->ptr++ = ch;
+			}
+		} else if (IS_QUOTE(ch)) {
+			if (xml->len < MIN_LEN)
+				return data;
+			if (xml->curr_node->quote == 0)
+				xml->curr_node->quote = ch;
+			else {
+				xml->len--;
+				*xml->ptr++ = ch;
+			}
+		} else if (ch == '<') {
+			if (xml->len < MIN_LEN)
+				return data;
+			xml->curr_node->nlt++;
 			xml->len--;
 			*xml->ptr++ = ch;
 		} else if (ch == '>') {
@@ -365,9 +373,10 @@ static const char *xml_parse_meta_comment(ACL_XML2 *xml, const char *data)
 				&& xml->curr_node->meta[0] == '-'
 				&& xml->curr_node->meta[1] == '-')
 			{
-				data++;
 				if (xml->len < MIN_LEN)
 					return data;
+
+				data++;
 				xml->len--;
 				*xml->ptr++ = 0;
 				xml->curr_node->text_size = xml->ptr -
@@ -375,6 +384,7 @@ static const char *xml_parse_meta_comment(ACL_XML2 *xml, const char *data)
 				xml->curr_node->status = ACL_XML2_S_MEND;
 				break;
 			}
+
 			xml->curr_node->nlt--;
 
 			if (xml->len < MIN_LEN)
@@ -440,12 +450,10 @@ static const char *xml_parse_left_tag(ACL_XML2 *xml, const char *data)
 		xml->curr_node->ltag = xml->ptr;
 
 	while ((ch = *data) != 0) {
-
-		data++;
-
 		if (ch == '>') {
 			if (xml->len < MIN_LEN)
 				return data;
+			data++;
 			xml->len--;
 			*xml->ptr++ = 0;
 			xml->curr_node->ltag_size = xml->ptr -
@@ -467,6 +475,7 @@ static const char *xml_parse_left_tag(ACL_XML2 *xml, const char *data)
 		} else if (IS_SPACE(ch)) {
 			if (xml->len < MIN_LEN)
 				return data;
+			data++;
 			xml->len--;
 			*xml->ptr++ = 0;
 			xml->curr_node->ltag_size = xml->ptr -
@@ -477,6 +486,7 @@ static const char *xml_parse_left_tag(ACL_XML2 *xml, const char *data)
 		} else {
 			if (xml->len < MIN_LEN)
 				return data;
+			data++;
 			xml->len--;
 			*xml->ptr++ = ch;
 			xml->curr_node->last_ch = ch;
@@ -510,9 +520,9 @@ static const char *xml_parse_attr(ACL_XML2 *xml, const char *data)
 			xml->curr_node->status = ACL_XML2_S_LGT;
 
 		xml->curr_node->curr_attr = NULL;
-		data++;
 		if (xml->len < MIN_LEN)
 			return data;
+		data++;
 		xml->len--;
 		*xml->ptr++ = 0;
 
@@ -523,7 +533,7 @@ static const char *xml_parse_attr(ACL_XML2 *xml, const char *data)
 	if (*data == '/') {
 		data++;
 
-		/* 此处返回后会触发本次函数再次被调用，当下一个字节为 '>' 时，
+		/* 此处返回后会触发本函数再次被调用，当下一个字节为 '>' 时，
 		 * 上面通过调用 xml_parse_check_self_closed 检查是否为自封闭
 		 * 标签: "/>"
 		 */
@@ -539,20 +549,22 @@ static const char *xml_parse_attr(ACL_XML2 *xml, const char *data)
 	while ((ch = *data) != 0) {
 		xml->curr_node->last_ch = ch;
 		if (ch == '=') {
-			data++;
 			if (xml->len < MIN_LEN)
 				return data;
+			data++;
 			xml->len--;
 			*xml->ptr++ = 0;
 			attr->name_size = xml->ptr - attr->name;
 			xml->curr_node->status = ACL_XML2_S_AVAL;
 			break;
 		}
-		if (!IS_SPACE(ch))
+		if (!IS_SPACE(ch)) {
 			if (xml->len < MIN_LEN)
 				return data;
 			xml->len--;
 			*xml->ptr++ = ch;
+		}
+
 		data++;
 	}
 
@@ -579,9 +591,9 @@ static const char *xml_parse_attr_val(ACL_XML2 *xml, const char *data)
 	while ((ch = *data) != 0) {
 		if (attr->quote) {
 			if (ch == attr->quote) {
-				data++;
 				if (xml->len < MIN_LEN)
 					return data;
+				data++;
 				xml->len--;
 				*xml->ptr++ = 0;
 				attr->value_size = xml->ptr - attr->value;
@@ -596,9 +608,9 @@ static const char *xml_parse_attr_val(ACL_XML2 *xml, const char *data)
 			*xml->ptr++ = ch;
 			xml->curr_node->last_ch = ch;
 		} else if (ch == '>') {
-			data++;
 			if (xml->len < MIN_LEN)
 				return data;
+			data++;
 			xml->len--;
 			*xml->ptr++ = 0;
 			attr->value_size = xml->ptr - attr->value;
@@ -615,9 +627,9 @@ static const char *xml_parse_attr_val(ACL_XML2 *xml, const char *data)
 				xml->curr_node->status = ACL_XML2_S_LGT;
 			break;
 		} else if (IS_SPACE(ch)) {
-			data++;
 			if (xml->len < MIN_LEN)
 				return data;
+			data++;
 			xml->len--;
 			*xml->ptr++ = 0;
 			attr->value_size = xml->ptr - attr->value;
@@ -647,9 +659,7 @@ static const char *xml_parse_attr_val(ACL_XML2 *xml, const char *data)
 		*/
 
 		/* 将该标签ID号映射至哈希表中，以便于快速查询 */
-		/* if (IS_ID(STR(attr->name)) && LEN(attr->value) > 0) { */
 		if (IS_ID(attr->name) && *attr->value != 0) {
-			/* const char *ptr = STR(attr->value); */
 			const char *ptr = attr->value;
 
 			/* 防止重复ID被插入现象 */
@@ -688,29 +698,15 @@ static const char *xml_parse_text(ACL_XML2 *xml, const char *data)
 	if (*data == 0)
 		return data;
 
-	if (*data == '<') {
-		data++;
-		if (xml->curr_node->text > xml->addr) {
-			if (xml->len < MIN_LEN)
-				return data;
-			xml->len--;
-			*xml->ptr++ = 0;
-			xml->curr_node->text_size = xml->ptr
-				- xml->curr_node->text;
-			/* 此处可对文本内容进行 xml 解码 */
-		}
-		xml->curr_node->status = ACL_XML2_S_RLT;
-		return data;
-	}
-
 	if (xml->curr_node->text == xml->addr)
 		xml->curr_node->text = xml->ptr;
 
 	while ((ch = *data) != 0) {
 		if (ch == '<') {
-			data++;
 			if (xml->len < MIN_LEN)
 				return data;
+
+			data++;
 			xml->len--;
 			*xml->ptr++ = 0;
 			xml->curr_node->text_size = xml->ptr
@@ -722,9 +718,10 @@ static const char *xml_parse_text(ACL_XML2 *xml, const char *data)
 
 		if (xml->len < MIN_LEN)
 			return data;
+
+		data++;
 		xml->len--;
 		*xml->ptr++ = ch;
-		data++;
 	}
 
 	return data;
@@ -758,7 +755,7 @@ static const char *xml_parse_right_lt(ACL_XML2 *xml, const char *data)
 
 	/* 说明遇到了当前节点的子节点 */
 
-	/* 重新设置当前节点状态，以便于其可以找到 "</" */
+	/* 重新设置当前节点状态，以便于其被子节点弹出时可以找到 "</" */
 	xml->curr_node->status = ACL_XML2_S_TXT;
 
 	/* 创建新的子节点，并将其加入至当前节点的子节点集合中 */
@@ -808,18 +805,6 @@ static int search_match_node(ACL_XML2 *xml)
 		acl_array_append(nodes, xml->curr_node);
 
 	while (parent != xml->root) {
-		/*
-		if (acl_strcasecmp(STR(xml->curr_node->rtag),
-			STR(parent->ltag)) == 0)
-			acl_vstring_strcpy(parent->rtag,
-				STR(xml->curr_node->rtag));
-			ACL_VSTRING_RESET(xml->curr_node->rtag);
-			ACL_VSTRING_TERMINATE(xml->curr_node->rtag);
-			parent->status = ACL_XML2_S_RGT;
-			xml->curr_node = parent;
-			break;
-		}
-		*/
 		if (acl_strcasecmp(xml->curr_node->rtag, parent->ltag) == 0) {
 			parent->rtag = xml->ptr;
 			string_copy(xml->ptr, xml->curr_node->rtag);
@@ -870,9 +855,9 @@ static const char *xml_parse_right_tag(ACL_XML2 *xml, const char *data)
 
 	while ((ch = *data) != 0) {
 		if (ch == '>') {
-			data++;
 			if (xml->len < MIN_LEN)
 				return data;
+			data++;
 			xml->len--;
 			*xml->ptr++ = 0;
 			curr_node->rtag_size = xml->ptr - curr_node->rtag;
