@@ -134,6 +134,7 @@ static char *mmap_addr(size_t len)
 {
 	const char *filepath = "./local.map";
 	int fd = open(filepath, O_RDWR | O_CREAT, 0600);
+	size_t mapped_size = len;
 	char *ptr;
 
 	if (fd == -1)
@@ -142,7 +143,8 @@ static char *mmap_addr(size_t len)
 		exit (1);
 	}
 
-	ptr = (char*) mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	ptr = (char*) mmap(NULL, mapped_size, PROT_READ | PROT_WRITE,
+		MAP_SHARED, fd, 0);
 	if (ptr == NULL) {
 		printf("mmap %s error %s\r\n", filepath, acl_last_serror());
 		exit (1);
@@ -153,6 +155,11 @@ static char *mmap_addr(size_t len)
 	close(fd);
 
 	return ptr;
+}
+
+static void ummap_addr(char *addr, int len)
+{
+	munmap(addr, len);
 }
 
 static void parse_xml_benchmark(int once, int max, const char *data)
@@ -249,6 +256,8 @@ static int parse_xml_file(const char *filepath)
 	else
 		printf("Xml is not complete, filepath: %s\r\n", filepath);
 	acl_xml2_free(xml);
+
+	ummap_addr(addr, len);
 
 	printf("Enter any key to continue ...\r\n");
 	getchar();
