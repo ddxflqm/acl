@@ -309,6 +309,53 @@ static ACL_XML_NODE *test_getElementById(ACL_XML *xml, const char *id)
 	return node;
 }
 
+static void parse_xml_benchmark(int once, int max, const char *data)
+{
+	int   i;
+	ACL_XML *xml = acl_xml_alloc();
+
+	acl_xml_slash(xml, 1);
+	acl_xml_multi_root(xml, 1);
+
+	ACL_METER_TIME("-------------bat begin--------------");
+	for (i = 0; i < max; i++) {
+		const char *ptr = data;
+
+		if (once) {
+			acl_xml_parse(xml, ptr);
+		} else {
+			/* 每次仅输入一个字节来分析 xml 数据 */
+			while (*ptr != 0) {
+				char  ch2[2];
+
+				ch2[0] = *ptr;
+				ch2[1] = 0;
+				acl_xml_parse(xml, ch2);
+				ptr++;
+			}
+		}
+		/*
+		if (i < 2 || i == 4) {
+			printf("--------- dump xml --------------\n");
+			acl_xml_dump(xml, ACL_VSTREAM_OUT);
+			printf("--------- data src --------------\n");
+			printf("%s", data);
+			printf("--------- dump end --------------\n");
+		}
+		*/
+
+		acl_xml_reset(xml);
+	}
+
+	ACL_METER_TIME("-------------bat end--------------");
+	acl_xml_free(xml);
+
+	printf("-----------------benchmark_max: %d----------------\r\n", max);
+
+	printf("Enter any key to continue ...\r\n");
+	getchar();
+}
+
 static ACL_XML *get_xml(int once, const char *data,
 	const char* root, int multi_root)
 {
@@ -470,6 +517,7 @@ static void usage(const char *procname)
 {
 	printf("usage: %s -h[help]\r\n"
 		" -s[parse once]\r\n"
+		" -b benchmark_max\r\n"
 		" -m[if enable  multiple root xml node, default: no]\r\n"
 		" -p[print] data1|data2|data3|data4|data5|data6|data7\r\n"
 		" -d[parse] data1|data2|data3|data4|data5|data6|data7\r\n",
@@ -482,7 +530,7 @@ static void usage(const char *procname)
 
 int main(int argc, char *argv[])
 {
-	int   ch, once = 0, multi_root = 0;
+	int   ch, once = 0, multi_root = 0, benchmark_max = 10000;
 	const char *data = __data1;
 	const char* root = "root";
 
@@ -494,13 +542,16 @@ int main(int argc, char *argv[])
 		getchar();
 	}
 
-	while ((ch = getopt(argc, argv, "hsp:d:m")) > 0) {
+	while ((ch = getopt(argc, argv, "hsp:d:mb:")) > 0) {
 		switch (ch) {
 		case 'h':
 			usage(argv[0]);
 			return (0);
 		case 'm':
 			multi_root = 1;
+			break;
+		case 'b':
+			benchmark_max = atoi(optarg);
 			break;
 		case 's':
 			once = 1;
@@ -546,6 +597,9 @@ int main(int argc, char *argv[])
 			break;
 		}
 	}
+
+	if (benchmark_max > 0)
+		parse_xml_benchmark(once, benchmark_max, data);
 
 	parse_xml(once, data, root, multi_root);
 
