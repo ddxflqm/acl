@@ -458,6 +458,45 @@ static void parse_xml(int once, const char *data,
 	left = acl_xml_free(xml);
 
 	printf("Free all node ok, total(%d), left is: %d\n", total, left);
+	printf("Enter any key to continue ...\r\n");
+	getchar();
+}
+
+static int parse_xml_file(const char *filepath)
+{
+	int   n;
+	char  buf[10240];
+	ACL_VSTREAM *fp = acl_vstream_fopen(filepath, O_RDONLY, 0600, 8192);
+	ACL_XML *xml = acl_xml_alloc();
+
+	if (fp == NULL) {
+		printf("open %s error %s\r\n", filepath, acl_last_serror());
+		acl_xml_free(xml);
+		return -1;
+	}
+
+	ACL_METER_TIME("-------------begin--------------");
+	while (1) {
+		n = acl_vstream_read(fp, buf, sizeof(buf) - 1);
+		if (n == ACL_VSTREAM_EOF)
+			break;
+		buf[n] = 0;
+		acl_xml_update(xml, buf);
+	}
+	ACL_METER_TIME("-------------end--------------");
+
+	acl_vstream_close(fp);
+
+	if (acl_xml_is_complete(xml, "root"))
+		printf("Xml is complete OK, filepath: %s\r\n", filepath);
+	else
+		printf("Xml is not complete, filepath: %s\r\n", filepath);
+	acl_xml_free(xml);
+
+	printf("Enter any key to continue ...\r\n");
+	getchar();
+
+	return 0;
 }
 
 static void test1(void)
@@ -518,6 +557,7 @@ static void usage(const char *procname)
 	printf("usage: %s -h[help]\r\n"
 		" -s[parse once]\r\n"
 		" -b benchmark_max\r\n"
+		" -f xml_file\r\n"
 		" -m[if enable  multiple root xml node, default: no]\r\n"
 		" -p[print] data1|data2|data3|data4|data5|data6|data7\r\n"
 		" -d[parse] data1|data2|data3|data4|data5|data6|data7\r\n",
@@ -533,6 +573,9 @@ int main(int argc, char *argv[])
 	int   ch, once = 0, multi_root = 0, benchmark_max = 10000;
 	const char *data = __data1;
 	const char* root = "root";
+	char  filepath[256];
+
+	filepath[0] = 0;
 
 	if (0)
 	{
@@ -542,7 +585,7 @@ int main(int argc, char *argv[])
 		getchar();
 	}
 
-	while ((ch = getopt(argc, argv, "hsp:d:mb:")) > 0) {
+	while ((ch = getopt(argc, argv, "hsp:d:mb:f:")) > 0) {
 		switch (ch) {
 		case 'h':
 			usage(argv[0]);
@@ -593,6 +636,10 @@ int main(int argc, char *argv[])
 			else if (strcasecmp(optarg, "data7") == 0)
 				printf("%s\n", __data7);
 			return (0);
+
+		case 'f':
+			snprintf(filepath, sizeof(filepath), "%s", optarg);
+			break;
 		default:
 			break;
 		}
@@ -602,6 +649,9 @@ int main(int argc, char *argv[])
 		parse_xml_benchmark(once, benchmark_max, data);
 
 	parse_xml(once, data, root, multi_root);
+
+	if (filepath[0] != 0)
+		parse_xml_file(filepath);
 
 #ifdef	ACL_MS_WINDOWS
 	printf("ok, enter any key to exit ...\n");
