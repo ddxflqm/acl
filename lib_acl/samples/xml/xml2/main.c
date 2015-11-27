@@ -575,6 +575,8 @@ int main(int argc, char *argv[])
 	const char* root = "root";
 	char  filepath[256];
 
+	acl_msg_stdout_enable(1);
+
 	filepath[0] = 0;
 
 	if (0)
@@ -648,6 +650,7 @@ int main(int argc, char *argv[])
 	if (benchmark_max > 0)
 		parse_xml_benchmark(once, benchmark_max, data);
 
+	if (0)
 	parse_xml(once, data, root, multi_root);
 
 	if (filepath[0] != 0)
