@@ -318,8 +318,8 @@ static void xml_node_attrs(ACL_XML2_NODE* node, int n)
 			printf("\t");
 
 		printf("attr->%s(%ld)=\"%s(%ld)\"\n",
-			attr->name, attr->name_size,
-			attr->value, attr->value_size);
+			attr->name, (long) attr->name_size,
+			attr->value, (long) attr->value_size);
 	}
 }
 
