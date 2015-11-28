@@ -1,5 +1,5 @@
-#ifndef ACL_XML22_INCLUDE_H
-#define ACL_XML22_INCLUDE_H
+#ifndef ACL_XML2_INCLUDE_H
+#define ACL_XML2_INCLUDE_H
 
 #ifdef __cplusplus
 extern "C" {
