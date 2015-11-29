@@ -176,10 +176,10 @@ ACL_API ACL_XML2 *acl_xml2_alloc(char *addr, size_t size);
 
 /**
  * 创建一个 xml 对象，该 xml 对象及所有的内部内存分配都在该内存池上进行分配
- * @param dbuf {ACL_DBUF_POOL*} 内存池对象，当该针对非 NULL 时，则 xml 对象
- *  及所属节点内存在其基础上进行分配，否则，内部自动创建隶属于 xml 的内存池
  * @param addr {char*} 内存映射起始地址
  * @param size {ssize_t} addr 内存映射地址大小
+ * @param dbuf {ACL_DBUF_POOL*} 内存池对象，当该针对非 NULL 时，则 xml 对象
+ *  及所属节点内存在其基础上进行分配，否则，内部自动创建隶属于 xml 的内存池
  * @return {ACL_XML2*} 新创建的 xml 对象
  */
 ACL_API ACL_XML2 *acl_xml2_dbuf_alloc(char *addr, size_t size,
