@@ -127,7 +127,6 @@ struct ACL_XML2 {
 
 	/**< 是否需要对文本数据进行 xml 解码  */
 #define	ACL_XML2_FLAG_XML_DECODE	(1 << 2)
-	ACL_VSTRING *decode_buf;        /**< 当需要进行 xml 解码时非空 */
 
 	/* for acl_iterator, 通过 acl_foreach 可以列出所有子节点 */
 
@@ -466,13 +465,9 @@ ACL_API void acl_xml2_node_set_text(ACL_XML2_NODE *node, const char *text);
 /**
  * 将 xml 对象转成字符串内容
  * @param xml {ACL_XML2*} xml 对象
- * @param buf {ACL_VSTRING*} 存储结果集的缓冲区，当该参数为空时则函数内部会
- *  自动分配一段缓冲区，应用用完后需要释放掉；非空函数内部会直接将结果存储其中
- * @return {ACL_VSTRING*} xml 对象转换成字符串后的存储缓冲区，该返回值永远非空，
- *  使用者可以通过 ACL_VSTRING_LEN(x) 宏来判断内容是否为空，返回的 ACL_VSTRING
- *  指针如果为该函数内部创建的，则用户名必须用 acl_vstring_free 进行释放
+ * @return {const char*}
  */
-ACL_API ACL_VSTRING* acl_xml2_build(ACL_XML2* xml, ACL_VSTRING *buf);
+ACL_API const char *acl_xml2_build(ACL_XML2* xml);
 
 /**
  * 将 xml 对象转储于指定流中，注：该转储信息仅为调试用的数据

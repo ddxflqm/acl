@@ -381,17 +381,10 @@ void acl_xml2_slash(ACL_XML2 *xml, int ignore)
 
 void acl_xml2_decode_enable(ACL_XML2 *xml, int on)
 {
-	if (on) {
-		if (xml->decode_buf == NULL)
-			xml->decode_buf = acl_vstring_alloc(256);
+	if (on)
 		xml->flag |= ACL_XML2_FLAG_XML_DECODE;
-	} else {
-		if (xml->decode_buf != NULL) {
-			acl_vstring_free(xml->decode_buf);
-			xml->decode_buf = NULL;
-		}
+	else
 		xml->flag &= ~ACL_XML2_FLAG_XML_DECODE;
-	}
 }
 
 ACL_XML2 *acl_xml2_alloc(char *addr, size_t size)
@@ -438,9 +431,6 @@ int acl_xml2_free(ACL_XML2 *xml)
 	int  node_cnt = xml->node_cnt;
 
 	acl_htable_free(xml->id_table, NULL);
-
-	if (xml->decode_buf)
-		acl_vstring_free(xml->decode_buf);
 
 	if (xml->dbuf_inner != NULL)
 		acl_dbuf_pool_destroy(xml->dbuf_inner);

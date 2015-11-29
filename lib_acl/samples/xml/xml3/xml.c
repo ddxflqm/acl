@@ -499,6 +499,7 @@ static void parse_xml(int once, const char *data,
 	ACL_XML2 *xml = get_xml(once, data, root, multi_root);
 	ACL_XML2_NODE *node;
 	int total = xml->node_cnt, left;
+	const char *ptr;
 
 	/* 遍历所有 xml 节点 */
 	walk_xml(xml);
@@ -539,10 +540,17 @@ static void parse_xml(int once, const char *data,
 
 	list_xml_tags(xml);
 
+	printf("----------------- build xml -------------------------\r\n");
+	ptr = acl_xml2_build(xml);
+	printf("%s\r\n", ptr);
+	printf("----------------- build xml end ---------------------\r\n");
+
 	/* 释放 xml 对象 */
 	left = acl_xml2_free(xml);
 
 	printf("Free all node ok, total(%d), left is: %d\n", total, left);
+	printf("Enter any key to continue ...\r\n");
+	getchar();
 }
 
 static void test1(void)
@@ -558,8 +566,9 @@ static void test1(void)
 	ACL_XML2 *xml;
 	ACL_XML2_NODE *node;
 	const char *encoding, *type, *href;
-	size_t size = strlen(data) * 2;
+	size_t size = strlen(data) * 3;
 	char *addr = mmap_addr(size);
+	const char *ptr;
 
 	xml = acl_xml2_alloc(addr, size);
 
@@ -597,7 +606,52 @@ static void test1(void)
 	getchar();
 	test_getElementsByTagName(xml, "root");
 
+	printf("----------------- build xml -------------------------\r\n");
+	ptr = acl_xml2_build(xml);
+	printf("%s\r\n", ptr);
+	printf("----------------- build xml end ---------------------\r\n");
 	acl_xml2_free(xml);
+	ummap_addr(addr, size);
+}
+
+static void build_xml(void)
+{
+	size_t size = 1024;
+	char *addr = mmap_addr(size);
+	ACL_XML2 *xml = acl_xml2_alloc(addr, size);
+	ACL_XML2_NODE *node1, *node2, *node3;
+	const char *buf;
+
+	node1 = acl_xml2_create_node(xml, "users", "text1");
+	acl_xml2_node_add_child(xml->root, node1);
+	(void) acl_xml2_node_add_attr(node1, "name", "users list");
+
+	node2 = acl_xml2_create_node(xml, "user", "text11");
+	acl_xml2_node_add_child(node1, node2);
+	acl_xml2_node_add_attrs(node2, "name", "user11", "value", "zsx11", NULL);
+
+	node3 = acl_xml2_create_node(xml, "age", "text111");
+	acl_xml2_node_add_child(node2, node3);
+	acl_xml2_node_add_attrs(node3, "name", "user111", "value", "zsx111", NULL);
+
+	node2 = acl_xml2_create_node(xml, "user", "text2");
+	acl_xml2_node_add_child(node1, node2);
+	acl_xml2_node_add_attrs(node2, "name", "value2", "value", "zsx2", NULL);
+
+	node2 = acl_xml2_create_node(xml, "user", "text3");
+	acl_xml2_node_add_child(node1, node2);
+	acl_xml2_node_add_attrs(node2, "name", "value3", "value", "zsx3", NULL);
+
+	printf("--------------------xml string-------------------\r\n");
+	buf = acl_xml2_build(xml);
+	printf("%s\n", buf);
+	printf("--------------------xml string end---------------\r\n");
+
+	acl_xml2_free(xml);
+	ummap_addr(addr, size);
+
+	printf("Enter any key to continue ...\r\n");
+	getchar();
 }
 
 static void usage(const char *procname)
@@ -605,6 +659,7 @@ static void usage(const char *procname)
 	printf("usage: %s -h[help]\r\n"
 		" -s[parse once]\r\n"
 		" -b benchmark_max\r\n"
+		" -B build_xml\r\n"
 		" -P [if parse one xml]\r\n"
 		" -f xml_file\r\n"
 		" -m[if enable  multiple root xml node, default: no]\r\n"
@@ -620,14 +675,14 @@ static void usage(const char *procname)
 int main(int argc, char *argv[])
 {
 	int   ch, once = 0, multi_root = 0, benchmark_max = 10000;
-	int   parse_one = 0;
+	int   parse_one = 0, build = 0;
 	const char *data = __data1;
 	const char* root = "root";
 	char  filepath[256];
 
 	filepath[0] = 0;
 
-	if (0)
+	if (1)
 	{
 		test1();
 
@@ -635,7 +690,7 @@ int main(int argc, char *argv[])
 		getchar();
 	}
 
-	while ((ch = getopt(argc, argv, "hsp:d:mb:f:P")) > 0) {
+	while ((ch = getopt(argc, argv, "hsp:d:mb:f:PB")) > 0) {
 		switch (ch) {
 		case 'h':
 			usage(argv[0]);
@@ -651,6 +706,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'P':
 			parse_one = 1;
+			break;
+		case 'B':
+			build = 1;
 			break;
 		case 'd':
 			if (strcasecmp(optarg, "data2") == 0) {
@@ -705,6 +763,9 @@ int main(int argc, char *argv[])
 
 	if (filepath[0] != 0)
 		parse_xml_file(filepath);
+
+	if (build)
+		build_xml();
 
 #ifdef	ACL_MS_WINDOWS
 	printf("ok, enter any key to exit ...\n");
