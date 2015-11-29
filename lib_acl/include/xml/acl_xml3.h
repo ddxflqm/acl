@@ -36,7 +36,7 @@ struct ACL_XML3_NODE {
 	char *rtag;                     /**< 右标签名 */
 	size_t ltag_size;               /**< 左标签名长度 */
 	size_t rtag_size;               /**< 右标签名长度 */
-	char *id;                 /**< ID标识符, 只有在 xml->id_table
+	const char *id;                 /**< ID标识符, 只有在 xml->id_table
 					  存在的节点的 id 才非空 */
 	char *text;                     /**< 文本显示内容 */
 	size_t text_size;               /**< 文件数据长度 */
