@@ -13,7 +13,7 @@ static void test()
 	acl::xml_node& server = xml.create_node("server");
 	root.add_child(server);
 
-	acl::xml_node& proc1 = xml.create_node("porc");
+	acl::xml_node& proc1 = xml.create_node("proc");
 	server.add_child(proc1);
 	proc1.add_child("pid", false, "1111");
 	proc1.add_child("conns", false, "111");

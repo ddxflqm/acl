@@ -34,13 +34,13 @@ const char* xml_attr::get_value(void) const
 
 //////////////////////////////////////////////////////////////////////////
 
-xml_node::xml_node(ACL_XML_NODE* node, xml* xml_ptr)
-	: node_(node)
-	, xml_(xml_ptr)
+xml_node::xml_node(xml* xml_ptr)
+	: xml_(xml_ptr)
 	, parent_(NULL)
 	, parent_saved_(NULL)
 	, child_iter_(NULL)
 	, attr_iter_(NULL)
+	, node_(NULL)
 {
 	acl_assert(xml_ptr);
 }
@@ -55,12 +55,40 @@ xml_node::~xml_node(void)
 	clear();
 }
 
+void xml_node::clear()
+{
+	std::vector<xml_node*>::iterator it = nodes_tmp_.begin();
+	for (; it != nodes_tmp_.end(); ++it)
+		delete *it;
+	nodes_tmp_.clear();
+
+	std::vector<xml_attr*>::iterator it2 = attrs_tmp_.begin();
+	for (; it2 != attrs_tmp_.end(); ++it2)
+		delete *it2;
+	attrs_tmp_.clear();
+}
+
+void xml_node::set_xml_node(ACL_XML_NODE* node)
+{
+	node_ = node;
+}
+
+xml& xml_node::get_xml() const
+{
+	return *xml_;
+}
+
+ACL_XML_NODE* xml_node::get_xml_node(void) const
+{
+	return node_;
+}
+
 const char* xml_node::tag_name(void) const
 {
 	if (node_->ltag && ACL_VSTRING_LEN(node_->ltag) > 0)
 		return (acl_vstring_str(node_->ltag));
 	else
-		return (NULL);
+		return "";
 }
 
 const char* xml_node::text(void) const
@@ -68,7 +96,7 @@ const char* xml_node::text(void) const
 	if (node_->text && ACL_VSTRING_LEN(node_->text) > 0)
 		return acl_vstring_str(node_->text);
 	else
-		return NULL;
+		return "";
 }
 
 const char* xml_node::id(void) const
@@ -76,7 +104,7 @@ const char* xml_node::id(void) const
 	if (node_->id && ACL_VSTRING_LEN(node_->id) > 0)
 		return acl_vstring_str(node_->id);
 	else
-		return NULL;
+		return "";
 }
 
 const char* xml_node::attr_value(const char* name) const
@@ -180,8 +208,7 @@ xml_node& xml_node::set_text(acl_int64 number)
 {
 	char buf[32];
 	acl_assert(acl_i64toa(number, buf, sizeof(buf)) != NULL);
-	acl_xml_node_set_text(node_, buf);
-	return *this;
+	return set_text(buf);
 }
 
 xml_node& xml_node::add_child(xml_node* child, bool return_child /* = false */)
@@ -220,9 +247,11 @@ xml_node& xml_node::get_parent() const
 	else if (node_->parent == NULL)  // xxx: can this happen?
 		return xml_->get_root();
 
-	const_cast<xml_node*>(this)->parent_saved_ =
-		NEW xml_node(node_->parent, xml_);
+	xml_node* node = NEW xml_node(xml_);
+	node->set_xml_node(node_->parent);
+	const_cast<xml_node*>(this)->parent_saved_ = node;
 	const_cast<xml_node*>(this)->parent_ = parent_saved_;
+
 	return *parent_saved_;
 }
 
@@ -235,7 +264,8 @@ xml_node* xml_node::first_child(void)
 	if (node == NULL)
 		return NULL;
 
-	xml_node* n = NEW xml_node(node, xml_);
+	xml_node* n = NEW xml_node(xml_);
+	n->set_xml_node(node);
 	nodes_tmp_.push_back(n);
 	return n;
 }
@@ -248,8 +278,10 @@ xml_node* xml_node::next_child(void)
 	if (node == NULL)
 		return NULL;
 
-	xml_node* n = NEW xml_node(node, xml_);
+	xml_node* n = NEW xml_node(xml_);
+	n->set_xml_node(node);
 	nodes_tmp_.push_back(n);
+
 	return n;
 }
 
@@ -263,64 +295,56 @@ int   xml_node::children_count(void) const
 	return acl_ring_size(&node_->children);
 }
 
-xml& xml_node::get_xml() const
-{
-	return *xml_;
-}
-
-ACL_XML_NODE* xml_node::get_xml_node() const
-{
-	return node_;
-}
-
-void xml_node::set_xml_node(ACL_XML_NODE* node)
-{
-	node_ = node;
-}
-
-void xml_node::clear()
-{
-	std::vector<xml_node*>::iterator it = nodes_tmp_.begin();
-	for (; it != nodes_tmp_.end(); ++it)
-		delete *it;
-	nodes_tmp_.clear();
-
-	std::vector<xml_attr*>::iterator it2 = attrs_tmp_.begin();
-	for (; it2 != attrs_tmp_.end(); ++it2)
-		delete *it2;
-	attrs_tmp_.clear();
-}
-
 //////////////////////////////////////////////////////////////////////
 
-xml::xml(const char* data /* = NULL */)
+xml::xml(const char* data /* = NULL */, bool subclass /* = false */)
 {
-	root_ = NULL;
-	xml_ = acl_xml_alloc();
-	buf_ = NULL;
 	//dummyRootAdded_ = false;
+	root_ = NULL;
+	buf_ = NULL;
 	m_pTokenTree = NULL;
 	iter_ = NULL;
+
+	if (subclass)
+		xml_ = NULL;
+	else
+		xml_ = acl_xml_alloc();
 	if (data && *data)
+	{
+		if (xml_ == NULL)
+			logger_fatal("not subclass and data not null!");
 		update(data);
+	}
 }
 
 xml::~xml(void)
 {
 	clear();
 	delete root_;
-	if (xml_)
-		acl_xml_free(xml_);
 	delete buf_;
 	if (m_pTokenTree)
 		acl_token_tree_destroy(m_pTokenTree);
 	if (iter_)
 		acl_myfree(iter_);
+
+	if (xml_)
+		acl_xml_free(xml_);
 }
 
-xml& xml::part_word(bool)
+void xml::clear(void)
 {
-	return *this;
+	if (buf_)
+		buf_->clear();
+
+	std::vector<acl::xml_node*>::iterator it = elements_.begin();
+	for (; it != elements_.end(); ++it)
+		delete (*it);
+	elements_.clear();
+
+	std::list<xml_node*>::iterator it1 = nodes_tmp_.begin();
+	for (; it1 != nodes_tmp_.end(); ++it1)
+		delete (*it1);
+	nodes_tmp_.clear();
 }
 
 xml& xml::ignore_slash(bool on)
@@ -352,7 +376,8 @@ const std::vector<xml_node*>& xml::getElementsByTagName(const char* tag) const
 	acl_foreach(iter, a)
 	{
 		ACL_XML_NODE *tmp = (ACL_XML_NODE*) iter.data;
-		xml_node* node = NEW xml_node(tmp, const_cast<xml*>(this));
+		xml_node* node = NEW xml_node(const_cast<xml*>(this));
+		node->set_xml_node(tmp);
 		const_cast<xml*>(this)->elements_.push_back(node);
 	}
 	acl_xml_free_array(a);
@@ -363,7 +388,8 @@ const std::vector<xml_node*>& xml::getElementsByTagName(const char* tag) const
 const xml_node* xml::getFirstElementByTag(const char* tag) const
 {
 	ACL_XML_NODE* node = acl_xml_getFirstElementByTagName(xml_, tag);
-	xml_node* n = NEW xml_node(node, const_cast<xml*>(this));
+	xml_node* n = NEW xml_node(const_cast<xml*>(this));
+	n->set_xml_node(node);
 	const_cast<xml*>(this)->nodes_tmp_.push_back(n);
 	return n;
 }
@@ -380,7 +406,8 @@ const std::vector<xml_node*>& xml::getElementsByTags(const char* tags) const
 	acl_foreach(iter, a)
 	{
 		ACL_XML_NODE *tmp = (ACL_XML_NODE*) iter.data;
-		xml_node* node = NEW xml_node(tmp, const_cast<xml*>(this));
+		xml_node* node = NEW xml_node(const_cast<xml*>(this));
+		node->set_xml_node(tmp);
 		const_cast<xml*>(this)->elements_.push_back(node);
 	}
 	acl_xml_free_array(a);
@@ -397,7 +424,8 @@ const xml_node* xml::getFirstElementByTags(const char* tags) const
 	ACL_XML_NODE* node = (ACL_XML_NODE*) acl_array_index(a, 0);
 	acl_assert(node);
 
-	xml_node* n = NEW xml_node(node, const_cast<xml*>(this));
+	xml_node* n = NEW xml_node(const_cast<xml*>(this));
+	n->set_xml_node(node);
 	const_cast<xml*>(this)->nodes_tmp_.push_back(n);
 
 	acl_xml_free_array(a);
@@ -415,7 +443,8 @@ const std::vector<xml_node*>& xml::getElementsByName(const char* value) const
 	acl_foreach(iter, a)
 	{
 		ACL_XML_NODE *tmp = (ACL_XML_NODE*) iter.data;
-		xml_node* node = NEW xml_node(tmp, const_cast<xml*>(this));
+		xml_node* node = NEW xml_node(const_cast<xml*>(this));
+		node->set_xml_node(tmp);
 		const_cast<xml*>(this)->elements_.push_back(node);
 	}
 	acl_xml_free_array(a);
@@ -435,7 +464,8 @@ const std::vector<xml_node*>& xml::getElementsByAttr(
 	acl_foreach(iter, a)
 	{
 		ACL_XML_NODE *tmp = (ACL_XML_NODE*) iter.data;
-		xml_node* node = NEW xml_node(tmp, const_cast<xml*>(this));
+		xml_node* node = NEW xml_node(const_cast<xml*>(this));
+		node->set_xml_node(tmp);
 		const_cast<xml*>(this)->elements_.push_back(node);
 	}
 	acl_xml_free_array(a);
@@ -449,14 +479,10 @@ const xml_node* xml::getElementById(const char* id) const
 	if (node == NULL)
 		return (NULL);
 
-	xml_node* n = NEW xml_node(node, const_cast<xml*>(this));
+	xml_node* n = NEW xml_node(const_cast<xml*>(this));
+	n->set_xml_node(node);
 	const_cast<xml*>(this)->nodes_tmp_.push_back(n);
 	return n;
-}
-
-ACL_XML* xml::get_xml(void) const
-{
-	return xml_;
 }
 
 const acl::string& xml::getText()
@@ -552,7 +578,8 @@ const acl::string& xml::getText()
 xml_node& xml::create_node(const char* tag, const char* text /* = NULL */)
 {
 	ACL_XML_NODE* node = acl_xml_create_node(xml_, tag, text);
-	xml_node* n = NEW xml_node(node, this);
+	xml_node* n = NEW xml_node(this);
+	n->set_xml_node(node);
 	nodes_tmp_.push_back(n);
 	return *n;
 }
@@ -562,17 +589,15 @@ xml_node& xml::create_node(const char* tag, acl_int64 number)
 	char buf[32];
 	acl_assert(acl_i64toa(number, buf, sizeof(buf)) != NULL);
 
-	ACL_XML_NODE* node = acl_xml_create_node(xml_, tag, buf);
-	xml_node* n = NEW xml_node(node, this);
-	nodes_tmp_.push_back(n);
-	return *n;
+	return create_node(tag, buf);
 }
 
 xml_node& xml::get_root(void)
 {
 	if (root_)
 		return *root_;
-	root_ = NEW xml_node(xml_->root, this);
+	root_ = NEW xml_node(this);
+	root_->set_xml_node(xml_->root);
 	return *root_;
 }
 
@@ -585,7 +610,8 @@ xml_node* xml::first_node(void)
 	if (node == NULL)
 		return NULL;
 
-	xml_node* n = NEW xml_node(node, this);
+	xml_node* n = NEW xml_node(this);
+	n->set_xml_node(node);
 	nodes_tmp_.push_back(n);
 	return n;
 }
@@ -598,7 +624,8 @@ xml_node* xml::next_node(void)
 	if (node == NULL)
 		return NULL;
 
-	xml_node* n = NEW xml_node(node, this);
+	xml_node* n = NEW xml_node(this);
+	n->set_xml_node(node);
 	nodes_tmp_.push_back(n);
 	return n;
 }
@@ -645,22 +672,6 @@ int xml::pop_end(string* out acl_unused, size_t max /* = 0 */ acl_unused)
 	//	dummyRootAdded_ = false;
 	//}
 	return 0;
-}
-
-void xml::clear(void)
-{
-	if (buf_)
-		buf_->clear();
-
-	std::vector<acl::xml_node*>::iterator it = elements_.begin();
-	for (; it != elements_.end(); ++it)
-		delete (*it);
-	elements_.clear();
-
-	std::list<xml_node*>::iterator it1 = nodes_tmp_.begin();
-	for (; it1 != nodes_tmp_.end(); ++it1)
-		delete (*it1);
-	nodes_tmp_.clear();
 }
 
 } // namespace acl
