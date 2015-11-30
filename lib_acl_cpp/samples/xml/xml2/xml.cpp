@@ -8,7 +8,7 @@ using namespace std;
 static void test()
 {
 	acl::string buf;
-	acl::xml xml;
+	acl::xml1 xml;
 	acl::xml_node& root = xml.get_root();
 	acl::xml_node& server = xml.create_node("server");
 	root.add_child(server);
@@ -45,7 +45,7 @@ static void print_attrs(acl::xml_node& node)
 
 static void test2()
 {
-	acl::xml xml;
+	acl::xml1 xml;
 	acl::xml_node& root = xml.get_root();
 	root.add_child("users", true)
 		.add_child("user", true)
