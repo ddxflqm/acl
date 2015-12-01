@@ -397,6 +397,29 @@ xml_node* xml2::next_node(void)
 	return n;
 }
 
+void xml2::build_xml(string& out) const
+{
+	size_t len;
+	const char* dat = to_string(&len);
+	if (*dat && len > 0)
+		out.copy(dat, len);
+}
+
+const char* xml2::to_string(size_t* len) const
+{
+	const char* dat = acl_xml2_build(xml_);
+	if (dat <= xml_->addr)
+	{
+		if (len)
+			*len = 0;
+		return "";
+	}
+
+	if (len)
+		*len = xml_->ptr - dat;
+	return dat;
+}
+
 void xml2::reset(void)
 {
 	clear();

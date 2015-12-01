@@ -348,6 +348,11 @@ public:
 	 */
 	void build_xml(string& out) const;
 
+	/**
+	 * @override
+	 */
+	const char* to_string(size_t* len) const;
+
 public:
 	/**
 	 * 取得 acl 库中的 ACL_XML 对象

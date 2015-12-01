@@ -139,9 +139,9 @@ static const char *xml_parse_meta_tag(ACL_XML2 *xml, const char *data)
 				return data;
 			data++;
 			xml->len--;
-			*xml->ptr++ = 0;
 			xml->curr_node->ltag_size =
 				xml->ptr - xml->curr_node->ltag;
+			*xml->ptr++ = 0;
 			xml->curr_node->status = ACL_XML2_S_MTXT;
 			break;
 		}
@@ -171,14 +171,14 @@ static char *xml_meta_attr_name(ACL_XML2_ATTR *attr, char *data)
 
 	while ((ch = *data) != 0) {
 		if (ch == '=') {
-			*data++ = 0;
 			if (attr->name_size == 0)
 				attr->name_size = data - attr->name;
+			*data++ = 0;
 			break;
 		}
 		if (IS_SPACE(ch)) {
-			*data++ = 0;
 			attr->name_size = data - attr->name;
+			*data++ = 0;
 		} else
 			data++;
 	}
@@ -203,12 +203,12 @@ static char *xml_meta_attr_value(ACL_XML2_ATTR *attr, char *data)
 
 	while ((ch = *data) != 0) {
 		if (attr->quote && ch == attr->quote) {
-			*data++ = 0;
 			attr->value_size = data - attr->value;
+			*data++ = 0;
 			break;
 		} else if (IS_SPACE(ch)) {
-			*data++ = 0;
 			attr->value_size = data - attr->value;
+			*data++ = 0;
 			break;
 		}
 
@@ -222,7 +222,7 @@ static char *xml_meta_attr_value(ACL_XML2_ATTR *attr, char *data)
 
 		attr->value = xml->ptr;
 		(void) acl_xml_decode2(ptr, &xml->ptr, &xml->len);
-		attr->value_size = xml->ptr - attr->value;
+		attr->value_size = xml->ptr - attr->value - 1;
 	}
 
 	return data;
@@ -304,9 +304,9 @@ static const char *xml_parse_meta_text(ACL_XML2 *xml, const char *data)
 
 			data++;
 			xml->len--;
-			*xml->ptr++ = 0;
 			xml->curr_node->text_size = xml->ptr -
 				xml->curr_node->text;
+			*xml->ptr++ = 0;
 			xml->curr_node->status = ACL_XML2_S_MEND;
 
 			if ((xml->curr_node->flag & ACL_XML2_F_META_QM) == 0)
@@ -346,7 +346,8 @@ static const char *xml_parse_meta_text(ACL_XML2 *xml, const char *data)
 
 		xml->curr_node->text = xml->ptr;
 		(void) acl_xml_decode2(txt, &xml->ptr, &xml->len);
-		xml->curr_node->text_size = xml->ptr - xml->curr_node->text;
+		xml->curr_node->text_size = xml->ptr
+			- xml->curr_node->text - 1;
 	}
 
 	return data;
@@ -400,9 +401,9 @@ static const char *xml_parse_meta_comment(ACL_XML2 *xml, const char *data)
 
 				data++;
 				xml->len--;
-				*xml->ptr++ = 0;
 				xml->curr_node->text_size = xml->ptr -
 					xml->curr_node->text;
+				*xml->ptr++ = 0;
 				xml->curr_node->status = ACL_XML2_S_MEND;
 				break;
 			}
@@ -457,7 +458,8 @@ static const char *xml_parse_meta_comment(ACL_XML2 *xml, const char *data)
 
 		xml->curr_node->text = xml->ptr;
 		(void) acl_xml_decode2(txt, &xml->ptr, &xml->len);
-		xml->curr_node->text_size = xml->ptr - xml->curr_node->text;
+		xml->curr_node->text_size = xml->ptr
+			- xml->curr_node->text - 1;
 	}
 
 	return data;
@@ -489,9 +491,9 @@ static const char *xml_parse_left_tag(ACL_XML2 *xml, const char *data)
 				return data;
 			data++;
 			xml->len--;
-			*xml->ptr++ = 0;
 			xml->curr_node->ltag_size = xml->ptr -
 				xml->curr_node->ltag;
+			*xml->ptr++ = 0;
 
 			xml_parse_check_self_closed(xml);
 
@@ -511,9 +513,9 @@ static const char *xml_parse_left_tag(ACL_XML2 *xml, const char *data)
 				return data;
 			data++;
 			xml->len--;
-			*xml->ptr++ = 0;
 			xml->curr_node->ltag_size = xml->ptr -
 				xml->curr_node->ltag;
+			*xml->ptr++ = 0;
 			xml->curr_node->status = ACL_XML2_S_ATTR;
 			xml->curr_node->last_ch = ch;
 			break;
@@ -587,8 +589,8 @@ static const char *xml_parse_attr(ACL_XML2 *xml, const char *data)
 				return data;
 			data++;
 			xml->len--;
-			*xml->ptr++ = 0;
 			attr->name_size = xml->ptr - attr->name;
+			*xml->ptr++ = 0;
 			xml->curr_node->status = ACL_XML2_S_AVAL;
 			break;
 		}
@@ -629,8 +631,8 @@ static const char *xml_parse_attr_val(ACL_XML2 *xml, const char *data)
 					return data;
 				data++;
 				xml->len--;
-				*xml->ptr++ = 0;
 				attr->value_size = xml->ptr - attr->value;
+				*xml->ptr++ = 0;
 				xml->curr_node->status = ACL_XML2_S_ATTR;
 				xml->curr_node->last_ch = ch;
 				break;
@@ -646,8 +648,8 @@ static const char *xml_parse_attr_val(ACL_XML2 *xml, const char *data)
 				return data;
 			data++;
 			xml->len--;
-			*xml->ptr++ = 0;
 			attr->value_size = xml->ptr - attr->value;
+			*xml->ptr++ = 0;
 
 			xml_parse_check_self_closed(xml);
 
@@ -665,8 +667,8 @@ static const char *xml_parse_attr_val(ACL_XML2 *xml, const char *data)
 				return data;
 			data++;
 			xml->len--;
-			*xml->ptr++ = 0;
 			attr->value_size = xml->ptr - attr->value;
+			*xml->ptr++ = 0;
 			xml->curr_node->status = ACL_XML2_S_ATTR;
 			xml->curr_node->last_ch = ch;
 			break;
@@ -694,7 +696,7 @@ static const char *xml_parse_attr_val(ACL_XML2 *xml, const char *data)
 
 		attr->value = xml->ptr;
 		(void) acl_xml_decode2(val, &xml->ptr, &xml->len);
-		attr->value_size = xml->ptr - attr->value;
+		attr->value_size = xml->ptr - attr->value - 1;
 	}
 
 	/* 将该标签ID号映射至哈希表中，以便于快速查询 */
@@ -746,9 +748,9 @@ static const char *xml_parse_text(ACL_XML2 *xml, const char *data)
 
 			data++;
 			xml->len--;
-			*xml->ptr++ = 0;
 			xml->curr_node->text_size = xml->ptr
 				- xml->curr_node->text;
+			*xml->ptr++ = 0;
 			xml->curr_node->status = ACL_XML2_S_RLT;
 			break;
 		}
@@ -770,7 +772,8 @@ static const char *xml_parse_text(ACL_XML2 *xml, const char *data)
 
 		xml->curr_node->text = xml->ptr;
 		(void) acl_xml_decode2(txt, &xml->ptr, &xml->len);
-		xml->curr_node->text_size = xml->ptr - xml->curr_node->text;
+		xml->curr_node->text_size = xml->ptr
+			- xml->curr_node->text - 1;
 	}
 
 	return data;
@@ -908,8 +911,8 @@ static const char *xml_parse_right_tag(ACL_XML2 *xml, const char *data)
 				return data;
 			data++;
 			xml->len--;
-			*xml->ptr++ = 0;
 			curr_node->rtag_size = xml->ptr - curr_node->rtag;
+			*xml->ptr++ = 0;
 			curr_node->status = ACL_XML2_S_RGT;
 			break;
 		}

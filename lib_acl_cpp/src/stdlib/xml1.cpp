@@ -493,6 +493,19 @@ void xml1::build_xml(string& out) const
 	(void) acl_xml_build(xml_, buf);
 }
 
+const char* xml1::to_string(size_t* len) const
+{
+	if (buf_ == NULL)
+		const_cast<xml1*>(this)->buf_ = NEW string();
+	else
+		const_cast<xml1*>(this)->buf_->clear();
+
+	build_xml(*buf_);
+	if (len)
+		*len = buf_->size();
+	return buf_->c_str();
+}
+
 void xml1::reset(void)
 {
 	clear();

@@ -123,9 +123,9 @@ static char *xml_parse_meta_tag(ACL_XML3 *xml, char *data)
 
 	while ((ch = *data) != 0) {
 		if (IS_SPACE(ch) || ch == '>') {
-			*data++ = 0;
 			xml->curr_node->ltag_size = data - xml->curr_node->ltag;
 			xml->curr_node->status = ACL_XML3_S_MTXT;
+			*data++ = 0;
 			break;
 		}
 
@@ -149,14 +149,14 @@ static char *xml_meta_attr_name(ACL_XML3_ATTR *attr, char *data)
 
 	while ((ch = *data) != 0) {
 		if (ch == '=') {
-			*data++ = 0;
 			if (attr->name_size == 0)
 				attr->name_size = data - attr->name;
+			*data++ = 0;
 			break;
 		}
 		if (IS_SPACE(ch)) {
-			*data++ = 0;
 			attr->name_size = data - attr->name;
+			*data++ = 0;
 		} else
 			data++;
 	}
@@ -181,12 +181,12 @@ static char *xml_meta_attr_value(ACL_XML3_ATTR *attr, char *data)
 
 	while ((ch = *data) != 0) {
 		if (attr->quote && ch == attr->quote) {
-			*data++ = 0;
 			attr->value_size = data - attr->value;
+			*data++ = 0;
 			break;
 		} else if (IS_SPACE(ch)) {
-			*data++ = 0;
 			attr->value_size = data - attr->value;
+			*data++ = 0;
 			break;
 		}
 
@@ -252,9 +252,9 @@ static char *xml_parse_meta_text(ACL_XML3 *xml, char *data)
 		} else if (xml->curr_node->nlt == 0) {
 			char *last;
 
-			*data++ = 0;
 			xml->curr_node->text_size = data - xml->curr_node->text;
 			xml->curr_node->status = ACL_XML3_S_MEND;
+			*data++ = 0;
 
 			if ((xml->curr_node->flag & ACL_XML3_F_META_QM) == 0)
 				break;
@@ -262,9 +262,9 @@ static char *xml_parse_meta_text(ACL_XML3 *xml, char *data)
 			last = data;
 			while (last > xml->curr_node->text) {
 				if (*last == '?') {
-					*last = 0;
 					xml->curr_node->text_size = last -
 						xml->curr_node->text;
+					*last = 0;
 					break;
 				}
 				last--;
@@ -312,10 +312,10 @@ static char *xml_parse_meta_comment(ACL_XML3 *xml, char *data)
 				&& xml->curr_node->meta[1] == '-')
 			{
 
-				*data++ = 0;
 				xml->curr_node->text_size = data -
 					xml->curr_node->text;
 				xml->curr_node->status = ACL_XML3_S_MEND;
+				*data++ = 0;
 				break;
 			}
 
@@ -362,8 +362,8 @@ static char *xml_parse_left_tag(ACL_XML3 *xml, char *data)
 
 	while ((ch = *data) != 0) {
 		if (ch == '>') {
-			*data++ = 0;
 			xml->curr_node->ltag_size = data - xml->curr_node->ltag;
+			*data++ = 0;
 
 			xml_parse_check_self_closed(xml);
 
@@ -379,10 +379,10 @@ static char *xml_parse_left_tag(ACL_XML3 *xml, char *data)
 				xml->curr_node->status = ACL_XML3_S_LGT;
 			break;
 		} else if (IS_SPACE(ch)) {
-			*data++ = 0;
 			xml->curr_node->ltag_size = data - xml->curr_node->ltag;
 			xml->curr_node->status = ACL_XML3_S_ATTR;
 			xml->curr_node->last_ch = ch;
+			*data++ = 0;
 			break;
 		} else {
 			data++;
@@ -442,16 +442,16 @@ static char *xml_parse_attr(ACL_XML3 *xml, char *data)
 	while ((ch = *data) != 0) {
 		xml->curr_node->last_ch = ch;
 		if (ch == '=') {
-			*data++ = 0;
 			if (attr->name_size == 0)
 				attr->name_size = data - attr->name;
 			xml->curr_node->status = ACL_XML3_S_AVAL;
+			*data++ = 0;
 			break;
 		}
 		if (IS_SPACE(ch)) {
 			if (attr->name_size == 0) {
-				*data = 0;
 				attr->name_size = data - attr->name + 1;
+				*data = 0;
 			}
 		}
 
@@ -481,18 +481,18 @@ static char *xml_parse_attr_val(ACL_XML3 *xml, char *data)
 	while ((ch = *data) != 0) {
 		if (attr->quote) {
 			if (ch == attr->quote) {
-				*data++ = 0;
 				attr->value_size = data - attr->value;
 				xml->curr_node->status = ACL_XML3_S_ATTR;
 				xml->curr_node->last_ch = ch;
+				*data++ = 0;
 				break;
 			}
 
 			xml->curr_node->last_ch = ch;
 		} else if (ch == '>') {
-			*data++ = 0;
 			if (attr->value_size == 0)
 				attr->value_size = data - attr->value;
+			*data++ = 0;
 
 			xml_parse_check_self_closed(xml);
 
@@ -506,10 +506,10 @@ static char *xml_parse_attr_val(ACL_XML3 *xml, char *data)
 				xml->curr_node->status = ACL_XML3_S_LGT;
 			break;
 		} else if (IS_SPACE(ch)) {
-			*data++ = 0;
 			attr->value_size = data - attr->value;
 			xml->curr_node->status = ACL_XML3_S_ATTR;
 			xml->curr_node->last_ch = ch;
+			*data++ = 0;
 			break;
 		} else
 			xml->curr_node->last_ch = ch;
@@ -564,9 +564,9 @@ static char *xml_parse_text(ACL_XML3 *xml, char *data)
 
 	while ((ch = *data) != 0) {
 		if (ch == '<') {
-			*data++ = 0;
 			xml->curr_node->text_size = data - xml->curr_node->text;
 			xml->curr_node->status = ACL_XML3_S_RLT;
+			*data++ = 0;
 			/* 此处可对文本内容进行 xml 解码 */
 			break;
 		}
@@ -692,16 +692,16 @@ static char *xml_parse_right_tag(ACL_XML3 *xml, char *data)
 
 	while ((ch = *data) != 0) {
 		if (ch == '>') {
-			*data++ = 0;
 			curr_node->rtag_size = data - curr_node->rtag;
 			curr_node->status = ACL_XML3_S_RGT;
+			*data++ = 0;
 			break;
 		}
 
 		if (IS_SPACE(ch)) {
 			if (curr_node->rtag_size == 0) {
-				*data = 0;
 				curr_node->rtag_size = data - curr_node->rtag;
+				*data = 0;
 			}
 		}
 

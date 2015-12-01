@@ -236,6 +236,11 @@ public:
 	 */
 	void build_xml(string& out) const;
 
+	/**
+	 * @override
+	 */
+	const char* to_string(size_t* len) const;
+
 public:
 	ACL_XML2* get_xml2(void) const
 	{

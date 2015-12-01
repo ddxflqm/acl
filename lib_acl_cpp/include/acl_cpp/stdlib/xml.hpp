@@ -443,6 +443,8 @@ public:
 	 */
 	virtual void build_xml(string& out) const { (void) out; };
 
+	virtual const char* to_string(size_t* len) const = 0;
+
 public:
 	// pipe_stream ащКЏЪ§жиди
 
