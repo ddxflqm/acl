@@ -18,7 +18,7 @@ static const char *__data1 =
   "      <email name='zsxxsz@263.net'/>"
   "      <phone>"
   "        <mobile number='111111'> mobile number </mobile>"
-  "        <office number='111111'> mobile number </office>"
+  "        <office number='111111'> office number </office>"
   "      </phone>"
   "    </other>"
   "  </user>\r\n"
@@ -130,6 +130,9 @@ static const char* __data7 = "<?xml version=\"1.0\" encoding=\"gb2312\"?>\r\n"
   "  </tags2>\r\n"
   "</request>\r\n";
 
+ static const char* __data8 = "<?xml version=\"1.0\" encoding=\"gb2312\"?>\r\n"
+ "<root> hello world! </root>\r\n";
+
 static char *mmap_addr(size_t len)
 {
 	const char *filepath = "./local.map";
@@ -165,7 +168,7 @@ static void ummap_addr(char *addr, int len)
 static void parse_xml_benchmark(int once, int max, const char *data)
 {
 	int   i;
-	size_t size = strlen(data) * 2;
+	size_t size = strlen(data) * 4;
 	char *addr = mmap_addr(size);
 	ACL_XML2 *xml = acl_xml2_alloc(addr, size);
 
@@ -229,7 +232,7 @@ static int parse_xml_file(const char *filepath)
 		acl_vstream_close(fp);
 		return -1;
 	}
-	len *= 2;
+	len *= 4;
 	addr = mmap_addr(len);
 	if (addr == NULL)
 	{
@@ -442,7 +445,7 @@ static ACL_XML2_NODE *test_getElementById(ACL_XML2 *xml, const char *id)
 static ACL_XML2 *get_xml(int once, const char *data,
 	const char* root, int multi_root)
 {
-	size_t size = strlen(data) * 2;
+	size_t size = strlen(data) * 4;
 	char *addr = mmap_addr(size);
 	ACL_XML2 *xml;
 	const char *left;
@@ -455,6 +458,7 @@ static ACL_XML2 *get_xml(int once, const char *data,
 
 	xml = acl_xml2_alloc(addr, size);
 	acl_xml2_multi_root(xml, multi_root);
+	acl_xml2_decode_enable(xml, 1);
 	acl_xml2_slash(xml, 1);
 
 	if (once) {
@@ -660,10 +664,11 @@ static void usage(const char *procname)
 		" -s[parse once]\r\n"
 		" -b benchmark_max\r\n"
 		" -B build_xml\r\n"
-		" -P [if parse one xml]\r\n"
+		" -t [if test one xml]\r\n"
 		" -f xml_file\r\n"
 		" -m[if enable  multiple root xml node, default: no]\r\n"
 		" -p[print] data1|data2|data3|data4|data5|data6|data7\r\n"
+		" -P [if parse one xml with one data]\r\n"
 		" -d[parse] data1|data2|data3|data4|data5|data6|data7\r\n",
 		procname);
 }
@@ -674,27 +679,22 @@ static void usage(const char *procname)
 
 int main(int argc, char *argv[])
 {
-	int   ch, once = 0, multi_root = 0, benchmark_max = 10000;
-	int   parse_one = 0, build = 0;
+	int   ch, once = 0, multi_root = 0, benchmark_max = 0;
+	int   parse_one = 0, build = 0, test_one = 0;
 	const char *data = __data1;
 	const char* root = "root";
 	char  filepath[256];
 
 	filepath[0] = 0;
 
-	if (1)
-	{
-		test1();
-
-		printf("Enter any key to continue ...\r\n");
-		getchar();
-	}
-
-	while ((ch = getopt(argc, argv, "hsp:d:mb:f:PB")) > 0) {
+	while ((ch = getopt(argc, argv, "hsp:d:mb:f:PBt")) > 0) {
 		switch (ch) {
 		case 'h':
 			usage(argv[0]);
 			return (0);
+		case 't':
+			test_one = 1;
+			break;
 		case 'm':
 			multi_root = 1;
 			break;
@@ -729,6 +729,9 @@ int main(int argc, char *argv[])
 			} else if (strcasecmp(optarg, "data7") == 0) {
 				data = __data7;
 				root = "request";
+			} else if (strcasecmp(optarg, "data8") == 0) {
+				data = __data8;
+				root = "root";
 			}
 			break;
 		case 'p':
@@ -746,6 +749,8 @@ int main(int argc, char *argv[])
 				printf("%s\n", __data6);
 			else if (strcasecmp(optarg, "data7") == 0)
 				printf("%s\n", __data7);
+			else if (strcasecmp(optarg, "data8") == 0)
+				printf("%s\n", __data8);
 			return (0);
 		case 'f':
 			snprintf(filepath, sizeof(filepath), "%s", optarg);
@@ -757,6 +762,15 @@ int main(int argc, char *argv[])
 
 	if (benchmark_max > 0)
 		parse_xml_benchmark(once, benchmark_max, data);
+
+	if (test_one)
+	{
+		test1();
+
+		printf("Enter any key to continue ...\r\n");
+		getchar();
+	}
+
 
 	if (parse_one)
 		parse_xml(once, data, root, multi_root);

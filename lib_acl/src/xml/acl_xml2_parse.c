@@ -763,17 +763,28 @@ static const char *xml_parse_text(ACL_XML2 *xml, const char *data)
 		*xml->ptr++ = ch;
 	}
 
-	if (xml->curr_node->status == ACL_XML2_S_RGT
+
+	if (xml->curr_node->status == ACL_XML2_S_RLT
 		&& (xml->flag & ACL_XML2_FLAG_XML_DECODE)
 		&& xml->curr_node->text_size > 1
 		&& xml->len > 0)
 	{
-		const char *txt = xml->curr_node->text;
+		char *txt = xml->curr_node->text;
 
 		xml->curr_node->text = xml->ptr;
 		(void) acl_xml_decode2(txt, &xml->ptr, &xml->len);
 		xml->curr_node->text_size = xml->ptr
 			- xml->curr_node->text - 1;
+
+		/* xml->ptr pointer to the position after '\0', but we
+		 * want to get the position before '\0', so subtract 2.
+		 */
+		txt = xml->ptr - 2;
+
+		while (txt >= xml->curr_node->text && IS_SPACE(*txt)) {
+			*txt-- = 0;
+			xml->curr_node->text_size--;
+		}
 	}
 
 	return data;
