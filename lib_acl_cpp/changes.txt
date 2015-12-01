@@ -2,7 +2,8 @@
 
 -----------------------------------------------------------------------
 383) 2015.11.30
-383.1) feature: 增加了 xml2.cpp/xml2.hpp 以便于支持第二个 xml 解析器
+383.1) feature: 增加了 xml1.cpp/xml1.hpp 以便于支持第一个 xml 解析器
+383.2) feature: 增加了 xml2.cpp/xml2.hpp 以便于支持第二个 xml 解析器
 
 382) 2015.11.26
 382.1) bugfix: redis_zset::zstore 在判断 aggregate 时有误

@@ -153,6 +153,11 @@ public:
 	 */
 	ACL_XML_NODE* get_xml_node(void) const;
 
+	/**
+	 * 设置本节点的父节点
+	 * @param node {xml_node*} 父节点
+	 * @return {xml_node&} 返回本节点引用
+	 */
 	xml_node& set_parent(xml_node* node);
 
 protected:
@@ -161,13 +166,14 @@ protected:
 	/**
 	 * xml 节点构造函数
 	 * @param xml_ptr {xml*} xml 树对象，非空
+	 * @param node {ACL_XML_NODE*} C 版中的 xml 节点指针
 	 */
 	xml1_node(xml* xml_ptr, ACL_XML_NODE* node);
 
 	/**
 	 * 要求该对象必须是动态创建的
 	 */
-	virtual ~xml1_node(void);
+	~xml1_node(void);
 
 private:
 	ACL_XML_NODE *node_;
@@ -282,7 +288,8 @@ public:
 	 *  注：返回的数组中的 xml_node 节点数据可以修改，但不能删除该节点，
 	 *  因为该库内部有自动删除的机制
 	 */
-	const std::vector<xml_node*>& getElementsByName(const char* value) const;
+	const std::vector<xml_node*>&
+		getElementsByName(const char* value) const;
 
 	/**
 	 * @override 从 xml 对象中获得所有给定属性名及属性值的 xml 节点元素集合
@@ -313,8 +320,8 @@ public:
 	xml_node& create_node(const char* tag, const char* text = NULL);
 
 	/**
-	 * @override 获得根节点对象，但需要注意，该节点为虚节点，里面不存放任何数据，
-	 * 它是所有 xml 节点对象的最顶层父对象
+	 * @override 获得根节点对象，但需要注意，该节点为虚节点，里面不存放
+	 *  任何数据，它是所有 xml 节点对象的最顶层父对象
 	 * @return {xml_node&}
 	 */
 	xml_node& get_root(void);

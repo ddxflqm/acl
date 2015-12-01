@@ -10,6 +10,7 @@ xml1_attr::xml1_attr(xml_node* node, ACL_XML_ATTR* attr)
 	: xml_attr(node)
 	, attr_(attr)
 {
+	acl_assert(attr_);
 }
 
 const char* xml1_attr::get_name(void) const
@@ -136,6 +137,7 @@ xml_node& xml1_node::add_child(xml_node* child, bool return_child /* = false */)
 	ACL_XML_NODE* node = ((xml1_node*) child)->get_xml_node();
 	acl_xml_node_add_child(node_, node);
 	child->set_parent(this);
+
 	if (return_child)
 		return *child;
 	return *this;
@@ -209,7 +211,8 @@ xml1::xml1(const char* data /* = NULL */)
 	root_ = NULL;
 
 	xml_ = acl_xml_alloc();
-	update(data);
+	if (data && *data)
+		update(data);
 }
 
 xml1::~xml1(void)
@@ -217,9 +220,7 @@ xml1::~xml1(void)
 	if (iter_)
 		acl_myfree(iter_);
 	delete root_;
-
-	if (xml_)
-		acl_xml_free(xml_);
+	acl_xml_free(xml_);
 }
 
 xml& xml1::ignore_slash(bool on)
@@ -256,7 +257,6 @@ const std::vector<xml_node*>& xml1::getElementsByTagName(const char* tag) const
 	}
 
 	acl_xml_free_array(a);
-
 	return elements_;
 }
 
@@ -285,7 +285,6 @@ const std::vector<xml_node*>& xml1::getElementsByTags(const char* tags) const
 	}
 
 	acl_xml_free_array(a);
-
 	return elements_;
 }
 
@@ -321,7 +320,6 @@ const std::vector<xml_node*>& xml1::getElementsByName(const char* value) const
 	}
 
 	acl_xml_free_array(a);
-
 	return elements_;
 }
 
@@ -342,7 +340,6 @@ const std::vector<xml_node*>& xml1::getElementsByAttr(
 	}
 
 	acl_xml_free_array(a);
-
 	return elements_;
 }
 
@@ -499,10 +496,7 @@ void xml1::build_xml(string& out) const
 void xml1::reset(void)
 {
 	clear();
-	if (xml_)
-		acl_xml_reset(xml_);
-	else
-		xml_ = acl_xml_alloc();
+	acl_xml_reset(xml_);
 	//dummyRootAdded_ = false;
 }
 
