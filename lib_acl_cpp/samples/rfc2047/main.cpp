@@ -192,7 +192,7 @@ static void usage(const char* procname)
 
 int main(int argc, char* argv[])
 {
-	acl::rfc2047 rfc2047(false);
+	acl::rfc2047 rfc2047;
 
 	int   ch;
 

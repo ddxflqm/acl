@@ -20,7 +20,7 @@ enum
 	rfc2047_status_question_equal
 };
 
-rfc2047::rfc2047(bool strip_sp /* false */, bool addCrlf /* true */)
+rfc2047::rfc2047(bool strip_sp /* = true */, bool addCrlf /* = true */)
 	: m_pCurrentEntry(NULL)
 	, m_coder(NULL)
 	, m_status(rfc2047_status_next)
@@ -37,7 +37,7 @@ rfc2047::~rfc2047()
 	delete m_coder;
 }
 
-void rfc2047::reset(bool strip_sp /* false */)
+void rfc2047::reset(bool strip_sp /* = true */)
 {
 	std::list<rfc2047_entry*>::iterator it, lt;
 	
@@ -317,7 +317,7 @@ void rfc2047::decode_update(const char* in, int n)
 }
 
 #define EQ(x, y) (((x) == NULL && (y) == NULL)  \
-		  || ((x) != NULL && (y) != NULL && !strcasecmp((x), (y))))
+	  || ((x) != NULL && (y) != NULL && !strcasecmp((x), (y))))
 
 static bool decoder_update(rfc2047_entry* entry,
 	const char* fromCharset, const char* toCharset,
@@ -378,9 +378,7 @@ static bool decoder_finish(acl::mime_code* pDecoder, acl::charset_conv* pConv,
 	buf2->clear();
 
 	if (!pConv->update(buf1->c_str(), buf1->length(), buf2))
-	{
 		out->append(buf1->c_str(), buf1->length());
-	}
 	else
 	{
 		pConv->update_finish(buf2);
@@ -391,37 +389,40 @@ static bool decoder_finish(acl::mime_code* pDecoder, acl::charset_conv* pConv,
 	return true;
 }
 
-bool rfc2047::decode_finish(const char* toCharset, acl::string* out,
-	bool addInvalid /* = true */)
+bool rfc2047::decode_finish(const char* toCharset,
+	string* out, bool addInvalid /* = true */)
 {
 	std::list<rfc2047_entry*>::const_iterator cit = m_List.begin();
-	acl::string buf1;
-	acl::string buf2;
-	acl::mime_base64 base64;
-	acl::mime_quoted_printable qp;
+	string buf1;
+	string buf2;
+	mime_base64 base64;
+	mime_quoted_printable qp;
 
 	// 选择一个默认的解码器，然后根据需要变化
-	acl::mime_code* pDecoder = &base64;
+	mime_code* pDecoder = &base64;
 	const char *fromCharset = NULL;
-	acl::charset_conv conv;
+	charset_conv conv;
 	conv.set_add_invalid(addInvalid);
 
 	for (; cit != m_List.end(); ++cit)
 	{
 		if ((*cit)->coding == 'Q')
 		{
-			if (pDecoder != &qp || !EQ((*cit)->pCharset->c_str(), fromCharset))
+			if (pDecoder != &qp
+				|| !EQ((*cit)->pCharset->c_str(), fromCharset))
 			{
 				if (fromCharset == NULL)
 					fromCharset = (*cit)->pCharset->c_str();
 				if (*fromCharset == 0)
 					fromCharset = NULL;
 				if (fromCharset == NULL || toCharset == NULL)
-					decoder_finish(pDecoder, NULL, out, &buf1, &buf2);
+					decoder_finish(pDecoder, NULL, out,
+						&buf1, &buf2);
 				else
 				{
 					conv.update_begin(fromCharset, toCharset);
-					decoder_finish(pDecoder, &conv, out, &buf1, &buf2);
+					decoder_finish(pDecoder, &conv, out,
+						&buf1, &buf2);
 				}
 				pDecoder->reset();
 			}
@@ -434,18 +435,21 @@ bool rfc2047::decode_finish(const char* toCharset, acl::string* out,
 		}
 		else if ((*cit)->coding == 'B')
 		{
-			if (pDecoder != &base64 || !EQ((*cit)->pCharset->c_str(), fromCharset))
+			if (pDecoder != &base64
+				|| !EQ((*cit)->pCharset->c_str(), fromCharset))
 			{
 				if (fromCharset == NULL)
 					fromCharset = (*cit)->pCharset->c_str();
 				if (*fromCharset == 0)
 					fromCharset = NULL;
 				if (fromCharset == NULL && toCharset == NULL)
-					decoder_finish(pDecoder, NULL, out, &buf1, &buf2);
+					decoder_finish(pDecoder, NULL, out,
+						&buf1, &buf2);
 				else
 				{
 					conv.update_begin(fromCharset, toCharset);
-					decoder_finish(pDecoder, &conv, out, &buf1, &buf2);
+					decoder_finish(pDecoder, &conv, out,
+						&buf1, &buf2);
 				}
 				pDecoder->reset();
 			}
@@ -459,14 +463,17 @@ bool rfc2047::decode_finish(const char* toCharset, acl::string* out,
 		else
 		{
 			if (fromCharset == NULL || toCharset == NULL)
-				decoder_finish(pDecoder, NULL, out, &buf1, &buf2);
+				decoder_finish(pDecoder, NULL, out,
+					&buf1, &buf2);
 			else
 			{
 				conv.update_begin(fromCharset, toCharset);
-				decoder_finish(pDecoder, &conv, out, &buf1, &buf2);
+				decoder_finish(pDecoder, &conv, out,
+					&buf1, &buf2);
 			}
 			pDecoder->reset();
-			out->append((*cit)->pData->c_str(), (*cit)->pData->length());
+			out->append((*cit)->pData->c_str(),
+				(*cit)->pData->length());
 		}
 	}
 
