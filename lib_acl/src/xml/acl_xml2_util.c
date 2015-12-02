@@ -417,6 +417,10 @@ static const char *mem_copy(ACL_XML2 *xml, const char *in)
 	return in;
 }
 
+#define	CHECK_SPACE(x) \
+	if ((x)->len == 0 && acl_xml2_mmap_extend((x)) == 0) \
+		break;
+
 const char *acl_xml2_build(ACL_XML2 *xml)
 {
 	ACL_XML2_ATTR *attr;
@@ -430,84 +434,72 @@ const char *acl_xml2_build(ACL_XML2 *xml)
 	xml->len--;
 
 	acl_foreach(iter1, xml) {
-		if (xml->len == 0)
-			break;
+
+		CHECK_SPACE(xml);
 
 		node = (ACL_XML2_NODE*) iter1.data;
 		if (ACL_XML2_IS_COMMENT(node)) {
 			mem_copy(xml, "<!--");
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
 
 			mem_copy(xml, node->text);
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
 		} else if ((node->flag & ACL_XML2_F_META_QM)) {
 			mem_copy(xml, "<?");
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
 
 			mem_copy(xml, node->ltag);
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
 		} else if ((node->flag & ACL_XML2_F_META_EM)) {
 			mem_copy(xml, "<!");
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
 
 			mem_copy(xml, node->ltag);
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
 
 			*xml->ptr++ = ' ';
 			xml->len--;
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
 
 			if (node->text_size > 0) {
 				mem_copy(xml, node->text);
-				if (xml->len == 0)
-					break;
+				CHECK_SPACE(xml);
 			}
 		} else {
 			*xml->ptr++ = '<';
 			xml->len--;
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
 
 			mem_copy(xml, node->ltag);
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
 		}
 
 		acl_foreach(iter2, node->attr_list) {
 			attr = (ACL_XML2_ATTR*) iter2.data;
 
 			*xml->ptr++ = ' ';
-			if (--xml->len == 0)
-				break;
+			xml->len--;
+			CHECK_SPACE(xml);
 
 			mem_copy(xml, attr->name);
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
 
 			*xml->ptr++ = '=';
-			if (--xml->len == 0)
-				break;
+			xml->len--;
+			CHECK_SPACE(xml);
 
 			escape_append(xml, attr->value, 1);
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
 		}
 
 		if (acl_ring_size(&node->children) > 0) {
 			*xml->ptr++ = '>';
-			if (--xml->len == 0)
-				break;
+			xml->len--;
+			CHECK_SPACE(xml);
+
 			if (node->text_size > 0) {
 				escape_append(xml, node->text, 0);
-				if (xml->len == 0)
-					break;
+				CHECK_SPACE(xml);
 			}
 
 			continue;
@@ -515,71 +507,64 @@ const char *acl_xml2_build(ACL_XML2 *xml)
 
 		if (ACL_XML2_IS_COMMENT(node)) {
 			mem_copy(xml, "-->");
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
 
 			continue;
 		}
 		if (node->flag & ACL_XML2_F_META_QM) {
 			mem_copy(xml, "?>");
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
+
 			continue;
 		}
 		if (node->flag & ACL_XML2_F_META_EM) {
 			*xml->ptr++ = '>';
-			if (--xml->len == 0)
-				break;
+			xml->len--;
+			CHECK_SPACE(xml);
+
 			continue;
 		}
 		if (node->text_size == 0) {
 			mem_copy(xml, "></");
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
 
 			escape_append(xml, node->ltag, 0);
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
 
 			*xml->ptr++ = '>';
-			if (--xml->len == 0)
-				break;
+			xml->len--;
+			CHECK_SPACE(xml);
 		} else {
 			*xml->ptr++ = '>';
-			if (--xml->len == 0)
-				break;
+			xml->len--;
+			CHECK_SPACE(xml);
 
 			escape_append(xml, node->text, 0);
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
 
 			mem_copy(xml, "</");
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
 
 			escape_append(xml, node->ltag, 0);
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
 
 			*xml->ptr++ = '>';
-			if (--xml->len == 0)
-				break;
+			xml->len--;
+			CHECK_SPACE(xml);
 		}
 
 		while (node->parent != node->xml->root
 			&& acl_xml2_node_next(node) == NULL)
 		{
 			mem_copy(xml, "</");
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
 
 			escape_append(xml, node->parent->ltag, 0);
-			if (xml->len == 0)
-				break;
+			CHECK_SPACE(xml);
 
 			*xml->ptr++ = '>';
-			if (--xml->len == 0)
-				break;
+			xml->len--;
+			CHECK_SPACE(xml);
 
 			node = node->parent;
 		}

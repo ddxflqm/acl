@@ -133,44 +133,12 @@ static const char* __data7 = "<?xml version=\"1.0\" encoding=\"gb2312\"?>\r\n"
  static const char* __data8 = "<?xml version=\"1.0\" encoding=\"gb2312\"?>\r\n"
  "<root> hello world! </root>\r\n";
 
-static char *mmap_addr(size_t len)
-{
-	const char *filepath = "./local.map";
-	int fd = open(filepath, O_RDWR | O_CREAT, 0600);
-	size_t mapped_size = len;
-	char *ptr;
-
-	if (fd == -1)
-	{
-		printf("open %s error %s\r\n", filepath, acl_last_serror());
-		exit (1);
-	}
-
-	ptr = (char*) mmap(NULL, mapped_size, PROT_READ | PROT_WRITE,
-		MAP_SHARED, fd, 0);
-	if (ptr == NULL) {
-		printf("mmap %s error %s\r\n", filepath, acl_last_serror());
-		exit (1);
-	}
-
-	lseek(fd, len, SEEK_SET);
-	write(fd, "\0", 1);
-	close(fd);
-
-	return ptr;
-}
-
-static void ummap_addr(char *addr, int len)
-{
-	munmap(addr, len);
-}
-
 static void parse_xml_benchmark(int once, int max, const char *data)
 {
 	int   i;
 	size_t size = strlen(data) * 4;
-	char *addr = mmap_addr(size);
-	ACL_XML2 *xml = acl_xml2_alloc(addr, size);
+	const char *mmap_file = "./local.map";
+	ACL_XML2 *xml = acl_xml2_mmap_alloc(mmap_file, size, 1024, 1, NULL);
 
 	acl_xml2_slash(xml, 1);
 
@@ -219,8 +187,8 @@ static int parse_xml_file(const char *filepath)
 	acl_int64 len;
 	char  buf[10240];
 	ACL_VSTREAM *fp = acl_vstream_fopen(filepath, O_RDONLY, 0600, 8192);
-	char *addr;
 	ACL_XML2 *xml;
+	const char *mmap_file = "./local.map";
 
 	if (fp == NULL) {
 		printf("open %s error %s\r\n", filepath, acl_last_serror());
@@ -233,14 +201,8 @@ static int parse_xml_file(const char *filepath)
 		return -1;
 	}
 	len *= 4;
-	addr = mmap_addr(len);
-	if (addr == NULL)
-	{
-		printf("mmap_addr error %s\r\n", acl_last_serror());
-		acl_vstream_close(fp);
-		return -1;
-	}
-	xml = acl_xml2_alloc(addr, len);
+
+	xml = acl_xml2_mmap_alloc(mmap_file, len, 1024, 1, NULL);
 
 	ACL_METER_TIME("-------------begin--------------");
 	while (1) {
@@ -259,8 +221,6 @@ static int parse_xml_file(const char *filepath)
 	else
 		printf("Xml is not complete, filepath: %s\r\n", filepath);
 	acl_xml2_free(xml);
-
-	ummap_addr(addr, len);
 
 	printf("Enter any key to continue ...\r\n");
 	getchar();
@@ -446,7 +406,7 @@ static ACL_XML2 *get_xml(int once, const char *data,
 	const char* root, int multi_root)
 {
 	size_t size = strlen(data) * 4;
-	char *addr = mmap_addr(size);
+	char *addr = (char*) acl_mymalloc(size);
 	ACL_XML2 *xml;
 	const char *left;
 
@@ -550,6 +510,7 @@ static void parse_xml(int once, const char *data,
 	printf("----------------- build xml end ---------------------\r\n");
 
 	/* ÊÍ·Å xml ¶ÔÏó */
+	acl_myfree(xml->addr);
 	left = acl_xml2_free(xml);
 
 	printf("Free all node ok, total(%d), left is: %d\n", total, left);
@@ -571,7 +532,7 @@ static void test1(void)
 	ACL_XML2_NODE *node;
 	const char *encoding, *type, *href;
 	size_t size = strlen(data) * 3;
-	char *addr = mmap_addr(size);
+	char *addr = acl_mymalloc(size);
 	const char *ptr;
 
 	xml = acl_xml2_alloc(addr, size);
@@ -614,14 +575,14 @@ static void test1(void)
 	ptr = acl_xml2_build(xml);
 	printf("%s\r\n", ptr);
 	printf("----------------- build xml end ---------------------\r\n");
+	acl_myfree(addr);
 	acl_xml2_free(xml);
-	ummap_addr(addr, size);
 }
 
 static void build_xml(void)
 {
 	size_t size = 1024;
-	char *addr = mmap_addr(size);
+	char *addr = acl_mymalloc(size);
 	ACL_XML2 *xml = acl_xml2_alloc(addr, size);
 	ACL_XML2_NODE *node1, *node2, *node3;
 	const char *buf;
@@ -651,8 +612,8 @@ static void build_xml(void)
 	printf("%s\n", buf);
 	printf("--------------------xml string end---------------\r\n");
 
+	acl_myfree(addr);
 	acl_xml2_free(xml);
-	ummap_addr(addr, size);
 
 	printf("Enter any key to continue ...\r\n");
 	getchar();
@@ -684,6 +645,8 @@ int main(int argc, char *argv[])
 	const char *data = __data1;
 	const char* root = "root";
 	char  filepath[256];
+
+	acl_msg_stdout_enable(1);
 
 	filepath[0] = 0;
 

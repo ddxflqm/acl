@@ -145,6 +145,9 @@ public:
 	 * @param data {const char*} 非空时自动调用解析过程
 	 */
 	xml2(char* addr, size_t size, const char* data = NULL);
+	xml2(const char* filepath, size_t size, const char* data = NULL,
+		size_t block = 8192, bool keep_open = true);
+
 	~xml2(void);
 
 	/**

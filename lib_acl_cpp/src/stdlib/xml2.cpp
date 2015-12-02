@@ -199,9 +199,30 @@ xml2::xml2(char* addr, size_t size, const char* data /* = NULL */)
 
 	iter_ = NULL;
 	root_ = NULL;
+
 	xml_ = acl_xml2_alloc(addr, size);
+
 	if (data && *data)
 		update(data);
+}
+
+xml2::xml2(const char* filepath, size_t size, const char* data /* = NULL */,
+	size_t block /* = 8192 */, bool keep_open /* = true */)
+{
+	acl_assert(filepath && size > 0 && block > 0);
+
+	if (block > size)
+		block = size;
+
+	iter_ = NULL;
+	root_ = NULL;
+
+	xml_ = acl_xml2_mmap_alloc(filepath, size, block,
+			keep_open ? 1 : 0, NULL);
+
+	if (data && *data)
+		update(data);
+
 }
 
 xml2::~xml2()

@@ -1,9 +1,19 @@
 #include "StdAfx.h"
 #ifndef ACL_PREPARE_COMPILE
 
+#include "stdlib/acl_define.h"
+
+#ifdef ACL_UNIX
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#endif
+
 #include <stdio.h>
 #include "stdlib/acl_mystring.h"
 #include "stdlib/acl_msg.h"
+#include "stdlib/acl_sys_patch.h"
 #include "code/acl_xmlcode.h"
 #include "xml/acl_xml2.h"
 
@@ -312,7 +322,7 @@ static const char *xml_parse_meta_text(ACL_XML2 *xml, const char *data)
 			if ((xml->curr_node->flag & ACL_XML2_F_META_QM) == 0)
 				break;
 
-			last = xml->ptr;
+			last = xml->ptr - 1;
 			while (last > xml->curr_node->text) {
 				if (*last == '?') {
 					*last = 0;
@@ -999,12 +1009,12 @@ static struct XML_STATUS_MACHINE status_tab[] = {
 
 const char *acl_xml2_update(ACL_XML2 *xml, const char *data)
 {
+	const char *myname = "acl_xml2_update";
+
 	if (data == NULL || *data == 0)
 		return data;
 
 	if (!(xml->flag & ACL_XML2_FLAG_MULTI_ROOT) && xml->root_cnt > 0)
-		return data;
-	if (xml->len < MIN_LEN)
 		return data;
 
 	/* XML 解析器状态机循环处理过程 */
@@ -1029,8 +1039,12 @@ const char *acl_xml2_update(ACL_XML2 *xml, const char *data)
 		}
 
 		data = status_tab[xml->curr_node->status].callback(xml, data);
-		if (xml->len < MIN_LEN)
+
+		if (xml->len < MIN_LEN && acl_xml2_mmap_extend(xml) == 0) {
+			acl_msg_warn("%s(%d), %s: space not enougth!",
+				__FILE__, __LINE__, myname);
 			break;
+		}
 	}
 
 	return data;

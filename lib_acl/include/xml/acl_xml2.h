@@ -107,10 +107,18 @@ struct ACL_XML2 {
 	ACL_XML2_NODE *root;            /**< XML 根节点 */
 
 	/* private */
-	char *addr;                     /**< 内存映射起始地址 */
-	char *ptr;                      /**< 内存映射地址 */
-	size_t size;			/**< addr 内存映射区的大小 */
-	size_t len;			/**< addr 内存映射区剩余大小 */
+	char *addr;                     /**< 内存起始地址 */
+	char *ptr;                      /**< 内存地址 */
+	size_t size;                    /**< addr 内存映射区的大小 */
+	size_t len;                     /**< addr 内存映射区剩余大小 */
+
+	char *mm_file;                  /**< 非空时指定内存映射文件名 */
+	char *mm_addr;                  /**< 内存映射起始地址 */
+	ACL_FILE_HANDLE fd;             /**< 采用内存映射方式时的文件句柄 */
+	size_t off;                     /**< 当前内存映射文件的实际映射大小 */
+	size_t block;                   /**< len 自增时的自增块长度大小 */
+	int   keep_open;                /**< 文件句柄是否一直打开 */
+
 	ACL_HTABLE *id_table;           /**< id 标识符哈希表 */
 	ACL_XML2_NODE *curr_node;       /**< 当前正在处理的 XML 节点 */
 	ACL_DBUF_POOL *dbuf;            /**< 内存池对象 */
@@ -183,6 +191,31 @@ ACL_API ACL_XML2 *acl_xml2_alloc(char *addr, size_t size);
  */
 ACL_API ACL_XML2 *acl_xml2_dbuf_alloc(char *addr, size_t size,
 		ACL_DBUF_POOL *dbuf);
+
+/**
+ * 创建一个 xml 对象，其 xml 节点的创建的内存区建立在内存映射文件上
+ * @param filepath {const char*} 内存映射文件的文件名
+ * @param size {size_t} 所映射的文件大小
+ * @param block {size_t} 每次进行空间大小扩充时的单位长度，在扩充时最大长度
+ *  不会超过指定的 size 大小
+ * @param keep_open {int} 是否一直保持文件被打开至 xml 对象释放，如果否，则
+ *  当映射文件自动扩充时需要重新反复打开，会影响解析效率
+ * @param dbuf {ACL_DBUF_POOL*} 内存池对象，当该针对非 NULL 时，则 xml 对象
+ *  及所属节点内存在其基础上进行分配，否则，内部自动创建隶属于 xml 的内存池
+ * @return {ACL_XML2*} 新创建的 xml 对象
+ */
+ACL_API ACL_XML2 *acl_xml2_mmap_alloc(const char *filepath, size_t size,
+		size_t block, int keep_open, ACL_DBUF_POOL *dbuf);
+
+/**
+ * 当采用内存文件映射方式时，此函数用来扩充映射文件的空间大小，因为在初始化时
+ * 仅分配较小的空间，在使用过程中如果发现空间不足，则内部自动调用此函数扩展
+ * 文件大小，这样既可以满足实际需求，又可以节省磁盘空间
+ * @param xml {ACL_XML2*} 采用 acl_xml2_mmap_alloc 方式创建的 xml 对象
+ * @return {size_t} 扩充后新增加的空间大小，如果返回值为 0，则表示出错或已经
+ *  达到空间分配上限购
+ */
+ACL_API size_t acl_xml2_mmap_extend(ACL_XML2 *xml);
 
 /**
  * 将某一个 ACL_XML2_NODE 节点作为一个 XML 对象的根节点，从而可以方便地遍历出该
