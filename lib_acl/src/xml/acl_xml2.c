@@ -403,23 +403,14 @@ ACL_XML2 *acl_xml2_alloc(char *buf, size_t size)
 	return acl_xml2_dbuf_alloc(buf, size, NULL);
 }
 
-ACL_XML2 *acl_xml2_mmap_alloc(const char *filepath, size_t size, size_t block,
+ACL_XML2 *acl_xml2_mmap_file(const char *filepath, size_t size, size_t block,
 	int keep_open, ACL_DBUF_POOL *dbuf)
 {
-#ifdef  ACL_UNIX
-
 	const char *myname = "acl_xml2_mmap_alloc";
 	ACL_FILE_HANDLE fd;
 	ACL_XML2 *xml;
-	size_t off = block - 1;
-	char *addr;
 
 	acl_assert(filepath && *filepath);
-	acl_assert(size > 0);
-	acl_assert(block > 0);
-
-	if (block > size)
-		block = size;
 
 	fd = acl_file_open(filepath, O_CREAT | O_RDWR, 0600);
 	if (fd == ACL_FILE_INVALID) {
@@ -428,28 +419,8 @@ ACL_XML2 *acl_xml2_mmap_alloc(const char *filepath, size_t size, size_t block,
 		return NULL;
 	}
 
-	if (acl_lseek(fd, off, SEEK_SET) != (acl_off_t) off) {
-		acl_msg_error("%s(%d), %s: lseek error: %s, block: %lu",
-			__FILE__, __LINE__, myname, acl_last_serror(),
-			(unsigned long) off);
-		acl_file_close(fd);
-		return 0;
-	}
-
-	if (acl_file_write(fd, "\0", 1, 0, NULL, NULL) == ACL_VSTREAM_EOF)
-	{
-		acl_msg_error("%s(%d), %s: write error: %s",
-			__FILE__, __LINE__, myname, acl_last_serror());
-		acl_file_close(fd);
-		return 0;
-	}
-
-	addr = (char*) mmap(NULL, size, PROT_READ | PROT_WRITE,
-			MAP_SHARED, fd, 0);
-	if (addr == MAP_FAILED) {
-		acl_msg_error("%s(%d), %s: mmap %s error: %s, size: %lu",
-			__FILE__, __LINE__, myname, filepath,
-			acl_last_serror(), (unsigned long) size);
+	xml = acl_xml2_mmap_fd(fd, size, block, dbuf);
+	if (xml == NULL) {
 		acl_file_close(fd);
 		return NULL;
 	}
@@ -459,18 +430,60 @@ ACL_XML2 *acl_xml2_mmap_alloc(const char *filepath, size_t size, size_t block,
 		fd = ACL_FILE_INVALID;
 	}
 
-	xml            = acl_xml2_dbuf_alloc(addr, size, dbuf);
+	xml->keep_open = keep_open;
 	xml->mm_file   = acl_dbuf_pool_strdup(xml->dbuf, filepath);
+
+	return xml;
+}
+
+ACL_XML2 *acl_xml2_mmap_fd(ACL_FILE_HANDLE fd, size_t size,
+	size_t block, ACL_DBUF_POOL *dbuf)
+{
+#ifdef	ACL_UNIX
+	size_t off = block - 1;
+	ACL_XML2 *xml;
+	char *addr;
+
+	acl_assert(size > 0);
+	acl_assert(block > 0);
+
+	if (block > size)
+		block = size;
+	if (acl_lseek(fd, off, SEEK_SET) != (acl_off_t) off) {
+		acl_msg_error("%s(%d), %s: lseek error: %s, block: %lu",
+			__FILE__, __LINE__, __FUNCTION__, acl_last_serror(),
+			(unsigned long) off);
+		return NULL;
+	}
+
+	if (acl_file_write(fd, "\0", 1, 0, NULL, NULL) == ACL_VSTREAM_EOF)
+	{
+		acl_msg_error("%s(%d), %s: write error: %s",
+			__FILE__, __LINE__, __FUNCTION__, acl_last_serror());
+		return NULL;
+	}
+
+	addr = (char*) mmap(NULL, size, PROT_READ | PROT_WRITE,
+			MAP_SHARED, fd, 0);
+	if (addr == MAP_FAILED) {
+		acl_msg_error("%s(%d), %s: mmap error: %s, size: %lu",
+			__FILE__, __LINE__, __FUNCTION__,
+			acl_last_serror(), (unsigned long) size);
+		return NULL;
+	}
+
+	xml            = acl_xml2_dbuf_calloc(addr, size, dbuf);
+	xml->mm_file   = NULL;
 	xml->fd        = fd;
 	xml->mm_addr   = addr;
 	xml->block     = block;
 	xml->off       = off;
-	xml->keep_open = keep_open;
+	xml->keep_open = 1;
 	xml->len       = xml->off + 1;
 
 	return xml;
 #else
-	(void) filepath;
+	(void) fd;
 	(void) size;
 	(void) block;
 	(void) dbuf;
@@ -486,14 +499,15 @@ size_t acl_xml2_mmap_extend(ACL_XML2 *xml)
 	const char *myname = "acl_xml2_mmap_extend";
 	size_t n;
 
-	if (xml->mm_file == NULL || *xml->mm_file == 0)
-		return 0;
 	if (xml->len >= xml->size)
 		return 0;
 	if (xml->block == 0)
 		return 0;
 
 	if (xml->fd == ACL_FILE_INVALID) {
+		if (xml->mm_file == NULL || *xml->mm_file == 0)
+			return 0;
+
 		xml->fd = acl_file_open(xml->mm_file, O_CREAT | O_RDWR, 0600);
 		if (xml->fd == ACL_FILE_INVALID) {
 			acl_msg_error("%s(%d), %s: open %s error: %s",

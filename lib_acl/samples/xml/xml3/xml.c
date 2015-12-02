@@ -138,7 +138,7 @@ static void parse_xml_benchmark(int once, int max, const char *data)
 	int   i;
 	size_t size = strlen(data) * 4;
 	const char *mmap_file = "./local.map";
-	ACL_XML2 *xml = acl_xml2_mmap_alloc(mmap_file, size, 1024, 1, NULL);
+	ACL_XML2 *xml = acl_xml2_mmap_file(mmap_file, size, 1024, 1, NULL);
 
 	acl_xml2_slash(xml, 1);
 
@@ -202,7 +202,7 @@ static int parse_xml_file(const char *filepath)
 	}
 	len *= 4;
 
-	xml = acl_xml2_mmap_alloc(mmap_file, len, 1024, 1, NULL);
+	xml = acl_xml2_mmap_file(mmap_file, len, 1024, 1, NULL);
 
 	ACL_METER_TIME("-------------begin--------------");
 	while (1) {

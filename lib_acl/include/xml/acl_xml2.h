@@ -204,8 +204,22 @@ ACL_API ACL_XML2 *acl_xml2_dbuf_alloc(char *addr, size_t size,
  *  及所属节点内存在其基础上进行分配，否则，内部自动创建隶属于 xml 的内存池
  * @return {ACL_XML2*} 新创建的 xml 对象
  */
-ACL_API ACL_XML2 *acl_xml2_mmap_alloc(const char *filepath, size_t size,
+ACL_API ACL_XML2 *acl_xml2_mmap_file(const char *filepath, size_t size,
 		size_t block, int keep_open, ACL_DBUF_POOL *dbuf);
+
+/**
+ * 创建一个 xml 对象，其 xml 节点的创建的内存区建立在内存映射文件上
+ * @param fd {ACL_FILE_HANDLE} 内存映射文件的文件句柄，当创建 xml 对象成功后，该句柄
+ *  需在 xml 对象释放后才关闭
+ * @param size {size_t} 所映射的文件大小
+ * @param block {size_t} 每次进行空间大小扩充时的单位长度，在扩充时最大长度
+ *  不会超过指定的 size 大小
+ * @param dbuf {ACL_DBUF_POOL*} 内存池对象，当该针对非 NULL 时，则 xml 对象
+ *  及所属节点内存在其基础上进行分配，否则，内部自动创建隶属于 xml 的内存池
+ * @return {ACL_XML2*} 新创建的 xml 对象
+ */
+ACL_API ACL_XML2 *acl_xml2_mmap_fd(ACL_FILE_HANDLE fd, size_t size,
+		size_t block, ACL_DBUF_POOL *dbuf);
 
 /**
  * 当采用内存文件映射方式时，此函数用来扩充映射文件的空间大小，因为在初始化时
