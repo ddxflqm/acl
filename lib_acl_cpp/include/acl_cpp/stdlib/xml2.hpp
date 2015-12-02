@@ -133,6 +133,8 @@ private:
 	xml2_node* parent_internal_;
 };
 
+class fstream;
+
 class ACL_CPP_API xml2 : public xml
 {
 public:

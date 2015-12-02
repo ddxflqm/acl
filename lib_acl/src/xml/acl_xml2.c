@@ -472,7 +472,7 @@ ACL_XML2 *acl_xml2_mmap_fd(ACL_FILE_HANDLE fd, size_t size,
 		return NULL;
 	}
 
-	xml            = acl_xml2_dbuf_calloc(addr, size, dbuf);
+	xml            = acl_xml2_dbuf_alloc(addr, size, dbuf);
 	xml->mm_file   = NULL;
 	xml->fd        = fd;
 	xml->mm_addr   = addr;
