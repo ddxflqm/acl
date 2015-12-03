@@ -244,6 +244,21 @@ xml2::xml2(fstream& fp, size_t size, const char* data /* = NULL */,
 		update(data);
 }
 
+xml2::xml2(ACL_FILE_HANDLE fd, size_t size, const char* data /* = NULL */,
+	size_t block /* = 8192 */)
+{
+	acl_assert(fd != ACL_FILE_INVALID);
+	acl_assert(size > 0);
+
+	if (block > size)
+		block = size;
+
+	xml_ = acl_xml2_mmap_fd(fd, size, block, NULL);
+
+	if (data && *data)
+		update(data);
+}
+
 xml2::~xml2()
 {
 	if (iter_)
