@@ -3,6 +3,9 @@
 ------------------------------------------------------------------------
 513) 2015.12.4
 513.1) bugfix: fdp->stream->sys_read_ready should be check in event_prepare
+513.2) performance: acl_xmlcode.c 中的函数 acl_xml_encode/acl_xml_decode 通过
+提前预分配内存，以减少重复分配/释放内存的次数，从而在一定程度上提升内存操作性能
+
 function of events.c for reading event.
 
 512) 2015.12.3
