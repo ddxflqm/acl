@@ -65,6 +65,10 @@ int event_prepare(ACL_EVENT *ev)
 				fdp->event_type |= ACL_EVENT_READ;
 				fdp->fdidx_ready = ev->fdcnt_ready;
 				ev->fdtabs_ready[ev->fdcnt_ready++] = fdp;
+			} else if (fdp->stream->sys_read_ready) {
+				fdp->event_type |= ACL_EVENT_READ;
+				fdp->fdidx_ready = ev->fdcnt_ready;
+				ev->fdtabs_ready[ev->fdcnt_ready++] = fdp;
 			} else if (fdp->r_ttl > 0 && ev->present > fdp->r_ttl) {
 				fdp->event_type |= ACL_EVENT_RW_TIMEOUT;
 				fdp->fdidx_ready = ev->fdcnt_ready;
