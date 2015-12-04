@@ -55,7 +55,9 @@ int acl_xml_encode(const char *in, ACL_VSTRING *out)
 {
 	const unsigned char *ptr = (const unsigned char*) in;
 	int  n = 0;
-	size_t len = strlen(in) * 1.5;
+	size_t len = strlen(in);
+
+	len += len / 2;
 
 	ACL_VSTRING_SPACE(out, len);
 
