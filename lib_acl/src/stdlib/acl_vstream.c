@@ -280,9 +280,6 @@ AGAIN:
 		if (in->read_cnt > 0)
 			in->sys_offset += in->read_cnt;
 	} else {
-		/* 如果由事件引擎设置了套接字有数据可读，则将超时时间设 0，
-		 * 这样可以减少一次对读超时的调用
-		 */ 
 		read_cnt = in->read_fn(ACL_VSTREAM_SOCK(in), buf, size,
 			in->rw_timeout, in, in->context);
 	}
