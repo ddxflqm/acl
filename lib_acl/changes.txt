@@ -1,6 +1,11 @@
 修改历史列表：
 
 ------------------------------------------------------------------------
+514) 2015.12.7
+514.1) performance: acl_xml_util.c 中的函数 acl_xml_create_node 在创建节点时，
+如果正文内容比较大，则会因内存的快速频繁膨胀而造成性能损耗，现在采用了预分配策略，以减少
+这种性能损耗
+
 513) 2015.12.4
 513.1) bugfix: fdp->stream->sys_read_ready should be check in event_prepare
 513.2) performance: acl_xmlcode.c 中的函数 acl_xml_encode/acl_xml_decode 通过
