@@ -152,7 +152,8 @@ static const char *xml_parse_cdata(ACL_XML *xml, const char *data)
 			if (curr_node->meta[0] == ']') {
 				if (curr_node->meta[1] == ']')
 					ADDCH(curr_node->text, ']');
-				curr_node->meta[1] = ']';
+				else
+					curr_node->meta[1] = ']';
 			} else if (curr_node->meta[1] == ']') {
 				curr_node->meta[0] = ']';
 				curr_node->meta[1] = 0;
@@ -189,8 +190,6 @@ static void cdata_prepare(ACL_XML_NODE *curr_node)
 	acl_vstring_strcpy(curr_node->text, ptr);
 	ACL_VSTRING_AT_OFFSET(curr_node->ltag, sizeof("[CDATA[") - 1);
 	ACL_VSTRING_TERMINATE(curr_node->ltag);
-
-	curr_node->flag |= ACL_XML_F_CDATA;
 }
 
 static const char *xml_parse_meta_tag(ACL_XML *xml, const char *data)
@@ -204,6 +203,7 @@ static const char *xml_parse_meta_tag(ACL_XML *xml, const char *data)
 				cdata_prepare(xml->curr_node);
 				ADDCH(xml->curr_node->text, ch);
 				xml->curr_node->status = ACL_XML_S_CDATA;
+				xml->curr_node->flag |= ACL_XML_F_CDATA;
 			} else
 				xml->curr_node->status = ACL_XML_S_MTXT;
 			break;

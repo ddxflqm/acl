@@ -72,7 +72,6 @@ static void test_build(void)
 
 static void test_parse(const char* filepath)
 {
-	acl::xml1 xml;
 	acl::string buf;
 	if (acl::ifstream::load(filepath, &buf) == false)
 	{
@@ -80,6 +79,7 @@ static void test_parse(const char* filepath)
 		return;
 	}
 
+	acl::xml1 xml;
 	xml.update(buf);
 	//printf("------------- buf data print ----------------------\r\n");
 	//printf("[%s]\r\n", buf.c_str());
@@ -89,17 +89,34 @@ static void test_parse(const char* filepath)
 	xml_node_walk(xml.get_root(), 0);
 }
 
+static void test_parse_mmap(const char* filepath)
+{
+	acl::string buf;
+	if (acl::ifstream::load(filepath, &buf) == false)
+	{
+		printf("load %s error %s\r\n", filepath, acl::last_serror());
+		return;
+	}
+
+	const char* local_file = "./local.map";
+	acl::xml2 xml(local_file, buf.size() * 2);
+	xml.update(buf.c_str());
+	printf("------------- xml node walk -----------------------\r\n");
+	xml_node_walk(xml.get_root(), 0);
+}
+
 static void usage(const char* procname)
 {
-	printf("usage: %s -h[help] -f parse_file\r\n", procname);
+	printf("usage: %s -h[help] -f parse_file -m[use mmap xml]\r\n", procname);
 }
 
 int main(int argc, char* argv[])
 {
 	int   ch;
 	acl::string path;
+	bool  use_mmap = false;
 
-	while ((ch = getopt(argc, argv, "hf:")) > 0)
+	while ((ch = getopt(argc, argv, "hf:m")) > 0)
 	{
 		switch (ch)
 		{
@@ -109,6 +126,9 @@ int main(int argc, char* argv[])
 		case 'f':
 			path = optarg;
 			break;
+		case 'm':
+			use_mmap = true;
+			break;
 		default:
 			break;
 		}
@@ -117,7 +137,12 @@ int main(int argc, char* argv[])
 	if (path.empty())
 		test_build();
 	else
-		test_parse(path);
+	{
+		if (use_mmap)
+			test_parse_mmap(path);
+		else
+			test_parse(path);
+	}
 
 	return 0;
 }

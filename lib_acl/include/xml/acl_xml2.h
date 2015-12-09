@@ -72,23 +72,23 @@ struct ACL_XML2_NODE {
 #define	ACL_XML2_IS_CDATA(x)	(((x)->flag & ACL_XML2_F_CDATA))
 
 	int   status;                   /**< 状态机当前解析状态 */
-#define ACL_XML2_S_NXT	0               /**< 下一个节点 */
-#define ACL_XML2_S_LLT	1               /**< 左边 '<' */
-#define ACL_XML2_S_LGT	2               /**< 右边 '>' */
-#define	ACL_XML2_S_LCH	3               /**< 左边 '<' 后第一个字节 */
-#define ACL_XML2_S_LEM	4               /**< 左边 '<' 后的 '!' */
-#define ACL_XML2_S_LTAG	5               /**< 左边的标签名 */
-#define ACL_XML2_S_RLT	6               /**< 右边的 '<' */
-#define ACL_XML2_S_RGT	7               /**< 右边的 '>' */
-#define ACL_XML2_S_RTAG	8               /**< 右边的标签名 */
-#define ACL_XML2_S_ATTR	9               /**< 标签属性名 */
-#define ACL_XML2_S_AVAL	10              /**< 标签属性值 */
-#define ACL_XML2_S_TXT	11              /**< 节点文本 */
-#define ACL_XML2_S_MTAG	12              /**< 元数据标签 */
-#define ACL_XML2_S_MTXT	13              /**< 元数据文本 */
-#define ACL_XML2_S_MCMT	14              /**< 元数据注释 */
-#define ACL_XML2_S_MEND	15              /**< 元数据结束 */
-#define	ACL_XML_S_CDATA	16              /**< CDATA 数据 */
+#define ACL_XML2_S_NXT		0       /**< 下一个节点 */
+#define ACL_XML2_S_LLT		1       /**< 左边 '<' */
+#define ACL_XML2_S_LGT		2       /**< 右边 '>' */
+#define	ACL_XML2_S_LCH		3       /**< 左边 '<' 后第一个字节 */
+#define ACL_XML2_S_LEM		4       /**< 左边 '<' 后的 '!' */
+#define ACL_XML2_S_LTAG		5       /**< 左边的标签名 */
+#define ACL_XML2_S_RLT		6       /**< 右边的 '<' */
+#define ACL_XML2_S_RGT		7       /**< 右边的 '>' */
+#define ACL_XML2_S_RTAG		8       /**< 右边的标签名 */
+#define ACL_XML2_S_ATTR		9       /**< 标签属性名 */
+#define ACL_XML2_S_AVAL		10      /**< 标签属性值 */
+#define ACL_XML2_S_TXT		11      /**< 节点文本 */
+#define ACL_XML2_S_MTAG		12      /**< 元数据标签 */
+#define ACL_XML2_S_MTXT		13      /**< 元数据文本 */
+#define ACL_XML2_S_MCMT		14      /**< 元数据注释 */
+#define ACL_XML2_S_MEND		15      /**< 元数据结束 */
+#define	ACL_XML2_S_CDATA	16      /**< CDATA 数据 */
 
 	/* for acl_iterator, 通过 acl_foreach 列出该节点的一级子节点 */
 
