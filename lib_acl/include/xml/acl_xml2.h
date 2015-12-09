@@ -61,12 +61,15 @@ struct ACL_XML2_NODE {
 #define	ACL_XML2_F_META_EM	(1 << 2)    /**< only '!' flag */
 #define ACL_XML2_F_SELF_CL	(1 << 3)    /**< self closed flag */
 #define	ACL_XML2_F_LEAF		(1 << 4)    /**< leaf node has no child node */
+#define	ACL_XML2_F_CDATA	(1 << 5)    /**< CDATA data */
 
 /**< 是否是元数据 */
 #define	ACL_XML2_F_META		\
 	(ACL_XML2_F_META_QM | ACL_XML2_F_META_CM | ACL_XML2_F_META_EM)
 
 #define	ACL_XML2_IS_COMMENT(x)	(((x)->flag & ACL_XML2_F_META_CM))
+
+#define	ACL_XML2_IS_CDATA(x)	(((x)->flag & ACL_XML2_F_CDATA))
 
 	int   status;                   /**< 状态机当前解析状态 */
 #define ACL_XML2_S_NXT	0               /**< 下一个节点 */
@@ -85,6 +88,7 @@ struct ACL_XML2_NODE {
 #define ACL_XML2_S_MTXT	13              /**< 元数据文本 */
 #define ACL_XML2_S_MCMT	14              /**< 元数据注释 */
 #define ACL_XML2_S_MEND	15              /**< 元数据结束 */
+#define	ACL_XML_S_CDATA	16              /**< CDATA 数据 */
 
 	/* for acl_iterator, 通过 acl_foreach 列出该节点的一级子节点 */
 

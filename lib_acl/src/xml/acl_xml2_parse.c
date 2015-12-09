@@ -133,6 +133,24 @@ static const char *xml_parse_left_em(ACL_XML2 *xml, const char *data)
 	return data;
 }
 
+#define	IS_CDATA(x) (*(x) == '[' \
+	&& (*(x + 1) == 'C' || *(x + 1) == 'c') \
+	&& (*(x + 2) == 'D' || *(x + 2) == 'd') \
+	&& (*(x + 3) == 'A' || *(x + 3) == 'a') \
+	&& (*(x + 4) == 'T' || *(x + 4) == 't') \
+	&& (*(x + 5) == 'A' || *(x + 5) == 't') \
+	&& *(x + 6) == '[')
+
+static void cdata_prepare(ACL_XML2 *xml, int last_ch)
+{
+	size_t cdata_len = sizeof("[CDATA[") - 1;
+	ACL_XML2_NODE *curr_node = xml->curr_node;
+
+	(void) last_ch;
+	if (curr_node->ltag_size >= cdata_len)
+		return;
+}
+
 static const char *xml_parse_meta_tag(ACL_XML2 *xml, const char *data)
 {
 	int   ch;
@@ -151,8 +169,24 @@ static const char *xml_parse_meta_tag(ACL_XML2 *xml, const char *data)
 			xml->len--;
 			xml->curr_node->ltag_size =
 				xml->ptr - xml->curr_node->ltag;
-			*xml->ptr++ = 0;
-			xml->curr_node->status = ACL_XML2_S_MTXT;
+
+			if (IS_CDATA(xml->curr_node->ltag)) {
+				cdata_prepare(xml, ch);
+				xml->curr_node->status = ACL_XML_S_CDATA;
+				xml->curr_node->flag |= ACL_XML2_F_CDATA;
+				if (xml->len < MIN_LEN)
+					return data;
+				*xml->ptr++ = ch;
+				xml->len--;
+				if (xml->len < MIN_LEN)
+					return data;
+				xml->curr_node->text_size = xml->ptr -
+					xml->curr_node->text;
+				*xml->ptr++ = 0;
+			} else {
+				*xml->ptr++ = 0;
+				xml->curr_node->status = ACL_XML2_S_MTXT;
+			}
 			break;
 		}
 
