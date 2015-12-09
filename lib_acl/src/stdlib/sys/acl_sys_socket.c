@@ -216,20 +216,22 @@ int acl_socket_close(ACL_SOCKET fd)
 	return close(fd);
 }
 
-int acl_socket_read(ACL_SOCKET fd, void *buf, size_t size,
-	int timeout, ACL_VSTREAM *fp, void *arg acl_unused)
+static int __sys_socket_read(ACL_SOCKET fd, void *buf, size_t size,
+	int timeout, int sys_read)
 {
-	if (fp != NULL && fp->sys_read_ready) {
-		fp->sys_read_ready = 0;
-		timeout = 0;
-	}
-
-	if (timeout > 0 && acl_read_wait(fd, timeout) < 0) {
+	if (sys_read == 0 && timeout > 0 && acl_read_wait(fd, timeout) < 0) {
 		errno = acl_last_error();
 		return -1;
 	}
 
 	return read(fd, buf, size);
+}
+
+int acl_socket_read(ACL_SOCKET fd, void *buf, size_t size,
+	int timeout, ACL_VSTREAM *fp, void *arg acl_unused)
+{
+	return __sys_socket_read(fd, buf, size, timeout,
+			fp ? fp->sys_read_ready : 0);
 }
 
 int acl_socket_write(ACL_SOCKET fd, const void *buf, size_t size,
