@@ -44,6 +44,10 @@ typedef void (STDCALL *mysql_free_result_fn)(MYSQL_RES*);
 typedef my_ulonglong (STDCALL *mysql_affected_rows_fn)(MYSQL*);
 typedef int (STDCALL *mysql_set_character_set_fn)(MYSQL*, const char*);
 typedef const char* (STDCALL *mysql_character_set_name_fn)(MYSQL*);
+typedef void (STDCALL *mysql_thread_init_fn)(void);
+typedef void (STDCALL *mysql_thread_end_fn)(void);
+typedef void (STDCALL *mysql_server_init_fn)(void);
+typedef void (STDCALL *mysql_server_end_fn)(void);
 
 static mysql_libversion_fn __mysql_libversion = NULL;
 static mysql_client_info_fn __mysql_client_info = NULL;
@@ -64,6 +68,10 @@ static mysql_free_result_fn __mysql_free_result = NULL;
 static mysql_affected_rows_fn __mysql_affected_rows = NULL;
 static mysql_set_character_set_fn __mysql_set_character_set = NULL;
 static mysql_character_set_name_fn __mysql_character_set_name = NULL;
+static mysql_thread_init_fn __mysql_thread_init = NULL;
+static mysql_thread_end_fn __mysql_thread_end = NULL;
+static mysql_server_init_fn __mysql_server_init = NULL;
+static mysql_server_end_fn __mysql_server_end = NULL;
 
 static acl_pthread_once_t __mysql_once = ACL_PTHREAD_ONCE_INIT;
 static ACL_DLL_HANDLE __mysql_dll = NULL;
@@ -76,6 +84,12 @@ static void __mysql_dll_unload(void)
 {
 	if (__mysql_dll != NULL)
 	{
+		if (__mysql_server_end != NULL)
+		{
+			__mysql_server_end();
+			__mysql_server_end = NULL;
+		}
+
 		acl_dlclose(__mysql_dll);
 		__mysql_dll = NULL;
 		logger("%s unload ok", __mysql_path.c_str());
@@ -221,6 +235,30 @@ static void __mysql_dll_load(void)
 		logger_fatal("load mysql_character_set_name from %s error: %s",
 			path, acl_last_serror());
 
+	__mysql_thread_init = (mysql_thread_init_fn)
+		acl_dlsym(__mysql_dll, "mysql_thread_init");
+	if (__mysql_thread_init == NULL)
+		logger_warn("load mysql_thread_init from %s error: %s",
+			path, acl_last_serror());
+
+	__mysql_thread_end = (mysql_thread_end_fn)
+		acl_dlsym(__mysql_dll, "mysql_thread_end");
+	if (__mysql_thread_end == NULL)
+		logger_warn("load mysql_thread_end from %s error: %s",
+			path, acl_last_serror());
+
+	__mysql_server_init = (mysql_server_init_fn)
+		acl_dlsym(__mysql_dll, "mysql_server_init");
+	if (__mysql_server_init == NULL)
+		logger_warn("load mysql_server_init from %s error: %s",
+			path, acl_last_serror());
+
+	__mysql_server_end = (mysql_server_end_fn)
+		acl_dlsym(__mysql_dll, "mysql_server_end");
+	if (__mysql_server_end == NULL)
+		logger_warn("load mysql_server_end from %s error: %s",
+			path, acl_last_serror());
+
 	logger("%s loaded!", path);
 	atexit(__mysql_dll_unload);
 }
@@ -245,6 +283,10 @@ static void __mysql_dll_load(void)
 #  define  __mysql_affected_rows mysql_affected_rows
 #  define  __mysql_set_character_set mysql_set_character_set
 #  define  __mysql_character_set_name mysql_character_set_name
+#  define  __mysql_thread_init mysql_thread_init
+#  define  __mysql_thread_end mysql_thread_end
+#  define  __mysql_thread_init mysql_thread_init
+#  define  __mysql_server_end mysql_server_end
 
 # endif
 
@@ -401,6 +443,37 @@ const char* db_mysql::get_error() const
 		return "mysql not opened yet!";
 }
 
+static acl_pthread_key_t __thread_key;
+
+static void thread_free_dummy(void* ctx)
+{
+	if ((unsigned long) acl_pthread_self() != acl_main_thread_self())
+		acl_myfree(ctx);
+
+	if (__mysql_thread_end)
+		__mysql_thread_end();
+}
+
+static int* __main_dummy = NULL;
+static void main_free_dummy(void)
+{
+	if (__main_dummy)
+	{
+		acl_myfree(__main_dummy);
+		__main_dummy = NULL;
+	}
+
+	if (__mysql_thread_end)
+		__mysql_thread_end();
+}
+
+static acl_pthread_once_t __thread_once_control = ACL_PTHREAD_ONCE_INIT;
+
+static void thread_once(void)
+{
+	acl_assert(!acl_pthread_key_create(&__thread_key, thread_free_dummy));
+}
+
 bool db_mysql::dbopen(const char* charset /* = NULL */)
 {
 	if (conn_)
@@ -434,6 +507,27 @@ bool db_mysql::dbopen(const char* charset /* = NULL */)
 		db_unix = dbaddr_;
 		db_host = NULL;
 		db_port = 0;
+	}
+
+	int* dummy;
+
+	if (acl_pthread_once(&__thread_once_control, thread_once) != 0)
+		logger_error("call thread_once error: %s", acl_last_serror());
+	else if (!(dummy = (int*) acl_pthread_getspecific(__thread_key)))
+	{
+		dummy = (int*) acl_mymalloc(sizeof(int));
+		*dummy = 1;
+		acl_assert(!acl_pthread_setspecific(__thread_key, dummy));
+
+		if (__mysql_thread_init != NULL)
+			__mysql_thread_init();
+
+		if ((unsigned long) acl_pthread_self()
+			== acl_main_thread_self())
+		{
+			__main_dummy = dummy;
+			atexit(main_free_dummy);
+		}
 	}
 
 	conn_ = __mysql_init(NULL);
