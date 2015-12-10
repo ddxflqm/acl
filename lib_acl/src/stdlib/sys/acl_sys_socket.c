@@ -216,15 +216,28 @@ int acl_socket_close(ACL_SOCKET fd)
 	return close(fd);
 }
 
-static int __sys_socket_read(ACL_SOCKET fd, void *buf, size_t size,
-	int timeout, int sys_read)
+static int __sys_read(ACL_SOCKET fd, void *buf, size_t size, int readable)
 {
-	if (sys_read == 0 && timeout > 0 && acl_read_wait(fd, timeout) < 0) {
-		errno = acl_last_error();
-		return -1;
-	}
-
+	(void) readable;
 	return read(fd, buf, size);
+}
+
+static int __sys_socket_read(ACL_SOCKET fd, void *buf, size_t size,
+	int timeout, int sys_read_ready)
+{
+	int   readable;
+
+	if (sys_read_ready == 0 && timeout > 0) {
+		if (acl_read_wait(fd, timeout) < 0) {
+			errno = acl_last_error();
+			return -1;
+		}
+
+		readable = 1;
+	} else
+		readable = 0;
+
+	return __sys_read(fd, buf, size, readable);
 }
 
 int acl_socket_read(ACL_SOCKET fd, void *buf, size_t size,
