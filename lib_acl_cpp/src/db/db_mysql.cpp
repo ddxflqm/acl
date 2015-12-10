@@ -117,7 +117,7 @@ static void __mysql_dll_load(void)
 	__mysql_dll = acl_dlopen(path);
 
 	if (__mysql_dll == NULL)
-		logger_fatal("load %s error: %s", path, acl_last_serror());
+		logger_fatal("load %s error: %s", path, acl_dlerror());
 
 	// 记录动态库路径，以便于在动态库卸载时输出库路径名
 	__mysql_path = path;
@@ -126,138 +126,139 @@ static void __mysql_dll_load(void)
 		acl_dlsym(__mysql_dll, "mysql_get_client_version");
 	if (__mysql_libversion == NULL)
 		logger_fatal("load mysql_get_client_version from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_client_info = (mysql_client_info_fn)
 		acl_dlsym(__mysql_dll, "mysql_get_client_info");
 	if (__mysql_client_info == NULL)
 		logger_fatal("load mysql_get_client_info from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_init = (mysql_init_fn) acl_dlsym(__mysql_dll, "mysql_init");
 	if (__mysql_init == NULL)
 		logger_fatal("load mysql_init from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_open = (mysql_open_fn)
 		acl_dlsym(__mysql_dll, "mysql_real_connect");
 	if (__mysql_open == NULL)
 		logger_fatal("load mysql_real_connect from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_close = (mysql_close_fn)
 		acl_dlsym(__mysql_dll, "mysql_close");
 	if (__mysql_close == NULL)
 		logger_fatal("load mysql_close from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_options = (mysql_options_fn)
 		acl_dlsym(__mysql_dll, "mysql_options");
 	if (__mysql_options == NULL)
 		logger_fatal("load mysql_options from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_autocommit = (mysql_autocommit_fn)
 		acl_dlsym(__mysql_dll, "mysql_autocommit");
 	if (__mysql_autocommit == NULL)
 		logger_fatal("load mysql_autocommit from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_errno = (mysql_errno_fn)
 		acl_dlsym(__mysql_dll, "mysql_errno");
 	if (__mysql_errno == NULL)
 		logger_fatal("load mysql_errno from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_error = (mysql_error_fn)
 		acl_dlsym(__mysql_dll, "mysql_error");
 	if (__mysql_error == NULL)
 		logger_fatal("load mysql_error from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_query = (mysql_query_fn)
 		acl_dlsym(__mysql_dll, "mysql_query");
 	if (__mysql_query == NULL)
 		logger_fatal("load mysql_query from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_num_fields = (mysql_num_fields_fn)
 		acl_dlsym(__mysql_dll, "mysql_num_fields");
 	if (__mysql_num_fields == NULL)
 		logger_fatal("load mysql_num_fields from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_fetch_fields = (mysql_fetch_fields_fn)
 		acl_dlsym(__mysql_dll, "mysql_fetch_fields");
 	if (__mysql_fetch_fields == NULL)
 		logger_fatal("load mysql_fetch_fields from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_fetch_row = (mysql_fetch_row_fn)
 		acl_dlsym(__mysql_dll, "mysql_fetch_row");
 	if (__mysql_fetch_row == NULL)
 		logger_fatal("load mysql_fetch_row from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_store_result = (mysql_store_result_fn)
 		acl_dlsym(__mysql_dll, "mysql_store_result");
 	if (__mysql_store_result == NULL)
 		logger_fatal("load mysql_store_result from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_num_rows = (mysql_num_rows_fn)
 		acl_dlsym(__mysql_dll, "mysql_num_rows");
 	if (__mysql_num_rows == NULL)
 		logger_fatal("load mysql_num_rows from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_free_result = (mysql_free_result_fn)
 		acl_dlsym(__mysql_dll, "mysql_free_result");
 	if (__mysql_free_result == NULL)
 		logger_fatal("load mysql_free_result from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_affected_rows = (mysql_affected_rows_fn)
 		acl_dlsym(__mysql_dll, "mysql_affected_rows");
 	if (__mysql_affected_rows == NULL)
 		logger_fatal("load mysql_affected_rows from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_set_character_set = (mysql_set_character_set_fn)
 		acl_dlsym(__mysql_dll, "mysql_set_character_set");
 	if (__mysql_affected_rows == NULL)
 		logger_fatal("load mysql_set_character_set_fn %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_character_set_name = (mysql_character_set_name_fn)
 		acl_dlsym(__mysql_dll, "mysql_character_set_name");
 	if (__mysql_affected_rows == NULL)
 		logger_fatal("load mysql_character_set_name from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_thread_init = (mysql_thread_init_fn)
 		acl_dlsym(__mysql_dll, "mysql_thread_init");
 	if (__mysql_thread_init == NULL)
 		logger_warn("load mysql_thread_init from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_thread_end = (mysql_thread_end_fn)
 		acl_dlsym(__mysql_dll, "mysql_thread_end");
 	if (__mysql_thread_end == NULL)
 		logger_warn("load mysql_thread_end from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	__mysql_server_init = (mysql_server_init_fn)
 		acl_dlsym(__mysql_dll, "mysql_server_init");
 	if (__mysql_server_init == NULL)
 		logger_warn("load mysql_server_init from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
+		__mysql_thread_end();
 	__mysql_server_end = (mysql_server_end_fn)
 		acl_dlsym(__mysql_dll, "mysql_server_end");
 	if (__mysql_server_end == NULL)
 		logger_warn("load mysql_server_end from %s error: %s",
-			path, acl_last_serror());
+			path, acl_dlerror());
 
 	logger("%s loaded!", path);
 	atexit(__mysql_dll_unload);
