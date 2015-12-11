@@ -46,7 +46,7 @@ typedef int (STDCALL *mysql_set_character_set_fn)(MYSQL*, const char*);
 typedef const char* (STDCALL *mysql_character_set_name_fn)(MYSQL*);
 typedef void (STDCALL *mysql_thread_init_fn)(void);
 typedef void (STDCALL *mysql_thread_end_fn)(void);
-typedef void (STDCALL *mysql_server_init_fn)(void);
+typedef void (STDCALL *mysql_server_init_fn)(int, char **, char **);
 typedef void (STDCALL *mysql_server_end_fn)(void);
 
 static mysql_libversion_fn __mysql_libversion = NULL;
@@ -84,6 +84,12 @@ static void __mysql_dll_unload(void)
 {
 	if (__mysql_dll != NULL)
 	{
+		// 即使主线程没有调用 mysql_thread_init 过程，这样做也是
+		// 无害的，因为 libmysqlclient 内部会自动判断取得的线程
+		// 局部变量是否有效
+		if (__mysql_thread_end != NULL)
+			__mysql_thread_end();
+
 		if (__mysql_server_end != NULL)
 		{
 			__mysql_server_end();
