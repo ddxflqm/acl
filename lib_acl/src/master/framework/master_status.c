@@ -56,7 +56,7 @@ static void master_status_event(int type, ACL_EVENT *event acl_unused,
 	 */
 
 #if 1
-	n = read(ACL_VSTREAM_FILE(serv->status_read_stream),
+	n = read(ACL_VSTREAM_SOCK(serv->status_read_stream),
 		(char *) &stat_buf, sizeof(stat_buf));
 #else
 	n = acl_vstream_readn(serv->status_read_stream,
