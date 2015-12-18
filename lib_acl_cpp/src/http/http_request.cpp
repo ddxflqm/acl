@@ -314,10 +314,10 @@ bool http_request::request(const void* data, size_t len)
 	// 构建 HTTP 请求头
 	if (data && len > 0)
 	{
-		http_method_t method = header_.get_method();
+		header_.set_content_length(len);
 
 		// 在有数据体的条件下，重新设置 HTTP 请求方法
-		switch (method)
+		switch (header_.get_method())
 		{
 		case HTTP_METHOD_GET:
 		case HTTP_METHOD_CONNECT:
