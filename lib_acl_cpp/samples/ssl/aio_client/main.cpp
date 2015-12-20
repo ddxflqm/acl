@@ -1,6 +1,7 @@
 #include <iostream>
 #include <assert.h>
 #include "lib_acl.h"
+#include "../../util.h"
 #include "acl_cpp/lib_acl.hpp"
 
 typedef struct
@@ -67,9 +68,15 @@ public:
 		nread_ += len;
 		ctx_->nread_total++;
 
-		std::cout << ">>>>>>>> current len: " << len
-			<< "; total_len: " << nread_
-			<< "; nwrite_: " << nwrite_ << std::endl;
+		if (nwrite_ < 100 || nwrite_ % 1000 == 0)
+		{
+			char buf[256];
+
+			acl::safe_snprintf(buf, sizeof(buf),
+				"current len: %d, total_len: %d, nwrite: %d",
+				len, nread_, nwrite_);
+			acl::meter_time(__FILE__, __LINE__, buf);
+		}
 
 		write_line();
 		return true;
@@ -366,11 +373,19 @@ int main(int argc, char* argv[])
 	acl::log::stdout_open(true);
 
 	acl::aio_handle handle(use_kernel ? acl::ENGINE_KERNEL : acl::ENGINE_SELECT);
+
 	handle.set_check_inter(check_fds_inter);
+
 	int delay_sec = delay_ms / 1000;
 	int delay_usec = (delay_ms - delay_sec * 1000) * 1000;
 	handle.set_delay_sec(delay_sec);
 	handle.set_delay_usec(delay_usec);
+
+	printf(">>>delay_sec: %d, delay_usec: %d, check_fds_inter: %d\r\n",
+		delay_sec, delay_usec, check_fds_inter);
+	printf("Enter any key to continue ...\r\n");
+	getchar();
+
 	ctx.handle = &handle;
 
 	if (connect_server(ssl_conf, &ctx, ctx.id_begin) == false)
@@ -382,6 +397,9 @@ int main(int argc, char* argv[])
 
 	std::cout << "Connect " << ctx.addr << " ..." << std::endl;
 
+	struct timeval begin;
+	gettimeofday(&begin, NULL);
+
 	while (true)
 	{
 		// 如果返回 false 则表示不再继续，需要退出
@@ -389,13 +407,15 @@ int main(int argc, char* argv[])
 			break;
 	}
 
-	acl::string buf;
+	struct timeval end;
+	gettimeofday(&end, NULL);
 
-	buf << "total open: " << ctx.nopen_total
-		<< ", total write: " << ctx.nwrite_total
-		<< ", total read: " << ctx.nread_total;
+	double spent = util::stamp_sub(&end, &begin);
 
-	acl::meter_time(__FUNCTION__, __LINE__, buf.c_str());
+	printf("total open: %d, total write: %d, total read: %d,"
+		" spent: %.2f ms, speed: %.2f\r\n",
+		ctx.nopen_total, ctx.nwrite_total, ctx.nread_total,
+		spent, (ctx.nread_total * 1000) / (spent > 1 ? spent : 1));
 
 	delete ssl_conf;
 

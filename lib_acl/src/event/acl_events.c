@@ -52,6 +52,7 @@ static void event_init(ACL_EVENT *eventp, int fdsize,
 	SET_TIME(eventp->last_debug);
 
 	eventp->check_inter = 100000;  /* default: 100 ms */
+	eventp->read_ready = 0;
 
 	if (eventp->init_fn)
 		eventp->init_fn(eventp);
