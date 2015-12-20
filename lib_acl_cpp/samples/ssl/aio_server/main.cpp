@@ -51,7 +51,8 @@ public:
 		if (hook == NULL)
 		{
 			// 非 SSL 模式，异步读取数据
-			client_->read(__timeout);
+			//client_->read(__timeout);
+			client_->gets(__timeout, false);
 			return true;
 		}
 
@@ -70,7 +71,8 @@ public:
 			client_->disable_read();
 
 			// 异步读取数据，将会回调 read_callback
-			client_->read(__timeout);
+			//client_->read(__timeout);
+			client_->gets(__timeout, false);
 			return true;
 		}
 
@@ -211,7 +213,10 @@ public:
 
 		// 非 SSL 模式下，从异步流读一行数据
 		else
-			client->read(__timeout);
+		{
+			//client->read(__timeout);
+			client->gets(__timeout, false);
+		}
 
 		return true;
 	}
@@ -225,6 +230,8 @@ static void usage(const char* procname)
 		"	-t timeout\r\n"
 		"	-n conn_used_limit\r\n"
 		"	-k[use kernel event: epoll/iocp/kqueue/devpool]\r\n"
+		"	-M delay_ms\r\n"
+		"	-I check_fds_inter\r\n"
 		"	-K ssl_key_file -C ssl_cert_file [in SSL mode]\r\n",
 		procname);
 }
@@ -235,9 +242,9 @@ int main(int argc, char* argv[])
 	bool use_kernel = false;
 	acl::string key_file, cert_file;
 	acl::string addr("127.0.0.1:9800");
-	int  ch;
+	int  ch, delay_ms = 100, check_fds_inter = 10;
 
-	while ((ch = getopt(argc, argv, "l:hkL:t:K:C:n:")) > 0)
+	while ((ch = getopt(argc, argv, "l:hkL:t:K:C:n:M:I:")) > 0)
 	{
 		switch (ch)
 		{
@@ -264,6 +271,12 @@ int main(int argc, char* argv[])
 			break;
 		case 'n':
 			__max_used = atoi(optarg);
+			break;
+		case 'M':
+			delay_ms = atoi(optarg);
+			break;
+		case 'I':
+			check_fds_inter = atoi(optarg);
 			break;
 		default:
 			break;
@@ -303,6 +316,11 @@ int main(int argc, char* argv[])
 
 	// 构建异步引擎类对象
 	acl::aio_handle handle(use_kernel ? acl::ENGINE_KERNEL : acl::ENGINE_SELECT);
+	handle.set_check_inter(check_fds_inter);
+	int delay_sec = delay_ms / 1000;
+	int delay_usec = (delay_ms - delay_sec * 1000) * 1000;
+	handle.set_delay_sec(delay_sec);
+	handle.set_delay_usec(delay_usec);
 
 	// 创建监听异步流
 	acl::aio_listen_stream* sstream = new acl::aio_listen_stream(&handle);

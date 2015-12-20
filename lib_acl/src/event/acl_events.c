@@ -265,7 +265,8 @@ ACL_EVENT *acl_event_new(int event_mode, int use_thr,
 
 void acl_event_set_check_inter(ACL_EVENT *eventp, int n)
 {
-	eventp->check_inter = n * 1000;
+	if (n >= 0)
+		eventp->check_inter = ((acl_int64) n) * 1000;
 }
 
 void acl_event_set_fire_hook(ACL_EVENT *eventp,
