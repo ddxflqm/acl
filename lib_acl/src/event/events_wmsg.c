@@ -861,7 +861,7 @@ ACL_EVENT *event_new_wmsg(UINT nMsg)
 	eventp->free_fn              = event_free;
 	eventp->enable_read_fn       = event_enable_read;
 	eventp->enable_write_fn      = event_enable_write;
-	eventp->enable_listen_fn     = event_enable_read;
+	eventp->enable_listen_fn     = event_enable_listen;
 	eventp->disable_read_fn      = event_disable_read;
 	eventp->disable_write_fn     = event_disable_write;
 	eventp->disable_readwrite_fn = event_disable_readwrite;
