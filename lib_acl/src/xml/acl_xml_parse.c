@@ -183,11 +183,17 @@ static const char *xml_parse_cdata(ACL_XML *xml, const char *data)
 	&& (*(x + 5) == 'A' || *(x + 5) == 't') \
 	&& *(x + 6) == '[')
 
+#define CDATA_S sizeof("[CDATA[") - 1
+
 static void cdata_prepare(ACL_XML_NODE *curr_node)
 {
-	char *ptr = STR(curr_node->ltag) + sizeof("[CDATA[") - 1;
+	char *ptr;
 
-	acl_vstring_strcpy(curr_node->text, ptr);
+	ACL_VSTRING_TERMINATE(curr_node->ltag);
+	ptr = STR(curr_node->ltag) + sizeof("[CDATA[") - 1;
+
+	if (*ptr)
+		acl_vstring_strcpy(curr_node->text, ptr);
 	ACL_VSTRING_AT_OFFSET(curr_node->ltag, sizeof("[CDATA[") - 1);
 	ACL_VSTRING_TERMINATE(curr_node->ltag);
 }
@@ -209,7 +215,9 @@ static const char *xml_parse_meta_tag(ACL_XML *xml, const char *data)
 			break;
 		}
 #else
-		if (IS_CDATA(STR(xml->curr_node->ltag))) {
+		if (LEN(xml->curr_node->ltag) >= CDATA_S
+			&& IS_CDATA(STR(xml->curr_node->ltag)))
+		{
 			cdata_prepare(xml->curr_node);
 			xml->curr_node->status = ACL_XML_S_CDATA;
 			xml->curr_node->flag |= ACL_XML_F_CDATA;
