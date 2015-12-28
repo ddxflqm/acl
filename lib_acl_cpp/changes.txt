@@ -3,6 +3,7 @@
 -----------------------------------------------------------------------
 393) 2015.12.28
 393.1) bugfix: 类 xml1, xml2 中的函数 getFirstElementByTag 内部没有判断 NULL
+393.2) bugfix: 取消了 http_request 类中的 acl_assert(client_) 断言判断
 
 392.1) 2015.12.25
 392.1) bugfix: dbuf_guard 类应禁止引用拷贝，否则在调用 create 的参数中如果有
