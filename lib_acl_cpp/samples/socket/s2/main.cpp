@@ -7,8 +7,8 @@ class thread_client : public acl::thread
 {
 public:
 	thread_client(acl::socket_stream* conn) : conn_(conn) {}
-	~thread_client(void) {}
 
+protected:
 	void* run(void)
 	{
 		for (;;)
@@ -22,12 +22,14 @@ public:
 		}
 
 		delete conn_;
+		delete this;
 
 		return NULL;
 	}
 
 private:
 	acl::socket_stream* conn_;
+	~thread_client(void) {}
 };
 
 int main(int argc, char* argv[])
@@ -56,8 +58,10 @@ int main(int argc, char* argv[])
 			printf("accept failed: %s\r\n", acl::last_serror());
 			break;
 		}
+
+		client->set_rw_timeout(10);
 		thread_client* thread = new thread_client(client);
-		thread->run();
+		thread->start();
 	}
 
 	return (0);
