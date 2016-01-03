@@ -581,8 +581,11 @@ bool db_mysql::dbopen(const char* charset /* = NULL */)
 	{
 		logger_error("connect mysql error(%s), db_host=%s, db_port=%d,"
 			" db_unix=%s, db_name=%s, db_user=%s, db_pass=%s",
-			__mysql_error(conn_), db_host ? db_host : "null", db_port,
-			db_unix ? db_unix : "null", dbname_, dbuser_,
+			__mysql_error(conn_),
+			db_host ? db_host : "null", db_port,
+			db_unix ? db_unix : "null",
+			dbname_ ? dbname_ : "null",
+			dbuser_ ? dbuser_ : "null",
 			dbpass_ ? dbpass_ : "null");
 
 		__mysql_close(conn_);
