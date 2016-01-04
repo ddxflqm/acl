@@ -61,20 +61,28 @@ static void mime_content_type(MIME_NODE *node, const HEADER_OPTS *header_info)
 	if ((tok_count = PARSE_CONTENT_TYPE_HEADER(state, &cp)) <= 0) {
 
 		/*
-		* other/whatever.
-		*/
+		 * other/whatever.
+		 */
 		node->ctype = MIME_CTYPE_OTHER;
 		return;
 	}
 
 	/* tok_count > 0 */
 
+	if (state->token[0].type == HEADER_TOK_TOKEN)
+		node->ctype_s = acl_mystrdup(state->token[0].u.value);
+	if (tok_count >= 3 && state->token[1].type == '/'
+		&& state->token[2].type == HEADER_TOK_TOKEN)
+	{
+		node->stype_s = acl_mystrdup(state->token[2].u.value);
+	}
+
 	/*
-	* message/whatever body parts start with another block of message
-	* headers that we may want to look at. The partial and external-body
-	* subtypes cannot be subjected to 8-bit -> 7-bit conversion, so we
-	* must properly recognize them.
-	*/
+	 * message/whatever body parts start with another block of message
+	 * headers that we may want to look at. The partial and external-body
+	 * subtypes cannot be subjected to 8-bit -> 7-bit conversion, so we
+	 * must properly recognize them.
+	 */
 	if (TOKEN_MATCH(state->token[0], "message")) {
 		node->ctype = MIME_CTYPE_MESSAGE;
 		node->stype = MIME_STYPE_OTHER;
@@ -89,9 +97,9 @@ static void mime_content_type(MIME_NODE *node, const HEADER_OPTS *header_info)
 	}
 
 	/*
-	* multipart/digest has default content type message/rfc822,
-	* multipart/whatever has default content type text/plain.
-	*/
+	 * multipart/digest has default content type message/rfc822,
+	 * multipart/whatever has default content type text/plain.
+	 */
 	else if (TOKEN_MATCH(state->token[0], "multipart")) {
 		node->ctype = MIME_CTYPE_MULTIPART;
 		if (tok_count >= 3 && state->token[1].type == '/') {
@@ -113,14 +121,14 @@ static void mime_content_type(MIME_NODE *node, const HEADER_OPTS *header_info)
 		}
 
 		/*
-		* Yes, this is supposed to capture multiple boundary strings,
-		* which are illegal and which could be used to hide content in
-		* an implementation dependent manner. The code below allows us
-		* to find embedded message headers as long as the sender uses
-		* only one of these same-level boundary strings.
-		* 
-		* Yes, this is supposed to ignore the boundary value type.
-		*/
+		 * Yes, this is supposed to capture multiple boundary strings,
+		 * which are illegal and which could be used to hide content
+		 * in an implementation dependent manner. The code below allows
+		 * us to find embedded message headers as long as the sender
+		 * uses only one of these same-level boundary strings.
+		 * 
+		 * Yes, this is supposed to ignore the boundary value type.
+		 */
 		while ((tok_count = PARSE_CONTENT_TYPE_HEADER(state, &cp)) >= 0) {
 			if (tok_count < 3 || state->token[1].type != '=')
 				continue;
@@ -136,10 +144,10 @@ static void mime_content_type(MIME_NODE *node, const HEADER_OPTS *header_info)
 	}
 
 	/*
-	* text/whatever. Right now we don't really care if it is plain or
-	* not, but we may want to recognize subtypes later, and then this
-	* code can serve as an example.
-	*/
+	 * text/whatever. Right now we don't really care if it is plain or
+	 * not, but we may want to recognize subtypes later, and then this
+	 * code can serve as an example.
+	 */
 	else if (TOKEN_MATCH(state->token[0], "text")) {
 		node->ctype = MIME_CTYPE_TEXT;
 		if (tok_count >= 3 && state->token[1].type == '/') {
@@ -228,10 +236,10 @@ static void mime_content_encoding(MIME_NODE *node,
 	header_token(state->token, 1, state->token_buffer, ptr, (char *) 0, 0)
 
 	/*
-	* Do content-transfer-encoding header. Never set the encoding domain to
-	* something other than 7bit, 8bit or binary, even if we don't recognize
-	* the input.
-	*/
+	 * Do content-transfer-encoding header. Never set the encoding domain
+	 * to something other than 7bit, 8bit or binary, even if we don't
+	 * recognize the input.
+	 */
 	cp = STR(node->buffer) + strlen(header_info->name) + 1;
 	if (PARSE_CONTENT_ENCODING_HEADER(state, &cp) > 0
 		&& state->token[0].type == HEADER_TOK_TOKEN)
@@ -296,9 +304,9 @@ void mime_state_downgrade(MIME_STATE *state, int rec_type,
 }
 
 	/*
-	* Insert a soft line break when the output reaches a critical length
-	* before we reach a hard line break.
-	*/
+	 * Insert a soft line break when the output reaches a critical length
+	 * before we reach a hard line break.
+	 */
 	for (cp = CU_CHAR_PTR(text); cp < CU_CHAR_PTR(text + len); cp++) {
 		/* Critical length before hard line break. */
 		if (LEN(node->buffer) > 72) {
@@ -314,10 +322,10 @@ void mime_state_downgrade(MIME_STATE *state, int rec_type,
 	}
 
 	/*
-	* Flush output after a hard line break (i.e. the end of a REC_TYPE_NORM
-	* record). Fix trailing whitespace as per the RFC: in the worst case,
-	* the output length will grow from 73 characters to 75 characters.
-	*/
+	 * Flush output after a hard line break (i.e. the end of a REC_TYPE_NORM
+	 * record). Fix trailing whitespace as per the RFC: in the worst case,
+	 * the output length will grow from 73 characters to 75 characters.
+	 */
 	if (rec_type == REC_TYPE_NORM) {
 		if (LEN(node->buffer) > 0
 			&& ((ch = END(node->buffer)[-1]) == ' ' || ch == '\t'))
@@ -374,7 +382,7 @@ static void mail_rcpt(MIME_NODE *node, const HEADER_OPTS *header_info)
 
 static void mail_from(MIME_NODE *node, const HEADER_OPTS *header_info)
 {
-	//MIME_STATE *state = node->state;
+	/* MIME_STATE *state = node->state; */
 	TOK822 *tree;
 	TOK822 **addr_list;
 	TOK822 **tpp;
@@ -467,8 +475,8 @@ static void mime_header_line(MIME_NODE *node)
 				mail_rcpt(node, header_info);
 			} else if ((header_info->flags & HDR_OPT_SENDER)) {
 				/* 分析发件人地址: From, Sender,
-				*  Replyto, Returnpath
-				*/
+				 * Replyto, Returnpath
+				 */
 				mail_from(node, header_info);
 			} else if ((header_info->flags & HDR_OPT_SUBJECT)) {
 				mail_subject(node, header_info);
