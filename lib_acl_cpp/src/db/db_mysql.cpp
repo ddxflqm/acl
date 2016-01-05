@@ -704,6 +704,9 @@ bool db_mysql::tbl_exists(const char* tbl_name)
 
 bool db_mysql::sql_select(const char* sql)
 {
+	// 优先调用基类方法释放上次的查询结果
+	free_result();
+
 	if (sane_mysql_query(sql) == false)
 		return false;
 	MYSQL_RES *my_res = __mysql_store_result(conn_);
@@ -732,6 +735,8 @@ bool db_mysql::sql_select(const char* sql)
 
 bool db_mysql::sql_update(const char* sql)
 {
+	free_result();
+
 	if (sane_mysql_query(sql) == false)
 		return false;
 	int ret = (int) __mysql_affected_rows(conn_);
