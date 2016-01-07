@@ -153,6 +153,7 @@ static const char *xml_parse_cdata(ACL_XML2 *xml, const char *data)
 					*xml->ptr++ = 0;
 					xml->len--;
 				}
+				printf(">>>>>>>>>>>>cdata end<<<%s>>\r\n", data);
 				return data;
 			}
 			if (curr_node->meta[0] == ']') {
@@ -219,7 +220,7 @@ static void cdata_prepare(ACL_XML2 *xml)
 	ACL_XML2_NODE *curr_node = xml->curr_node;
 	char *src, *dst;
 
-	if (xml->len <= MIN_LEN || curr_node->ltag_size <= cdata_len)
+	if (xml->len <= MIN_LEN || curr_node->ltag_size < cdata_len)
 		return;
 
 	/* compute the max bytes for data copying */
@@ -245,6 +246,7 @@ static void cdata_prepare(ACL_XML2 *xml)
 	curr_node->ltag_size = cdata_len;
 	curr_node->ltag[curr_node->ltag_size] = 0;
 
+	printf(">>>>>>>ctag tag: {%s}\r\n", curr_node->ltag);
 #if 0
 	if (xml->len < MIN_LEN)
 		return;

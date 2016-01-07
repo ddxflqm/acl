@@ -399,7 +399,6 @@ ACL_XML2_ATTR *acl_xml2_addElementAttr(ACL_XML2_NODE *node,
 
 /***************************************************************************/
 
-#if 0
 static const char *escape_append(ACL_XML2 *xml, const char *in, int quoted)
 {
 	const char *next = in, *last = in;
@@ -436,16 +435,16 @@ static const char *escape_append(ACL_XML2 *xml, const char *in, int quoted)
 
 	return next;
 }
-#endif
 
 #define	CHECK_SPACE(x) \
 	if ((x)->len == 0 && acl_xml2_mmap_extend((x)) == 0) \
 		break;
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 static const char *mem_copy(ACL_XML2 *xml, const char *in)
 {
-	return in;
-	printf(">>>addr: [%s]\r\n",in);
 	while (*in != 0 && xml->len > 0) {
 		*xml->ptr++ = *in++;
 		xml->len--;
@@ -462,7 +461,6 @@ const char *acl_xml2_build(ACL_XML2 *xml)
 	ACL_ITER iter1, iter2;
 	char *res = xml->ptr;
 
-	(void) iter2; (void) attr;
 	if (xml->len == 0)
 		return xml->addr;
 
@@ -474,8 +472,17 @@ const char *acl_xml2_build(ACL_XML2 *xml)
 		CHECK_SPACE(xml);
 
 		node = (ACL_XML2_NODE*) iter1.data;
-#if 0
-		if (ACL_XML2_IS_COMMENT(node)) {
+		if (ACL_XML2_IS_CDATA(node)) {
+			printf(">>>>build->cdata: {%s}\r\n", node->ltag);
+			mem_copy(xml, "<![CDATA[");
+			CHECK_SPACE(xml);
+			if (node->text_size > 0) {
+				mem_copy(xml, node->text);
+				CHECK_SPACE(xml);
+			}
+			mem_copy(xml, "]]>");
+			CHECK_SPACE(xml);
+		} else if (ACL_XML2_IS_COMMENT(node)) {
 			mem_copy(xml, "<!--");
 			CHECK_SPACE(xml);
 
@@ -503,8 +510,6 @@ const char *acl_xml2_build(ACL_XML2 *xml)
 				CHECK_SPACE(xml);
 			}
 		} else {
-#endif
-		{
 			*xml->ptr++ = '<';
 			xml->len--;
 			CHECK_SPACE(xml);
@@ -512,7 +517,6 @@ const char *acl_xml2_build(ACL_XML2 *xml)
 			mem_copy(xml, node->ltag);
 			CHECK_SPACE(xml);
 		}
-#if 0
 
 		acl_foreach(iter2, node->attr_list) {
 			attr = (ACL_XML2_ATTR*) iter2.data;
@@ -608,7 +612,6 @@ const char *acl_xml2_build(ACL_XML2 *xml)
 
 			node = node->parent;
 		}
-#endif
 	}
 
 	*xml->ptr = 0;
