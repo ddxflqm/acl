@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include <stdio.h>
+
 #ifndef ACL_PREPARE_COMPILE
 
 #include "stdlib/acl_vstream.h"
@@ -269,19 +270,29 @@ int acl_xml2_removeElementAttr(ACL_XML2_NODE *node, const char *name)
 	return 0;
 }
 
+/***************************************************************************/
+
 static const char *string_copy(const char *in, ACL_XML2 *xml)
 {
-	if (xml->len < 1)
+	if (xml->len == 0 && acl_xml2_mmap_extend(xml) == 0)
 		return in;
 
+	/* reserve last position which maybe '\0' */
+	xml->ptr++;
 	xml->len--;
+
+	if (xml->len == 0 && acl_xml2_mmap_extend(xml) == 0)
+		return in;
 
 	while (*in != 0 && xml->len > 0) {
 		*xml->ptr++ = *in++;
 		xml->len--;
+		if (xml->len == 0 && acl_xml2_mmap_extend(xml) == 0)
+			return in;
 	}
 
-	*xml->ptr++ = 0;
+	if (xml->len > 0 || acl_xml2_mmap_extend(xml) > 0)
+		*xml->ptr = 0;
 
 	return in;
 }
@@ -293,7 +304,7 @@ void acl_xml2_node_set_text(ACL_XML2_NODE *node, const char *text)
 
 	node->text = node->xml->ptr;
 	string_copy(text, node->xml);
-	node->text_size = node->xml->ptr - node->text;
+	node->text_size = node->xml->ptr - node->text ;
 }
 
 ACL_XML2_NODE *acl_xml2_create_node(ACL_XML2 *xml, const char* tag,
@@ -374,27 +385,33 @@ ACL_XML2_ATTR *acl_xml2_addElementAttr(ACL_XML2_NODE *node,
 	return attr;
 }
 
+/***************************************************************************/
+
 static const char *escape_append(ACL_XML2 *xml, const char *in, int quoted)
 {
-	const char *left;
+	const char *next = in, *last = in;
+	size_t len = strlen(in);
 
-	if (xml->len == 0)
-		return 0;
+	if (xml->len == 0 && acl_xml2_mmap_extend(xml) == 0)
+		return next;
 
 	if (quoted) {
 		*xml->ptr++ = '"';
 		xml->len--;
 	}
 
-	left = acl_xml_encode2(in, strlen(in), &xml->ptr, &xml->len);
-	if (*left != 0)
-		return left;
+	while (len > 0) {
+		size_t n = acl_xml_encode2(&next, len, xml->ptr, xml->len);
+		if (n == 0 && acl_xml2_mmap_extend(xml) == 0)
+			return next;
+		len -= next - last;
+		last = next;
+		xml->ptr += n;
+		xml->len -= n;
+	}
 
-	if (xml->len == 0)
-		return left;
-
-	xml->ptr--;
-	xml->len++;
+	if (xml->len == 0 && acl_xml2_mmap_extend(xml) == 0)
+		return next;
 
 	if (quoted) {
 		*xml->ptr++ = '"';
@@ -404,22 +421,23 @@ static const char *escape_append(ACL_XML2 *xml, const char *in, int quoted)
 	if (xml->len > 0)
 		*xml->ptr = 0;
 
-	return left;
+	return next;
 }
+
+#define	CHECK_SPACE(x) \
+	if ((x)->len == 0 && acl_xml2_mmap_extend((x)) == 0) \
+		break;
 
 static const char *mem_copy(ACL_XML2 *xml, const char *in)
 {
 	while (*in != 0 && xml->len > 0) {
 		*xml->ptr++ = *in++;
 		xml->len--;
+		CHECK_SPACE(xml);
 	}
 
 	return in;
 }
-
-#define	CHECK_SPACE(x) \
-	if ((x)->len == 0 && acl_xml2_mmap_extend((x)) == 0) \
-		break;
 
 const char *acl_xml2_build(ACL_XML2 *xml)
 {
@@ -431,6 +449,7 @@ const char *acl_xml2_build(ACL_XML2 *xml)
 	if (xml->len == 0)
 		return xml->addr;
 
+	/* reserve one space for the last '\0 */
 	xml->len--;
 
 	acl_foreach(iter1, xml) {
