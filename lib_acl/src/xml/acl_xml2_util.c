@@ -277,13 +277,6 @@ static const char *string_copy(const char *in, ACL_XML2 *xml)
 	if (xml->len == 0 && acl_xml2_mmap_extend(xml) == 0)
 		return in;
 
-	/* reserve last position which maybe '\0' */
-	xml->ptr++;
-	xml->len--;
-
-	if (xml->len == 0 && acl_xml2_mmap_extend(xml) == 0)
-		return in;
-
 	while (*in != 0 && xml->len > 0) {
 		*xml->ptr++ = *in++;
 		xml->len--;
@@ -291,8 +284,10 @@ static const char *string_copy(const char *in, ACL_XML2 *xml)
 			return in;
 	}
 
-	if (xml->len > 0 || acl_xml2_mmap_extend(xml) > 0)
-		*xml->ptr = 0;
+	if (xml->len > 0 || acl_xml2_mmap_extend(xml) > 0) {
+		*xml->ptr++ = 0;
+		xml->len--;
+	}
 
 	return in;
 }
@@ -305,6 +300,8 @@ void acl_xml2_node_set_text(ACL_XML2_NODE *node, const char *text)
 	node->text = node->xml->ptr;
 	string_copy(text, node->xml);
 	node->text_size = node->xml->ptr - node->text ;
+	if (node->text_size > 0)
+		node->text_size--;
 }
 
 ACL_XML2_NODE *acl_xml2_create_node(ACL_XML2 *xml, const char* tag,
@@ -317,11 +314,15 @@ ACL_XML2_NODE *acl_xml2_create_node(ACL_XML2 *xml, const char* tag,
 	node->ltag = xml->ptr;
 	string_copy(tag, xml);
 	node->ltag_size = xml->ptr - node->ltag;
+	if (node->ltag_size > 0)
+		node->ltag_size--;
 
 	if (text && *text) {
 		node->text = xml->ptr;
 		string_copy(text, xml);
 		node->text_size = xml->ptr - node->text;
+		if (node->text_size > 0)
+			node->text_size--;
 	}
 
 	return node;
@@ -335,11 +336,16 @@ ACL_XML2_ATTR *acl_xml2_node_add_attr(ACL_XML2_NODE *node, const char *name,
 	acl_assert(name && *name);
 	attr->name = node->xml->ptr;
 	string_copy(name, node->xml);
+	attr->name_size = node->xml->ptr - attr->name;
+	if (attr->name_size > 0)
+		attr->name_size--;
 
 	if (value && *value) {
 		attr->value = node->xml->ptr;
 		string_copy(value, node->xml);
 		attr->value_size = node->xml->ptr - attr->value;
+		if (attr->value_size > 0)
+			attr->value_size--;
 	}
 
 	return attr;
@@ -368,6 +374,8 @@ ACL_XML2_ATTR *acl_xml2_addElementAttr(ACL_XML2_NODE *node,
 		attr->value = node->xml->ptr;
 		string_copy(value, node->xml);
 		attr->value_size = node->xml->ptr - attr->value;
+		if (attr->value_size > 0)
+			attr->value_size--;
 		return attr;
 	}
 
@@ -375,10 +383,14 @@ ACL_XML2_ATTR *acl_xml2_addElementAttr(ACL_XML2_NODE *node,
 	attr->name = node->xml->ptr;
 	string_copy(name, node->xml);
 	attr->name_size = node->xml->ptr - attr->name;
+	if (attr->name_size > 0)
+		attr->name_size--;
 
 	attr->value = node->xml->ptr;
 	string_copy(value, node->xml);
 	attr->value_size = node->xml->ptr - attr->value;
+	if (attr->value_size > 0)
+		attr->value_size--;
 
 	acl_array_append(node->attr_list, attr);
 
@@ -387,6 +399,7 @@ ACL_XML2_ATTR *acl_xml2_addElementAttr(ACL_XML2_NODE *node,
 
 /***************************************************************************/
 
+#if 0
 static const char *escape_append(ACL_XML2 *xml, const char *in, int quoted)
 {
 	const char *next = in, *last = in;
@@ -423,6 +436,7 @@ static const char *escape_append(ACL_XML2 *xml, const char *in, int quoted)
 
 	return next;
 }
+#endif
 
 #define	CHECK_SPACE(x) \
 	if ((x)->len == 0 && acl_xml2_mmap_extend((x)) == 0) \
@@ -430,6 +444,8 @@ static const char *escape_append(ACL_XML2 *xml, const char *in, int quoted)
 
 static const char *mem_copy(ACL_XML2 *xml, const char *in)
 {
+	return in;
+	printf(">>>addr: [%s]\r\n",in);
 	while (*in != 0 && xml->len > 0) {
 		*xml->ptr++ = *in++;
 		xml->len--;
@@ -446,6 +462,7 @@ const char *acl_xml2_build(ACL_XML2 *xml)
 	ACL_ITER iter1, iter2;
 	char *res = xml->ptr;
 
+	(void) iter2; (void) attr;
 	if (xml->len == 0)
 		return xml->addr;
 
@@ -457,6 +474,7 @@ const char *acl_xml2_build(ACL_XML2 *xml)
 		CHECK_SPACE(xml);
 
 		node = (ACL_XML2_NODE*) iter1.data;
+#if 0
 		if (ACL_XML2_IS_COMMENT(node)) {
 			mem_copy(xml, "<!--");
 			CHECK_SPACE(xml);
@@ -485,6 +503,8 @@ const char *acl_xml2_build(ACL_XML2 *xml)
 				CHECK_SPACE(xml);
 			}
 		} else {
+#endif
+		{
 			*xml->ptr++ = '<';
 			xml->len--;
 			CHECK_SPACE(xml);
@@ -492,6 +512,7 @@ const char *acl_xml2_build(ACL_XML2 *xml)
 			mem_copy(xml, node->ltag);
 			CHECK_SPACE(xml);
 		}
+#if 0
 
 		acl_foreach(iter2, node->attr_list) {
 			attr = (ACL_XML2_ATTR*) iter2.data;
@@ -587,6 +608,7 @@ const char *acl_xml2_build(ACL_XML2 *xml)
 
 			node = node->parent;
 		}
+#endif
 	}
 
 	*xml->ptr = 0;
