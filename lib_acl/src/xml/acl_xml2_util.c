@@ -272,19 +272,21 @@ int acl_xml2_removeElementAttr(ACL_XML2_NODE *node, const char *name)
 
 /***************************************************************************/
 
+#define MIN	1
+
 static const char *string_copy(const char *in, ACL_XML2 *xml)
 {
-	if (xml->len == 0 && acl_xml2_mmap_extend(xml) == 0)
+	if (xml->len < MIN && acl_xml2_mmap_extend(xml) < MIN)
 		return in;
 
-	while (*in != 0 && xml->len > 0) {
+	while (*in != 0 && xml->len > MIN) {
 		*xml->ptr++ = *in++;
 		xml->len--;
-		if (xml->len == 0 && acl_xml2_mmap_extend(xml) == 0)
+		if (xml->len < MIN && acl_xml2_mmap_extend(xml) < MIN)
 			return in;
 	}
 
-	if (xml->len > 0 || acl_xml2_mmap_extend(xml) > 0) {
+	if (xml->len > MIN || acl_xml2_mmap_extend(xml) > MIN) {
 		*xml->ptr++ = 0;
 		xml->len--;
 	}
@@ -404,7 +406,7 @@ static const char *escape_append(ACL_XML2 *xml, const char *in, int quoted)
 	const char *next = in, *last = in;
 	size_t len = strlen(in);
 
-	if (xml->len == 0 && acl_xml2_mmap_extend(xml) == 0)
+	if (xml->len < MIN && acl_xml2_mmap_extend(xml) < MIN) 
 		return next;
 
 	if (quoted) {
@@ -414,7 +416,7 @@ static const char *escape_append(ACL_XML2 *xml, const char *in, int quoted)
 
 	while (len > 0) {
 		size_t n = acl_xml_encode2(&next, len, xml->ptr, xml->len);
-		if (n == 0 && acl_xml2_mmap_extend(xml) == 0)
+		if (n < MIN && acl_xml2_mmap_extend(xml) < MIN)
 			return next;
 		len -= next - last;
 		last = next;
@@ -422,7 +424,7 @@ static const char *escape_append(ACL_XML2 *xml, const char *in, int quoted)
 		xml->len -= n;
 	}
 
-	if (xml->len == 0 && acl_xml2_mmap_extend(xml) == 0)
+	if (xml->len < MIN && acl_xml2_mmap_extend(xml) < MIN)
 		return next;
 
 	if (quoted) {
@@ -430,18 +432,15 @@ static const char *escape_append(ACL_XML2 *xml, const char *in, int quoted)
 		xml->len--;
 	}
 
-	if (xml->len > 0)
+	if (xml->len >= MIN)
 		*xml->ptr = 0;
 
 	return next;
 }
 
 #define	CHECK_SPACE(x) \
-	if ((x)->len == 0 && acl_xml2_mmap_extend((x)) == 0) \
+	if ((x)->len < MIN && acl_xml2_mmap_extend((x)) < MIN) \
 		break;
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 
 static const char *mem_copy(ACL_XML2 *xml, const char *in)
 {
@@ -461,7 +460,7 @@ const char *acl_xml2_build(ACL_XML2 *xml)
 	ACL_ITER iter1, iter2;
 	char *res = xml->ptr;
 
-	if (xml->len == 0)
+	if (xml->len < MIN)
 		return xml->addr;
 
 	/* reserve one space for the last '\0 */
