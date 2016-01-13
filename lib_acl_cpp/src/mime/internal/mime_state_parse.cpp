@@ -29,7 +29,7 @@ typedef struct MIME_ENCODING {
 	int     domain;         /* subset of encoding */
 } MIME_ENCODING;
 
-static const MIME_ENCODING mime_encoding_map[] = {  /* RFC 2045 */
+static const MIME_ENCODING mime_encoding_map[] = {      /* RFC 2045 */
 	{ "7bit", MIME_ENC_7BIT, MIME_ENC_7BIT },       /* domain */
 	{ "8bit", MIME_ENC_8BIT, MIME_ENC_8BIT },       /* domain */
 	{ "binary", MIME_ENC_BINARY, MIME_ENC_BINARY }, /* domain */
@@ -606,97 +606,97 @@ static int mime_state_head(MIME_STATE *state, const char *s, int n)
 }
 
 // 分析 multipart 部分体, 当匹配到一个完整的分隔符后则表明该部分数据体分析完毕
-static int mime_bound_body(const char *boundary, MIME_NODE *node,
-	const char *s, int n, int *finish)
+static int mime_bound_body(MIME_STATE *state, const char *boundary,
+	MIME_NODE *node, const char *s, int n, int *finish)
 {
-	const unsigned char *cp;
+	const unsigned char *cp, *end = (const unsigned char*) s + n;
 	const unsigned char *startn = NULL;
+	size_t bound_len = strlen(boundary);
 
-	for (cp = (const unsigned char *) s;
-		cp < (const unsigned char *) s + n; cp++)
+	for (cp = (const unsigned char *) s; cp < end; cp++)
 	{
 		// 记录下 \r\n 的位置
 		if (*cp == '\r')
-			node->last_cr_pos = node->state->curr_off;
+			node->last_cr_pos = state->curr_off;
 		else if (*cp == '\n')
-			node->last_lf_pos = node->state->curr_off;
+			node->last_lf_pos = state->curr_off;
 
-		node->state->curr_off++;
-		if (node->bound_ptr) {
-			if (*cp == *node->bound_ptr) {
-				node->bound_ptr++;
-				if (*node->bound_ptr == 0) {
-
-					/* 说明完全匹配 */
-					*finish = 1;
-
-					node->body_end = node->state->curr_off
-						- (off_t) strlen(node->state->curr_bound);
-					node->body_data_end = node->body_end;
-
-					// 因为 body_end 记录的是某个结点最后的位置，其中会包含
-					// 根据协议附加的 \r\n，所以真实数据的结束位置 body_data_end
-					// 得是去掉这些数据后的位置
-					if (node->last_lf_pos + (off_t) strlen(boundary)
-						== node->state->curr_off - 1)
-					{
-						node->body_data_end--;
-						if (node->last_cr_pos + 1 == node->last_lf_pos)
-							node->body_data_end--;
-					}
-
-					if (startn > (const unsigned char *) s) {
-
-						/* 将匹配之前的数据拷贝 */
-						APPEND(node->body, (const char*) s,
-							(const char*) startn - s);
-					}
-					node->bound_ptr = NULL;
-					cp++;
-					break;
-				}
-			} else {
+		state->curr_off++;
+		if (node->bound_ptr != NULL) {
+			if (*cp != *node->bound_ptr) {
 				/* 说明之前的匹配失效，需要重新匹配，
 				 * 但必须将之前匹配的字符拷贝
 				 */
-
 				if (node->bound_ptr > boundary) {
 					APPEND(node->body, boundary,
 						node->bound_ptr - boundary);
 				}
 				node->bound_ptr = NULL;
-			}
-		}
-		if (!node->bound_ptr) {
-			if (*cp == *boundary) {
-				node->bound_ptr = boundary + 1;
-
+			} else if (*++node->bound_ptr == 0) {
 				/* 说明完全匹配 */
-				if (*node->bound_ptr == 0) {
-					node->body_end = node->state->curr_off
-						- (off_t) strlen(node->state->curr_bound);
-					node->body_data_end = node->body_end;
+				*finish = 1;
 
-					// 因为 body_end 记录的是某个结点最后的位置，其中会包含
-					// 根据协议附加的 \r\n，所以真实数据的结束位置 body_data_end
-					// 得是去掉这些数据后的位置
-					if (node->last_lf_pos + (off_t) strlen(boundary)
-						== node->state->curr_off - 1)
-					{
+				node->body_end = state->curr_off
+					- (off_t) strlen(state->curr_bound);
+				node->body_data_end = node->body_end;
+
+				// 因为 body_end 记录的是某个结点最后的位置，
+				// 其中会包含, 根据协议附加的 \r\n，所以真实
+				// 数据的结束位置 body_data_end 是去掉这些数据
+				// 后的位置
+				if (node->last_lf_pos + (off_t) bound_len
+					== state->curr_off - 1)
+				{
+					node->body_data_end--;
+					if (node->last_cr_pos + 1 == node->last_lf_pos)
 						node->body_data_end--;
-						if (node->last_cr_pos + 1 == node->last_lf_pos)
-							node->body_data_end--;
-					}
-					*finish = 1;
-					node->bound_ptr = NULL;
-					cp++;
-					break;
 				}
-				startn = cp;
-			} else {
-				ADDCH(node->body, *cp);
+
+				if (startn > (const unsigned char *) s) {
+
+					/* 将匹配之前的数据拷贝 */
+					APPEND(node->body, (const char*) s,
+						(const char*) startn - s);
+				}
+				node->bound_ptr = NULL;
+				cp++;
+				break;
 			}
 		}
+
+		if (node->bound_ptr != NULL)
+			continue;
+
+		if (*cp != *boundary) {
+			ADDCH(node->body, *cp);
+			continue;
+		}
+
+		node->bound_ptr = boundary + 1;
+
+		/* 说明完全匹配 */
+		if (*node->bound_ptr == 0) {
+			node->body_end = state->curr_off
+				- (off_t) strlen(state->curr_bound);
+			node->body_data_end = node->body_end;
+
+			// body_end 记录的是某个结点最后的位置，其中会包含
+			// 根据协议附加的 \r\n，所以真实数据的结束位置
+			// body_data_end 是去掉这些数据后的位置
+			if (node->last_lf_pos + (off_t) strlen(boundary)
+				== node->state->curr_off - 1)
+			{
+				node->body_data_end--;
+				if (node->last_cr_pos + 1 == node->last_lf_pos)
+					node->body_data_end--;
+			}
+			*finish = 1;
+			node->bound_ptr = NULL;
+			cp++;
+			break;
+		}
+
+		startn = cp;
 	}
 
 	return (int) (n - ((const char*) cp - s));
@@ -717,17 +717,20 @@ static int mime_state_body(MIME_STATE *state, const char *s, int n)
 		APPEND(state->curr_node->body, s, n);
 		state->curr_off += n;
 
-		/* 因为 curr_off 指向的是下一个偏移位置，所以 body_end = curr_off - 1 */
+		/* 因为 curr_off 指向下一个偏移位置，所以
+		 * body_end = curr_off - 1
+		 */
 		state->curr_node->body_end = state->curr_off - 1;
-		state->curr_node->body_data_end = state->curr_node->body_end;  // add by zsx, 2012.5.28
-		return (0);
+		state->curr_node->body_data_end = state->curr_node->body_end;
+		return 0;
 	}
 
-	n  = mime_bound_body(state->curr_bound, state->curr_node, s, n, &finish);
+	n  = mime_bound_body(state, state->curr_bound,
+			state->curr_node, s, n, &finish);
 	if (finish)
 		state->curr_status = MIME_S_BODY_BOUND_CRLF;
 
-	return (n);
+	return n;
 }
 
 // 查找分隔符后的 "\r\n"
