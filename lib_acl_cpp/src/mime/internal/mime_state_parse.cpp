@@ -615,8 +615,7 @@ static int mime_bound_body(MIME_STATE *state, const char *boundary,
 	const unsigned char *startn = NULL;
 	size_t bound_len = strlen(boundary);
 
-	for (cp = (const unsigned char *) s; cp < end; cp++)
-	{
+	for (cp = (const unsigned char *) s; cp < end; cp++) {
 		// 记录下 \r\n 的位置
 		if (*cp == '\r')
 			node->last_cr_pos = state->curr_off;
@@ -624,6 +623,7 @@ static int mime_bound_body(MIME_STATE *state, const char *boundary,
 			node->last_lf_pos = state->curr_off;
 
 		state->curr_off++;
+
 		if (node->bound_ptr != NULL) {
 			if (*cp != *node->bound_ptr) {
 				// 说明之前的匹配失效，需要重新匹配，
@@ -634,36 +634,36 @@ static int mime_bound_body(MIME_STATE *state, const char *boundary,
 				}
 
 				node->bound_ptr = NULL;
-			} else if (*++node->bound_ptr != 0)
-				continue;
+			} else if (*++node->bound_ptr == 0) {
+				/* 说明完全匹配 */
+				*finish = 1;
 
-			/* 说明完全匹配 */
-			*finish = 1;
+				node->body_end = state->curr_off
+					- (off_t) strlen(state->curr_bound);
+				node->body_data_end = node->body_end;
 
-			node->body_end = state->curr_off
-				- (off_t) strlen(state->curr_bound);
-			node->body_data_end = node->body_end;
-
-			// 因为 body_end 记录的是某个结点最后的位置，
-			// 其中会包含, 根据协议附加的 \r\n，所以真实
-			// 数据的结束位置 body_data_end 是去掉这些数据
-			// 后的位置
-			if (node->last_lf_pos + (off_t) bound_len
-				== state->curr_off - 1)
-			{
-				node->body_data_end--;
-				if (node->last_cr_pos + 1 == node->last_lf_pos)
+				// 因为 body_end 记录的是某个结点最后的位置，
+				// 其中会包含, 根据协议附加的 \r\n，所以真实
+				// 数据的结束位置 body_data_end 是去掉这些数据
+				// 后的位置
+				if (node->last_lf_pos + (off_t) bound_len
+						== state->curr_off - 1)
+				{
 					node->body_data_end--;
-			}
+					if (node->last_cr_pos + 1 == node->last_lf_pos)
+						node->body_data_end--;
+				}
 
-			if (startn > (const unsigned char *) s) {
-				/* 将匹配之前的数据拷贝 */
-				APPEND(node->body, (const char*) s,
-					(const char*) startn - s);
-			}
-			node->bound_ptr = NULL;
-			cp++;
-			break;
+				if (startn > (const unsigned char *) s) {
+					/* 将匹配之前的数据拷贝 */
+					APPEND(node->body, (const char*) s,
+							(const char*) startn - s);
+				}
+				node->bound_ptr = NULL;
+				cp++;
+				break;
+			} else
+				continue;
 		}
 
 		// --> node->bound_ptr == NULL
