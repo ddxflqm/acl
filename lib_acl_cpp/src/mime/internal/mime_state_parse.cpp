@@ -346,7 +346,7 @@ static ACL_FIFO *mail_addr_add(ACL_FIFO *addr_list, const char *addr)
 	mail_addr = (MAIL_ADDR*) acl_mycalloc(1, sizeof(MAIL_ADDR));
 	mail_addr->addr = acl_mystrdup(addr);
 	acl_fifo_push(addr_list, mail_addr);
-	return (addr_list);
+	return addr_list;
 }
 
 static void mail_rcpt(MIME_NODE *node, const HEADER_OPTS *header_info)
@@ -513,7 +513,7 @@ static int mime_state_head(MIME_STATE *state, const char *s, int n)
 	MIME_NODE *node = state->curr_node;
 
 	if (n <= 0)
-		return (n);
+		return n;
 
 	/* 如果还未找到换行符，则继续 */
 
@@ -531,7 +531,7 @@ static int mime_state_head(MIME_STATE *state, const char *s, int n)
 			s++;
 		}
 
-		return (n);
+		return n;
 	}
 
 	/* 如果数据以换行开始， 说明当前的邮件头结束 */
@@ -550,14 +550,14 @@ static int mime_state_head(MIME_STATE *state, const char *s, int n)
 
 		/* 略过开头无用的空行 */
 		if (node->valid_line == 0)
-			return (0);
+			return 0;
 
 		/* 如果当前结点为 multipart 格式, 则重置 state->curr_bound */
 		if (node->boundary != NULL)
 			state->curr_bound = STR(node->boundary);
 		state->curr_status = MIME_S_BODY;
 		node->body_begin = state->curr_off;
-		return (n - 1);
+		return n - 1;
 	}
 	if (*s == '\r') {
 		state->curr_off++;
@@ -565,12 +565,12 @@ static int mime_state_head(MIME_STATE *state, const char *s, int n)
 			/* XXX: 出现了 \n\r\r 现象 */
 			node->last_ch = '\r';
 			node->last_lf = 0;
-			return (n - 1);
+			return n - 1;
 		}
 
 		node->last_ch = '\r';
 		/* 返回, 以期待下一个字符为 '\n' */
-		return (n - 1);
+		return n - 1;
 	}
 
 	/* 清除 '\n' */
@@ -593,7 +593,8 @@ static int mime_state_head(MIME_STATE *state, const char *s, int n)
 			}
 			s++;
 		}
-		return (n);
+
+		return n;
 	}
 
 	/* 处理头部的上一行数据 */
@@ -602,7 +603,8 @@ static int mime_state_head(MIME_STATE *state, const char *s, int n)
 		mime_header_line(node);
 		node->valid_line++;
 	}
-	return (n);
+
+	return n;
 }
 
 // 分析 multipart 部分体, 当匹配到一个完整的分隔符后则表明该部分数据体分析完毕
@@ -624,48 +626,47 @@ static int mime_bound_body(MIME_STATE *state, const char *boundary,
 		state->curr_off++;
 		if (node->bound_ptr != NULL) {
 			if (*cp != *node->bound_ptr) {
-				/* 说明之前的匹配失效，需要重新匹配，
-				 * 但必须将之前匹配的字符拷贝
-				 */
+				// 说明之前的匹配失效，需要重新匹配，
+				// 但必须将之前匹配的字符拷贝
 				if (node->bound_ptr > boundary) {
 					APPEND(node->body, boundary,
 						node->bound_ptr - boundary);
 				}
+
 				node->bound_ptr = NULL;
-			} else if (*++node->bound_ptr == 0) {
-				/* 说明完全匹配 */
-				*finish = 1;
+			} else if (*++node->bound_ptr != 0)
+				continue;
 
-				node->body_end = state->curr_off
-					- (off_t) strlen(state->curr_bound);
-				node->body_data_end = node->body_end;
+			/* 说明完全匹配 */
+			*finish = 1;
 
-				// 因为 body_end 记录的是某个结点最后的位置，
-				// 其中会包含, 根据协议附加的 \r\n，所以真实
-				// 数据的结束位置 body_data_end 是去掉这些数据
-				// 后的位置
-				if (node->last_lf_pos + (off_t) bound_len
-					== state->curr_off - 1)
-				{
+			node->body_end = state->curr_off
+				- (off_t) strlen(state->curr_bound);
+			node->body_data_end = node->body_end;
+
+			// 因为 body_end 记录的是某个结点最后的位置，
+			// 其中会包含, 根据协议附加的 \r\n，所以真实
+			// 数据的结束位置 body_data_end 是去掉这些数据
+			// 后的位置
+			if (node->last_lf_pos + (off_t) bound_len
+				== state->curr_off - 1)
+			{
+				node->body_data_end--;
+				if (node->last_cr_pos + 1 == node->last_lf_pos)
 					node->body_data_end--;
-					if (node->last_cr_pos + 1 == node->last_lf_pos)
-						node->body_data_end--;
-				}
-
-				if (startn > (const unsigned char *) s) {
-
-					/* 将匹配之前的数据拷贝 */
-					APPEND(node->body, (const char*) s,
-						(const char*) startn - s);
-				}
-				node->bound_ptr = NULL;
-				cp++;
-				break;
 			}
+
+			if (startn > (const unsigned char *) s) {
+				/* 将匹配之前的数据拷贝 */
+				APPEND(node->body, (const char*) s,
+					(const char*) startn - s);
+			}
+			node->bound_ptr = NULL;
+			cp++;
+			break;
 		}
 
-		if (node->bound_ptr != NULL)
-			continue;
+		// --> node->bound_ptr == NULL
 
 		if (*cp != *boundary) {
 			ADDCH(node->body, *cp);
@@ -690,6 +691,7 @@ static int mime_bound_body(MIME_STATE *state, const char *boundary,
 				if (node->last_cr_pos + 1 == node->last_lf_pos)
 					node->body_data_end--;
 			}
+
 			*finish = 1;
 			node->bound_ptr = NULL;
 			cp++;
@@ -737,7 +739,7 @@ static int mime_state_body(MIME_STATE *state, const char *s, int n)
 static int mime_state_body_bound_crlf(MIME_STATE *state, const char *s, int n)
 {
 	if (n <= 0)
-		return (n);
+		return n;
 
 	/* 如果不是分隔符的最后两个 "--" 则说明还由其它结点由本分隔符分隔 */
 
@@ -746,7 +748,7 @@ static int mime_state_body_bound_crlf(MIME_STATE *state, const char *s, int n)
 		state->curr_node->last_ch = '\n';
 		
 		state->curr_off++;
-		state->curr_node->bound_end = state->curr_node->state->curr_off;
+		state->curr_node->bound_end = state->curr_off;
 
 		/*
 		state->curr_node->body_end = state->curr_node->bound_end
@@ -767,12 +769,13 @@ static int mime_state_body_bound_crlf(MIME_STATE *state, const char *s, int n)
 				/* xxx: 本结点不应为根结点 */
 				state->curr_status = MIME_S_TERM;
 			} else if (state->curr_node->parent == state->root) {
-				/* 说明根结点的一级子结点都结束, 则整封邮件分析完毕 */
+				/* 说明根结点的一级子结点都结束,
+				 * 则整封邮件分析完毕 */
 				state->curr_status = MIME_S_TERM;
 			} else {
-				/* 说明本结点为根结点的二级或以上结点, 同时说明
-				 * 本结点的父结点已经结束, 下一步需要找出本结点的
-				 * 爷爷结点的分隔符
+				/* 说明本结点为根结点的二级或以上结点, 同时
+				 * 说明本结点的父结点已经结束, 下一步需要找
+				 * 出本结点的爷爷结点的分隔符
 				 */
 
 				/* 只有根结点 root 的父结点为 NULL */
@@ -780,48 +783,55 @@ static int mime_state_body_bound_crlf(MIME_STATE *state, const char *s, int n)
 				acl_assert(state->curr_node->parent->boundary);
 
 				state->curr_node = state->curr_node->parent;
-				state->curr_bound = STR(state->curr_node->parent->boundary);
+				state->curr_bound =
+					STR(state->curr_node->parent->boundary);
 				
 				state->curr_status = MIME_S_MULTI_BOUND;
 				state->curr_node->bound_ptr = NULL;
 			}
-		} else {
-			acl_assert(state->curr_node != NULL);
 
-			MIME_NODE *node = mime_node_new(state);
-
-			node->header_begin = state->curr_off;
-			if (state->curr_node->boundary != NULL) {
-				acl_assert(state->curr_bound == STR(state->curr_node->boundary));
-				mime_node_add_child(state->curr_node, node);
-			} else {
-				acl_assert(state->curr_node->parent->boundary != NULL);
-				acl_assert(state->curr_bound == STR(state->curr_node->parent->boundary));
-				mime_node_add_child(state->curr_node->parent, node);
-			}
-			state->curr_node = node;
-			state->curr_status = MIME_S_HEAD;
-			state->curr_node->last_ch = 0;
-			state->curr_node->last_lf = 0;
+			return n - 1;
 		}
-		return (n - 1);
+
+		acl_assert(state->curr_node != NULL);
+
+		MIME_NODE *node = mime_node_new(state);
+
+		node->header_begin = state->curr_off;
+		if (state->curr_node->boundary != NULL) {
+			acl_assert(state->curr_bound ==
+				STR(state->curr_node->boundary));
+			mime_node_add_child(state->curr_node, node);
+		} else {
+			acl_assert(state->curr_node->parent->boundary != NULL);
+			acl_assert(state->curr_bound ==
+				STR(state->curr_node->parent->boundary));
+			mime_node_add_child(state->curr_node->parent, node);
+		}
+
+		state->curr_node = node;
+		state->curr_status = MIME_S_HEAD;
+		state->curr_node->last_ch = 0;
+		state->curr_node->last_lf = 0;
+
+		return n - 1;
 	} else if (*s == '\r') {
 		state->curr_node->last_cr_pos = state->curr_off;
 		state->curr_node->last_ch = '\r';
 		state->curr_off++;
 		state->use_crlf = 1;
 		/* 期待下一个字符为 '\n' */
-		return (n - 1);
+		return n - 1;
 	} else if (*s == '-') {
 		state->curr_off++;
 		if (state->curr_node->bound_term[0] == '-') {
 			state->curr_node->bound_term[1] = '-';
 			/* 期待下一个字符为 '\r' 或 '\n' */
-			return (n - 1);
+			return n - 1;
 		} else {
 			/* 期待下一个字符为 '-' */
 			state->curr_node->bound_term[0] = '-';
-			return (n - 1);
+			return n - 1;
 		}
 	} else {
 		/* XXX: 分隔符后非法字符 ? */
@@ -837,14 +847,14 @@ static int mime_state_body_bound_crlf(MIME_STATE *state, const char *s, int n)
 		state->curr_status = MIME_S_HEAD;
 		state->curr_node->last_ch = 0;
 		state->curr_node->last_lf = 0;
-		return (n - 1);
+		return n - 1;
 	}
 }
 
 static int mime_state_multi_bound(MIME_STATE *state, const char *s, int n)
 {
 	MIME_NODE *node = state->curr_node;
-	const unsigned char *cp;
+	const unsigned char *cp, *end = (const unsigned char*) s + n;
 	//const unsigned char *startn = NULL;
 
 	acl_assert(state->curr_bound != NULL);
@@ -853,9 +863,7 @@ static int mime_state_multi_bound(MIME_STATE *state, const char *s, int n)
 
 	const char *boundary = state->curr_bound;
 
-	for (cp = (const unsigned char *) s;
-		cp < (const unsigned char *) s + n; cp++)
-	{
+	for (cp = (const unsigned char *) s; cp < end; cp++) {
 		// 记录下 \r\n 的位置
 		if (*cp == '\r')
 			node->last_cr_pos = state->curr_off;
@@ -863,27 +871,20 @@ static int mime_state_multi_bound(MIME_STATE *state, const char *s, int n)
 			node->last_lf_pos = state->curr_off;
 
 		state->curr_off++;
-		if (node->bound_ptr) {
-			if (*cp == *node->bound_ptr) {
-				node->bound_ptr++;
-				if (*node->bound_ptr == 0) {
-
-					/* 说明完全匹配 */
-
-					state->curr_status = MIME_S_MULTI_BOUND_CRLF;
-					node->bound_ptr = NULL;
-					cp++;
-					break;
-				}
-			} else {
-
-				/* 说明之前的匹配失效，需要重新匹配，
-				 * 但必须将之前匹配的字符拷贝
-				 */
-
+		if (node->bound_ptr != NULL) {
+			if (*cp != *node->bound_ptr) {
+				// 说明之前的匹配失效，需要重新匹配，
+				// 但必须将之前匹配的字符拷贝
 				node->bound_ptr = NULL;
+			} else if (*++node->bound_ptr == 0) {
+				// 说明完全匹配
+				state->curr_status = MIME_S_MULTI_BOUND_CRLF;
+				node->bound_ptr = NULL;
+				cp++;
+				break;
 			}
 		}
+
 		if (!node->bound_ptr && *cp == *boundary) {
 			node->bound_ptr = boundary + 1;
 
@@ -926,18 +927,18 @@ static int mime_state_multi_bound_crlf(MIME_STATE *state, const char *s, int n)
 		node->bound_ptr = NULL;
 		node->last_ch = 0;
 		node->last_lf = 0;
-		return (n - 1);
+		return n - 1;
 	} else if (*s == '\r') {
 		state->curr_node->last_cr_pos = state->curr_off;
 		state->curr_node->last_ch = '\r';
 		state->curr_off++;
 		state->use_crlf = 1;
 		/* 期待下一个字符为 '\n' */
-		return (n - 1);
+		return n - 1;
 	} else {
 		/* xxx */
 		state->curr_off += n;
-		return (0);
+		return 0;
 	}
 }
 
@@ -945,7 +946,7 @@ static int mime_state_term(MIME_STATE *state, const char *s, int n)
 {
 	(void) s;
 	state->curr_off += n;
-	return (0);
+	return 0;
 }
 
 static struct MIME_STATUS_MACHINE status_tab[] = {
@@ -963,7 +964,7 @@ int mime_state_update(MIME_STATE *state, const char *ptr, int n)
 	while (n > 0) {
 		int ret = status_tab[state->curr_status].callback(state, s, n);
 		if (state->curr_status == MIME_S_TERM)
-			return (1);
+			return 1;
 		acl_assert(ret >= 0);
 		if (ret == 0)
 			break;
@@ -971,5 +972,5 @@ int mime_state_update(MIME_STATE *state, const char *ptr, int n)
 		n = ret;
 	}
 
-	return (0);
+	return 0;
 }
