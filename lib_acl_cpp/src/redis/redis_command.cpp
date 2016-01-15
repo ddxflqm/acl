@@ -664,9 +664,14 @@ long long int redis_command::get_number64(bool* success /* = NULL */)
 		if (result == NULL)
 			logger_error("result NULL");
 		else
-			logger_error("result type: %d != %d£¬ error: %s",
+		{
+			string info;
+			result->argv_to_string(info);
+
+			logger_error("result type: %d != %d£¬ error: %s, info: %s",
 				result->get_type(), REDIS_RESULT_INTEGER,
-				result_error());
+				result_error(), info.c_str());
+		}
 		return -1;
 	}
 	if (success)
