@@ -268,4 +268,31 @@ const redis_result** redis_result::get_children(size_t* size) const
 	return children_;
 }
 
+const string& redis_result::to_string(string& out) const
+{
+	redis_result_t type = get_type();
+	if (type != REDIS_RESULT_ARRAY)
+	{
+		string buf;
+		argv_to_string(buf);
+		out += buf;
+		out += "\r\n";
+		return out;
+	}
+
+	size_t size;
+	const redis_result** children = get_children(&size);
+	if (children == NULL)
+		return out;
+
+	for (size_t i = 0; i < size; i++)
+	{
+		const redis_result* rr = children[i];
+		if (rr != NULL)
+			rr->to_string(out);
+	}
+
+	return out;
+}
+
 } // namespace acl

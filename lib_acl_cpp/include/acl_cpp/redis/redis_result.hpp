@@ -187,6 +187,13 @@ public:
 		return dbuf_;
 	}
 
+	/**
+	 * 将整个对象转换成字符串
+	 * @param out {string&} 存储结果(以追加方式添加)
+	 * @return {const string&}
+	 */
+	const string& to_string(string& out) const;
+
 private:
 	~redis_result(void);
 
