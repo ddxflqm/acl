@@ -1,6 +1,11 @@
 修改历史列表：
 
 ------------------------------------------------------------------------
+525) 2016.1.16
+525.1) bugfix: acl_multi_server.c/acl_single_server.c/acl_trigger_server.c，在
+将监控监听套接口的读事件时，应该调用 acl_event_enable_listen，而不是调用
+acl_event_enable_read
+
 524) 2016.1.8
 524.1) bugfix: acl_xml_parse.c/acl_xml2_parse.c/acl_xml_util.c/acl_xml2_util.c,
 修复了当数据节点为 META, COMMENT, CDATA 时解析与创建 xml 对象时的 BUG
