@@ -26,12 +26,19 @@ ACL_API int acl_getpeername(ACL_SOCKET sockfd, char *buf, size_t bsize);
 ACL_API int acl_getsockname(ACL_SOCKET sockfd, char *buf, size_t bsize);
 
 /**
- * 取得套接字的类型
+ * 取得套接字的类型：是网络套接字还是域套接字
  * @param sockfd {ACL_SOCKET} 网络套接字
  * @return {int} -1: 表示出错或输入非法或非套接字; >= 0 表示成功获得套接字
  *  类型，返回值有 AF_INET 或 AF_UNIX(仅限 UNIX 平台)
  */
 ACL_API int acl_getsocktype(ACL_SOCKET sockfd);
+
+/**
+ * 检查套接字：是监听套接字还是网络套接字
+ * @param sockefd {ACL_SOCKET} 套接字句柄
+ * @return {int} 返回 -1 表示该句柄非套接字，1 为监听套接字，0 为非监听套接字
+ */
+ACL_API int acl_check_socket(ACL_SOCKET sockfd);
 
 #ifdef	__cplusplus
 }

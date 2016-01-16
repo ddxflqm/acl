@@ -129,3 +129,17 @@ int acl_getsocktype(ACL_SOCKET sockfd)
 		return AF_INET;
 	return -1;
 }
+
+int acl_check_socket(ACL_SOCKET fd)
+{
+	int val, ret;
+	socklen_t len = sizeof(val);
+
+	ret = getsockopt(fd, SOL_SOCKET, SO_ACCEPTCONN, (void*) &val, &len);
+	if (ret == -1)
+		return -1;
+	else if (val)
+		return 1;
+	else
+		return 0;
+}
