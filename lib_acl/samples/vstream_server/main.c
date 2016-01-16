@@ -60,11 +60,11 @@ int   main(int argc, char *argv[])
 	printf("listening on %s ...\r\n", addr);
 	n = acl_check_socket(ACL_VSTREAM_SOCK(server));
 	if (n == 1)
-		printf("%d is listening socket\r\n", n);
+		printf("%d is listening socket\r\n", ACL_VSTREAM_SOCK(server));
 	else if (n == 0)
-		printf("%d is no-listening socket\r\n", n);
+		printf("%d is no-listening socket\r\n", ACL_VSTREAM_SOCK(server));
 	else if (n == -1)
-		printf("%d is not socket\r\n", n);
+		printf("%d is not socket\r\n", ACL_VSTREAM_SOCK(server));
 
 	/* 接收外来客户端连接 */
 	client = acl_vstream_accept(server, addr, sizeof(addr));
