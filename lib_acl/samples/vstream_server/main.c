@@ -29,6 +29,7 @@ int   main(int argc, char *argv[])
 	ACL_VSTREAM *server, *client;
 	char  addr[64], *buf = NULL, line[128];
 	int   n, i, len, inter = 1000;
+	int   type = 0;
 	double spent;
 	struct timeval begin, end;
 
@@ -57,16 +58,23 @@ int   main(int argc, char *argv[])
 		return 1;
 	}
 #else
-	if (strchr(addr, '/') != NULL || !acl_ipv4_addr_valid(addr))
+	if (strchr(addr, '/') != NULL || !acl_ipv4_addr_valid(addr)) {
 		n = acl_unix_listen(addr, 128, ACL_BLOCKING);
-	else
+#if defined(ACL_MACOSX)
+		type = ACL_VSTREAM_TYPE_LISTEN_UNIX;
+#endif
+	} else {
 		n = acl_inet_listen(addr, 127, ACL_BLOCKING);
+#if defined(ACL_MACOSX)
+		type = ACL_VSTREAM_TYPE_LISTEN_INET;
+#endif
+	}
 	if (n == ACL_SOCKET_INVALID)
 	{
 		printf("listen %s error %s\r\n", addr, acl_last_serror());
 		return 1;
 	}
-	server = acl_vstream_fdopen(n, 0, 8192, 0, 0);
+	server = acl_vstream_fdopen(n, 0, 8192, 0, type);
 #endif
 
 	printf("listening on %s ok!\r\n", addr);

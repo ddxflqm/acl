@@ -2037,13 +2037,13 @@ ACL_VSTREAM *acl_vstream_fdopen(ACL_SOCKET fd, unsigned int oflags,
 	   需要给其分配读缓冲区
 	 */
 
-	/*
+#ifdef ACL_MACOSX
 	if ((fdtype & ACL_VSTREAM_TYPE_LISTEN_INET)
 	    || (fdtype & ACL_VSTREAM_TYPE_LISTEN_UNIX))
 	{
 		fdtype |= ACL_VSTREAM_TYPE_LISTEN;
 	}
-	*/
+#endif
 
 	if (acl_is_listening_socket(fd)) {
 		int ret = acl_getsocktype(fd);
