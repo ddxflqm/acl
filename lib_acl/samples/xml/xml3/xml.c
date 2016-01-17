@@ -283,6 +283,11 @@ static void xml_node_attrs(ACL_XML2_NODE* node, int n)
 		printf("attr->%s(%ld)=\"%s(%ld)\"\n",
 			attr->name, (long) attr->name_size,
 			attr->value, (long) attr->value_size);
+		if (attr->name_size != strlen(attr->name)) {
+			printf("%s(%d): name_size invalie\r\n",
+				__FUNCTION__, __LINE__);
+			exit (1);
+		}
 	}
 }
 
@@ -299,16 +304,27 @@ static void walk_xml_node(ACL_XML2_NODE *node, int n)
 		for (i = 0; i < n; i++)
 			printf("\t");
 
-		printf("tag->%s, size: %ld\n", child->ltag,
-			(long) child->ltag_size);
+		printf("tag->%s, size: %ld, %ld\n", child->ltag,
+			(long) child->ltag_size, (long) strlen(child->ltag));
+
+		if (child->ltag_size != strlen(child->ltag)) {
+			printf("%s(%d): ltag_size invalid\r\n",
+				__FUNCTION__, __LINE__);
+			exit (1);
+		}
 
 		xml_node_attrs(child, n + 1);
 
 		for (i = 0; i < n + 1; i++)
 			printf("\t");
 
-		printf("text->%s, size: %ld\n", child->text,
-			(long) child->text_size);
+		printf("text->%s, size: %ld, %ld\n", child->text,
+			(long) child->text_size, (long) strlen(child->text));
+		if (child->text_size != strlen(child->text)) {
+			printf("%s(%d): text_size invalid\r\n",
+				__FUNCTION__, __LINE__);
+			exit (1);
+		}
 
 		walk_xml_node(child, n + 1);
 	}
@@ -506,7 +522,8 @@ static void parse_xml(int once, const char *data,
 
 	printf("----------------- build xml -------------------------\r\n");
 	ptr = acl_xml2_build(xml);
-	printf("%s\r\n", ptr);
+	printf("%s, len: %ld, %ld\r\n", ptr, (long) strlen(ptr),
+		(long) (xml->ptr - ptr));
 	printf("----------------- build xml end ---------------------\r\n");
 
 	/* ÊÍ·Å xml ¶ÔÏó */
@@ -610,6 +627,8 @@ static void build_xml(void)
 	printf("--------------------xml string-------------------\r\n");
 	buf = acl_xml2_build(xml);
 	printf("%s\n", buf);
+	printf("length: %ld, %ld\r\n", (long) strlen(buf),
+		(long) (xml->ptr - buf));
 	printf("--------------------xml string end---------------\r\n");
 
 	acl_myfree(addr);
