@@ -50,14 +50,26 @@ int   main(int argc, char *argv[])
 		}
 	}
 
-	/* 监听本地服务地址 */
+#if 0
 	server = acl_vstream_listen(addr, 128);
 	if (server == NULL) {
 		printf("listen %s error %s\r\n", addr, acl_last_serror());
 		return 1;
 	}
+#else
+	if (strchr(addr, '/') != NULL || !acl_ipv4_addr_valid(addr))
+		n = acl_unix_listen(addr, 128, ACL_BLOCKING);
+	else
+		n = acl_inet_listen(addr, 127, ACL_BLOCKING);
+	if (n == ACL_SOCKET_INVALID)
+	{
+		printf("listen %s error %s\r\n", addr, acl_last_serror());
+		return 1;
+	}
+	server = acl_vstream_fdopen(n, 0, 8192, 0, 0);
+#endif
 
-	printf("listening on %s ...\r\n", addr);
+	printf("listening on %s ok!\r\n", addr);
 	n = acl_check_socket(ACL_VSTREAM_SOCK(server));
 	if (n == 1)
 		printf("%d is listening socket\r\n", ACL_VSTREAM_SOCK(server));
@@ -66,6 +78,9 @@ int   main(int argc, char *argv[])
 	else if (n == -1)
 		printf("%d is not socket\r\n", ACL_VSTREAM_SOCK(server));
 
+	n = acl_is_listening_socket(ACL_VSTREAM_SOCK(server));
+	printf("server is listening socket: %s\r\n", n ? "yes" : "no");
+
 	/* 接收外来客户端连接 */
 	client = acl_vstream_accept(server, addr, sizeof(addr));
 	if (client == NULL) {
@@ -73,6 +88,8 @@ int   main(int argc, char *argv[])
 		acl_vstream_close(server);
 		return 1;
 	}
+	printf("client is listening socket: %s\r\n",
+		acl_is_listening_socket(ACL_VSTREAM_SOCK(client)) ? "yes" : "no");
 
 	/* 从客户端读取一行数据，从而知道客户每次发送数据的长度 */
 	n = acl_vstream_gets_nonl(client, line, sizeof(line));
@@ -94,6 +111,8 @@ int   main(int argc, char *argv[])
 			printf("read error %s\r\n", acl_last_serror());
 			break;
 		}
+		buf[n] = 0;
+		printf("readn: %s\r\n", buf);
 		i++;
 		if (i % inter == 0) {
 			snprintf(line, sizeof(line), "curr: %d, nread: %d", i, n);

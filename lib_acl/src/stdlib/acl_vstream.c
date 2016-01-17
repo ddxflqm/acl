@@ -34,6 +34,7 @@
 #include "stdlib/acl_array.h"
 #include "stdlib/acl_iostuff.h"
 #include "net/acl_sane_inet.h"
+#include "net/acl_sane_socket.h"
 #include "stdlib/acl_vstream.h"
 
 #endif
@@ -2036,9 +2037,22 @@ ACL_VSTREAM *acl_vstream_fdopen(ACL_SOCKET fd, unsigned int oflags,
 	   需要给其分配读缓冲区
 	 */
 
+	/*
 	if ((fdtype & ACL_VSTREAM_TYPE_LISTEN_INET)
 	    || (fdtype & ACL_VSTREAM_TYPE_LISTEN_UNIX))
 	{
+		fdtype |= ACL_VSTREAM_TYPE_LISTEN;
+	}
+	*/
+
+	if (acl_is_listening_socket(fd)) {
+		int ret = acl_getsocktype(fd);
+		if (ret == AF_INET)
+			fdtype |= ACL_VSTREAM_TYPE_LISTEN_INET;
+#ifndef ACL_WINDOWS
+		else if (ret == AF_UNIX)
+			fdtype |= ACL_VSTREAM_TYPE_LISTEN_UNIX;
+#endif
 		fdtype |= ACL_VSTREAM_TYPE_LISTEN;
 	}
 
