@@ -226,6 +226,8 @@ public:
 
 private:
 	dbuf_pool* dbuf_;
+	HttpServletRequest* req_;
+	HttpServletResponse* res_;
 	session* session_;
 	session* session_ptr_;
 	size_t   reserve_size_;
