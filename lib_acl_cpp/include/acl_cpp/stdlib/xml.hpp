@@ -2,6 +2,7 @@
 #include "acl_cpp/acl_cpp_define.hpp"
 #include <vector>
 #include <list>
+#include "acl_cpp/stdlib/dbuf_pool.hpp"
 #include "acl_cpp/stdlib/string.hpp"
 #include "acl_cpp/stdlib/pipe_stream.hpp"
 
@@ -20,7 +21,7 @@ namespace acl {
 class xml;
 class xml_node;
 
-class ACL_CPP_API xml_attr
+class ACL_CPP_API xml_attr : public dbuf_obj
 {
 public:
 	/**
@@ -46,7 +47,7 @@ protected:
 	xml_node* node_;
 };
 
-class ACL_CPP_API xml_node
+class ACL_CPP_API xml_node : public dbuf_obj
 {
 public:
 	/**
@@ -289,7 +290,7 @@ protected:
 
 class string;
 
-class ACL_CPP_API xml : public pipe_stream
+class ACL_CPP_API xml : public pipe_stream, public dbuf_obj
 {
 public:
 	xml(void);

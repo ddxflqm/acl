@@ -2,6 +2,7 @@
 #include "acl_cpp/acl_cpp_define.hpp"
 #include <vector>
 #include <list>
+#include "acl_cpp/stdlib/dbuf_pool.hpp"
 #include "acl_cpp/stdlib/string.hpp"
 #include "acl_cpp/mime/mime_attach.hpp"
 #include "acl_cpp/http/http_type.hpp"
@@ -64,7 +65,7 @@ private:
  * http mime 解析器，该解析器为流式解析器，用户在使用时可以每次仅输入
  * 部分数据给 update 函数，当该函数返回 true 时表示解析完成且解析正确
  */
-class ACL_CPP_API http_mime
+class ACL_CPP_API http_mime : public dbuf_obj
 {
 public:
 	/**
@@ -114,8 +115,8 @@ public:
 	const http_mime_node* get_node(const char* name) const;
 protected:
 private:
-	char* boundary_;
-	char* save_path_;
+	string boundary_;
+	string save_path_;
 	off_t off_;
 	MIME_STATE* mime_state_;
 	std::list<http_mime_node*> mime_nodes_;

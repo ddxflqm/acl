@@ -1,7 +1,7 @@
 #include "acl_stdafx.hpp"
+#include "acl_cpp/stdlib/log.hpp"
 #include "acl_cpp/stdlib/dbuf_pool.hpp"
 #include "acl_cpp/stdlib/snprintf.hpp"
-#include "acl_cpp/stdlib/log.hpp"
 #include "acl_cpp/stream/socket_stream.hpp"
 #include "acl_cpp/session/memcache_session.hpp"
 #include "acl_cpp/http/http_header.hpp"
@@ -18,13 +18,13 @@ HttpServlet::HttpServlet(socket_stream* stream, session* session)
 , res_(NULL)
 , stream_(stream)
 {
-	dbuf_ = new dbuf_pool;
+	dbuf_ = new dbuf_guard;
 	init();
 
 	if (session == NULL)
 	{
-		session_ = new (dbuf_->dbuf_alloc(sizeof(memcache_session)))
-			memcache_session("127.0.0.1");
+		session_ = dbuf_->create<memcache_session, const char*>
+				("127.0.0.1");
 		session_ptr_ = session_;
 		reserve_size_ = sizeof(memcache_session);
 	}
@@ -42,19 +42,19 @@ HttpServlet::HttpServlet(socket_stream* stream,
 , res_(NULL)
 , stream_(stream)
 {
-	dbuf_ = new dbuf_pool;
+	dbuf_ = new dbuf_guard;
 
 	init();
 
-	session_ = new (dbuf_->dbuf_alloc(sizeof(memcache_session)))
-		memcache_session(memcache_addr);
+	session_ = dbuf_->create<memcache_session, const char*>
+			(memcache_addr);
 	session_ptr_ = session_;
 	reserve_size_ = sizeof(memcache_session);
 }
 
 HttpServlet::HttpServlet()
 {
-	dbuf_ = new dbuf_pool;
+	dbuf_ = new dbuf_guard;
 
 	init();
 
@@ -77,13 +77,7 @@ void HttpServlet::init()
 
 HttpServlet::~HttpServlet(void)
 {
-	if (req_)
-		req_->~HttpServletRequest();
-	if (res_)
-		res_->~HttpServletResponse();
-	if (session_ptr_)
-		session_ptr_->~session();
-	dbuf_->destroy();
+	delete dbuf_;
 }
 
 #define COPY(x, y) ACL_SAFE_STRNCPY((x), (y), sizeof((x)))
@@ -116,7 +110,7 @@ HttpServlet& HttpServlet::setParseBodyLimit(int length)
 	return *this;
 }
 
-bool HttpServlet::doRun(dbuf_pool* dbuf)
+bool HttpServlet::doRun(dbuf_guard* dbuf)
 {
 	socket_stream* in;
 	socket_stream* out;
@@ -145,11 +139,13 @@ bool HttpServlet::doRun(dbuf_pool* dbuf)
 
 	// req/res 采用栈变量，减少内存分配次数
 
-	res_ = new (dbuf->dbuf_alloc(sizeof(HttpServletResponse)))
-		HttpServletResponse(*out, dbuf);
-	req_ = new (dbuf->dbuf_alloc(sizeof(HttpServletRequest)))
-		HttpServletRequest(*res_, *session_, *in, local_charset_,
-			parse_body_enable_, parse_body_limit_, dbuf);
+	res_ = dbuf->create<HttpServletResponse, socket_stream&, dbuf_guard*>
+		(*out, dbuf);
+	req_ = dbuf->create<HttpServletRequest, HttpServletResponse&,
+			session&, socket_stream&, const char*,
+			bool, int, dbuf_guard*>
+			(*res_, *session_, *in, local_charset_,
+			 parse_body_enable_, parse_body_limit_, dbuf);
 
 	// 设置 HttpServletRequest 对象
 	res_->setHttpServletRequest(req_);

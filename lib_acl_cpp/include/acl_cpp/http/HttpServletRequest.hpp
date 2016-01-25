@@ -2,13 +2,13 @@
 #include "acl_cpp/acl_cpp_define.hpp"
 #include <vector>
 #include "acl_cpp/stdlib/string.hpp"
+#include "acl_cpp/stdlib/dbuf_pool.hpp"
 #include "acl_cpp/http/http_header.hpp"
 #include "acl_cpp/http/http_ctype.hpp"
 #include "acl_cpp/http/http_type.hpp"
 
 namespace acl {
 
-class dbuf_pool;
 class istream;
 class ostream;
 class socket_stream;
@@ -25,7 +25,7 @@ class HttpServletResponse;
  * 与 HTTP 客户端请求相关的类，该类不应被继承，用户也不需要
  * 定义或创建该类对象
  */
-class ACL_CPP_API HttpServletRequest
+class ACL_CPP_API HttpServletRequest : public dbuf_obj
 {
 public:
 	/**
@@ -46,12 +46,12 @@ public:
 	 * @param body_limit {int} 针对 POST 方法，当数据体为文本参数
 	 *  类型时，此参数限制数据体的长度；当数据体为数据流或 MIME
 	 *  格式或 on 为 false，此参数无效
-	 * @param dbuf {dbuf_pool*} 非空时将做为内存分配池
+	 * @param dbuf {dbuf_guard*} 非空时将做为内存分配池
 	 */
 	HttpServletRequest(HttpServletResponse& res, session& store,
 		socket_stream& stream, const char* charset = NULL,
 		bool body_parse = true, int body_limit = 102400,
-		dbuf_pool* dbuf = NULL);
+		dbuf_guard* dbuf = NULL);
 	~HttpServletRequest(void);
 
 	/**
@@ -330,8 +330,8 @@ public:
 	void sprint_header(string& out, const char* prompt);
 
 private:
-	dbuf_pool* dbuf_internal_;
-	dbuf_pool* dbuf_;
+	dbuf_guard* dbuf_internal_;
+	dbuf_guard* dbuf_;
 	http_request_error_t req_error_;
 	char cookie_name_[64];
 	HttpServletResponse& res_;

@@ -628,8 +628,8 @@ const std::list<mime_attach*>& mime::get_attachments(bool enableDecode /* = true
 	acl_foreach(iter, m_pMimeState)
 	{
 		node = (MIME_NODE*) iter.data;
-		if (node->header_filename == NULL)
-			continue;
+		//if (node->header_filename == NULL)
+		//	continue;
 		attach = NEW mime_attach(m_pFilePath, node,
 				enableDecode, toCharset, off);
 		m_pAttaches->push_back(attach);
