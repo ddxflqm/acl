@@ -64,8 +64,7 @@ http_header::http_header(int status, dbuf_guard* dbuf /* = NULL */)
 http_header::~http_header(void)
 {
 	clear();
-	if (dbuf_internal_)
-		delete dbuf_internal_;
+	delete dbuf_internal_;
 }
 
 void http_header::init()
@@ -167,7 +166,8 @@ http_header& http_header::add_cookie(const char* name, const char* value,
 	if (name == NULL || *name == 0 || value == NULL)
 		return *this;
 
-	HttpCookie* cookie = dbuf_->create<HttpCookie>(name, value, dbuf_);
+	HttpCookie* cookie = dbuf_->create<HttpCookie, const char*,
+		const char*, dbuf_guard*>(name, value, dbuf_);
 
 	if (domain && *domain)
 		cookie->setDomain(domain);
@@ -184,7 +184,7 @@ http_header& http_header::add_cookie(const HttpCookie* in)
 	if (in == NULL)
 		return *this;
 
-	HttpCookie* cookie = dbuf_->create<HttpCookie>(in);
+	HttpCookie* cookie = dbuf_->create<HttpCookie, const HttpCookie&>(*in);
 	cookies_.push_back(cookie);
 	return *this;
 }

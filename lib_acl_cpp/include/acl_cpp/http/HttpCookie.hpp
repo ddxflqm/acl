@@ -29,11 +29,10 @@ public:
 
 	/**
 	 * 拷贝构造函数
-	 * @param cookie {const HttpCookie*} 该参数必须非 NULL，内部将复制拷贝其
-	 *  成员变量
+	 * @param cookie {const HttpCookie*} 内部将复制拷贝其成员变量
 	 * @param dbuf {dbuf_guard*} 非空时将做为内存分配池
 	 */
-	HttpCookie(const HttpCookie* cookie, dbuf_guard* dbuf = NULL);
+	HttpCookie(const HttpCookie& cookie, dbuf_guard* dbuf = NULL);
 
 	/**
 	 * 析构函数

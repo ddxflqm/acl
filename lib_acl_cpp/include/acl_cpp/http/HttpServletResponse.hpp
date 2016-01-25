@@ -1,31 +1,29 @@
 #pragma once
 #include "acl_cpp/acl_cpp_define.hpp"
-#include "acl_cpp/stdlib/dbuf_pool.hpp"
 
 namespace acl {
 
+class dbuf_guard;
 class string;
 class ostream;
 class socket_stream;
 class http_header;
 class http_client;
 class HttpCookie;
-class HttpServlet;
 class HttpServletRequest;
 
 /**
  * 与 HTTP 客户端响应相关的类，该类不应被继承，用户也不需要
  * 定义或创建该类对象
  */
-class ACL_CPP_API HttpServletResponse : public dbuf_obj
+class ACL_CPP_API HttpServletResponse
 {
 public:
 	/**
 	 * 构造函数
 	 * @param stream {socket_stream&} 数据流，内部不会自动关闭流
-	 * @param dbuf {dbuf_guard*} 非空时将做为内存分配池
 	 */
-	HttpServletResponse(socket_stream& stream, dbuf_guard* dbuf = NULL);
+	HttpServletResponse(socket_stream& stream);
 	~HttpServletResponse(void);
 
 	/**

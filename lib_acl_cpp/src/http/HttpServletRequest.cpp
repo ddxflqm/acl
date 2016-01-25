@@ -1,5 +1,5 @@
 #include "acl_stdafx.hpp"
-#include "acl_cpp/stdlib//dbuf_pool.hpp"
+#include "acl_cpp/stdlib/dbuf_pool.hpp"
 #include "acl_cpp/stdlib/snprintf.hpp"
 #include "acl_cpp/stdlib/log.hpp"
 #include "acl_cpp/stdlib/string.hpp"
@@ -28,7 +28,7 @@ namespace acl
 HttpServletRequest::HttpServletRequest(HttpServletResponse& res,
 	session& store, socket_stream& stream,
 	const char* charset /* = NULL */, bool body_parse /* = true */,
-	int body_limit /* = 102400 */, dbuf_guard* dbuf /* = NULL */)
+	int body_limit /* = 102400 */)
 : req_error_(HTTP_REQ_OK)
 , res_(res)
 , store_(store)
@@ -45,16 +45,8 @@ HttpServletRequest::HttpServletRequest(HttpServletResponse& res,
 , xml_(NULL)
 , readHeaderCalled_(false)
 {
-	if (dbuf != NULL)
-	{
-		dbuf_ = dbuf;
-		dbuf_internal_ = NULL;
-	}
-	else
-	{
-		dbuf_internal_ = new dbuf_guard;
-		dbuf_ = dbuf_internal_;
-	}
+	dbuf_internal_ = new dbuf_guard;
+	dbuf_ = dbuf_internal_;
 
 	COPY(cookie_name_, "ACL_SESSION_ID");
 	ACL_VSTREAM* in = stream.get_vstream();
@@ -73,11 +65,8 @@ HttpServletRequest::HttpServletRequest(HttpServletResponse& res,
 
 HttpServletRequest::~HttpServletRequest(void)
 {
-	if (json_)
-		json_->~json();
-	if (xml_)
-		xml_->~xml();
-
+	if (client_)
+		client_->~http_client();
 	delete dbuf_internal_;
 }
 
@@ -154,23 +143,21 @@ const std::vector<HttpCookie*>& HttpServletRequest::getCookies(void) const
 	if (req->cookies_table == NULL)
 		return cookies_;
 
-	const char* name, *value;
-	HttpCookie* cookie;
 	ACL_HTABLE_ITER iter;
 
 	// 遍历 HTTP  请求头中的 cookie 项
 	acl_htable_foreach(iter, req->cookies_table)
 	{
-		name = acl_htable_iter_key(iter);
-		value = (char*) acl_htable_iter_value(iter);
+		const char* name = acl_htable_iter_key(iter);
+		const char* value = (char*) acl_htable_iter_value(iter);
 		if (name == NULL || *name == 0
 			|| value == NULL || *value == 0)
 		{
 			continue;
 		}
 		// 创建 cookie 对象并将之加入数组中
-		cookie = dbuf_->create<HttpCookie, const char*, const char*,
-			dbuf_guard*>(name, value, dbuf_);
+		HttpCookie* cookie = dbuf_->create<HttpCookie, const char*,
+			const char*, dbuf_guard*>(name, value, dbuf_);
 		const_cast<HttpServletRequest*>
 			(this)->cookies_.push_back(cookie);
 	}
@@ -540,9 +527,8 @@ bool HttpServletRequest::readHeader(string* method_s)
 	}
 	else
 	{
-		client_ = dbuf_->create<http_client, socket_stream*, int>
-			(&stream_, rw_timeout_);
-
+		client_ = new (dbuf_->dbuf_alloc(sizeof(http_client)))
+			http_client(&stream_, rw_timeout_);
 		if (client_->read_head() == false)
 		{
 			req_error_ = HTTP_REQ_ERR_IO;
@@ -663,12 +649,16 @@ bool HttpServletRequest::readHeader(string* method_s)
 
 		return ret == -1 ? false : true;
 	}
+	if (!EQ(ctype, "text"))
+	{
+		request_type_ = HTTP_REQUEST_OTHER;
+		return true;
+	}
 
 	// 当数据类型为 text/json 格式时：
-	if (EQ(ctype, "text") && EQ(stype, "json"))
+	else if (EQ(stype, "json"))
 	{
 		request_type_ = HTTP_REQUEST_TEXT_JSON;
-		json_ = new (dbuf_->dbuf_alloc(sizeof(json))) json();
 		json_ = dbuf_->create<json>();
 		ssize_t dlen = (ssize_t) len, n;
 		char  buf[8192];
@@ -689,10 +679,10 @@ bool HttpServletRequest::readHeader(string* method_s)
 	}
 
 	// 当数据类型为 text/xml 格式时：
-	if (EQ(ctype, "text") && EQ(stype, "xml"))
+	else if (EQ(stype, "xml"))
 	{
 		request_type_ = HTTP_REQUEST_TEXT_XML;
-		xml_ = new (dbuf_->dbuf_alloc(sizeof(xml1))) xml1();
+		xml_ = dbuf_->create<xml1>();
 		ssize_t dlen = (ssize_t) len, n;
 		char  buf[8192];
 		istream& in = getInputStream();
@@ -710,9 +700,11 @@ bool HttpServletRequest::readHeader(string* method_s)
 		}
 		return true;
 	}
-
-	request_type_ = HTTP_REQUEST_OTHER;
-	return true;
+	else
+	{
+		request_type_ = HTTP_REQUEST_OTHER;
+		return true;
+	}
 }
 
 const char* HttpServletRequest::getRequestReferer(void) const
