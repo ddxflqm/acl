@@ -45,7 +45,7 @@ HttpCookie::HttpCookie(dbuf_guard* dbuf /* = NULL */)
 	dummy_[0] = 0;
 }
 
-HttpCookie::HttpCookie(const HttpCookie& cookie, dbuf_guard* dbuf /* = NULL */)
+HttpCookie::HttpCookie(const HttpCookie* cookie, dbuf_guard* dbuf /* = NULL */)
 {
 	if (dbuf != NULL)
 	{
@@ -59,17 +59,20 @@ HttpCookie::HttpCookie(const HttpCookie& cookie, dbuf_guard* dbuf /* = NULL */)
 	}
 
 	dummy_[0] = 0;
-	if (cookie.name_)
-		name_ = dbuf_->dbuf_strdup(cookie.name_);
+
+	acl_assert(cookie);
+
+	if (cookie->name_)
+		name_ = dbuf_->dbuf_strdup(cookie->name_);
 	else
 		name_ = NULL;
-	if (cookie.value_)
-		value_ = dbuf_->dbuf_strdup(cookie.value_);
+	if (cookie->value_)
+		value_ = dbuf_->dbuf_strdup(cookie->value_);
 	else
 		value_ = NULL;
 
-	std::list<HTTP_PARAM*>::const_iterator cit = cookie.params_.begin();
-	for (; cit != cookie.params_.end(); ++cit)
+	std::list<HTTP_PARAM*>::const_iterator cit = cookie->params_.begin();
+	for (; cit != cookie->params_.end(); ++cit)
 	{
 		HTTP_PARAM* param = (HTTP_PARAM*)
 			dbuf_->dbuf_alloc(sizeof(HTTP_PARAM));
