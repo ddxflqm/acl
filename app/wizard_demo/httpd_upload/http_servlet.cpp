@@ -134,6 +134,7 @@ bool http_servlet::doPost(acl::HttpServletRequest& req,
 	res_ = &res;
 	read_body_ = true;
 
+	// 直接返回，从而触发异步读 HTTP 数据体过程
 	return true;
 }
 
@@ -151,6 +152,7 @@ void http_servlet::reset(void)
 bool http_servlet::doBody(acl::HttpServletRequest& req,
 	acl::HttpServletResponse& res)
 {
+	// 当未读完数据体时，需要异步读 HTTP 请求数据体
 	if (content_length_ > read_length_)
 	{
 		if (doUpload(req, res) == false)
@@ -160,7 +162,10 @@ bool http_servlet::doBody(acl::HttpServletRequest& req,
 	if (content_length_ > read_length_)
 		return true;
 
+	// 当已经读完 HTTP 请求数据体时，则开始分析上传的数据
 	bool ret = doParse(req, res);
+
+	// 处理完毕，需重置 HTTP 会话状态，以便于处理下一个 HTTP 请求
 	reset();
 	return ret;
 }
