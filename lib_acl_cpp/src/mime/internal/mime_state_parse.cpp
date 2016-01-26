@@ -615,6 +615,8 @@ static int mime_bound_body(MIME_STATE *state, const char *boundary,
 	const unsigned char *startn = NULL;
 	size_t bound_len = strlen(boundary);
 
+//	printf(">>>size: %ld\r\n", (long) ACL_VSTRING_SIZE(node->body));
+
 	for (cp = (const unsigned char *) s; cp < end; cp++) {
 		// 记录下 \r\n 的位置
 		if (*cp == '\r')
@@ -628,10 +630,12 @@ static int mime_bound_body(MIME_STATE *state, const char *boundary,
 			if (*cp != *node->bound_ptr) {
 				// 说明之前的匹配失效，需要重新匹配，
 				// 但必须将之前匹配的字符拷贝
+#if 1
 				if (node->bound_ptr > boundary) {
 					APPEND(node->body, boundary,
 						node->bound_ptr - boundary);
 				}
+#endif
 
 				node->bound_ptr = NULL;
 			} else if (*++node->bound_ptr == 0) {
@@ -656,8 +660,10 @@ static int mime_bound_body(MIME_STATE *state, const char *boundary,
 
 				if (startn > (const unsigned char *) s) {
 					/* 将匹配之前的数据拷贝 */
+#if 1
 					APPEND(node->body, (const char*) s,
 							(const char*) startn - s);
+#endif
 				}
 				node->bound_ptr = NULL;
 				cp++;
@@ -669,7 +675,9 @@ static int mime_bound_body(MIME_STATE *state, const char *boundary,
 		// --> node->bound_ptr == NULL
 
 		if (*cp != *boundary) {
+#if 1
 			ADDCH(node->body, *cp);
+#endif
 			continue;
 		}
 

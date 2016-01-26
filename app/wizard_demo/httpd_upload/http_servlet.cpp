@@ -178,16 +178,18 @@ bool http_servlet::doUpload(acl::HttpServletRequest& req,
 	acl::string buf;
 	bool  finish = false;
 
-	logger(">>>>>>>>>>read: %lld, total: %lld<<<<<",
-		read_length_, content_length_);
+	//logger(">>>>>>>>>>read: %lld, total: %lld<<<<<",
+	//	read_length_, content_length_);
 
 	// 读取 HTTP 客户端请求数据
 	while (content_length_ > read_length_)
 	{
 		if (in.read_peek(buf, true) == false)
 			break;
-		if (buf.empty())
-			break;
+		//if (buf.empty())
+		//	break;
+//		printf(">>>size: %ld, space: %ld\r\n",
+//			(long) buf.size(), (long) buf.capacity());
 
 		if (fp_.write(buf) == -1)
 		{
