@@ -46,7 +46,7 @@ static void vstring_extend(ACL_VBUF *bp, int incr)
 	 * strings we might want to abandon the length doubling strategy, and go
 	 * to fixed increments.
 	 */
-	/* new_len = bp->len + (bp->len > incr ? bp->len : incr); */
+#ifdef INCR_NO_DOUBLE
 	/* below come from redis-server/sds.c/sdsMakeRoomFor, which can
 	 * avoid memory double growing too large --- 2015.2.2, zsx
 	 */
@@ -55,6 +55,9 @@ static void vstring_extend(ACL_VBUF *bp, int incr)
 		new_len *= 2;
 	else
 		new_len += MAX_PREALLOC;
+#else
+	new_len = bp->len + (bp->len > incr ? bp->len : incr);
+#endif
 
 	if (vp->slice)
 		bp->data = (unsigned char *) acl_slice_pool_realloc(
