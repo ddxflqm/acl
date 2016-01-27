@@ -612,7 +612,9 @@ static int mime_bound_body(MIME_STATE *state, const char *boundary,
 	MIME_NODE *node, const char *s, int n, int *finish)
 {
 	const unsigned char *cp, *end = (const unsigned char*) s + n;
+#ifdef SAVE_BODY
 	const unsigned char *startn = NULL;
+#endif
 	size_t bound_len = strlen(boundary);
 
 //	printf(">>>size: %ld\r\n", (long) ACL_VSTRING_SIZE(node->body));
@@ -628,9 +630,9 @@ static int mime_bound_body(MIME_STATE *state, const char *boundary,
 
 		if (node->bound_ptr != NULL) {
 			if (*cp != *node->bound_ptr) {
+#ifdef SAVE_BODY
 				// 说明之前的匹配失效，需要重新匹配，
 				// 但必须将之前匹配的字符拷贝
-#if 1
 				if (node->bound_ptr > boundary) {
 					APPEND(node->body, boundary,
 						node->bound_ptr - boundary);
@@ -658,13 +660,13 @@ static int mime_bound_body(MIME_STATE *state, const char *boundary,
 						node->body_data_end--;
 				}
 
+#ifdef SAVE_BODY
 				if (startn > (const unsigned char *) s) {
 					/* 将匹配之前的数据拷贝 */
-#if 1
 					APPEND(node->body, (const char*) s,
 							(const char*) startn - s);
-#endif
 				}
+#endif
 				node->bound_ptr = NULL;
 				cp++;
 				break;
@@ -675,7 +677,7 @@ static int mime_bound_body(MIME_STATE *state, const char *boundary,
 		// --> node->bound_ptr == NULL
 
 		if (*cp != *boundary) {
-#if 1
+#ifdef SAVE_BODY
 			ADDCH(node->body, *cp);
 #endif
 			continue;
@@ -706,7 +708,9 @@ static int mime_bound_body(MIME_STATE *state, const char *boundary,
 			break;
 		}
 
+#ifdef SAVE_BODY
 		startn = cp;
+#endif
 	}
 
 	return (int) (n - ((const char*) cp - s));
@@ -717,14 +721,18 @@ static int mime_state_body(MIME_STATE *state, const char *s, int n)
 {
 	int   finish = 0;
 
+#ifdef SAVE_BODY
 	if (state->curr_node->body == NULL)
 		state->curr_node->body = acl_vstring_alloc(1024);
+#endif
 
 	if (state->curr_bound == NULL) {
 
 		/* 如果没有分隔符，则说明是文本类型，即只有正文内容 */
 
+#ifdef SAVE_BODY
 		APPEND(state->curr_node->body, s, n);
+#endif
 		state->curr_off += n;
 
 		/* 因为 curr_off 指向下一个偏移位置，所以
