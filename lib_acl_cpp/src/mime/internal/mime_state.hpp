@@ -15,7 +15,7 @@ struct MAIL_ADDR
 	char *comment;
 };
 
-#define SAVE_BODY
+//#define SAVE_BODY
 
 struct MIME_NODE
 {
