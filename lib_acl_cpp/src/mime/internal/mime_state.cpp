@@ -500,3 +500,16 @@ const char *mime_stype_name(size_t stype)
 		return (OTHER_NAME);
 	return (mime_stype_map[stype - MIME_STYPE_MIN].name);
 }
+
+const char *mime_head_value(MIME_NODE* node, const char* name)
+{
+	ACL_ITER iter;
+	acl_foreach(iter, node->header_list)
+	{
+		HEADER_NV* hdr = (HEADER_NV*) iter.data;
+		if (strcasecmp(hdr->name, name) == 0 && *hdr->value)
+			return (hdr->value);
+	}
+
+	return NULL;
+}
