@@ -615,7 +615,7 @@ static int mime_bound_body(MIME_STATE *state, const char *boundary,
 #ifdef SAVE_BODY
 	const unsigned char *startn = NULL;
 #endif
-	register unsigned char ch;
+	unsigned char ch;
 	off_t curr_off = state->curr_off;
 	off_t last_cr_pos = node->last_cr_pos, last_lf_pos = node->last_lf_pos;
 	size_t bound_len = strlen(boundary);
@@ -654,7 +654,7 @@ static int mime_bound_body(MIME_STATE *state, const char *boundary,
 				// body_end 记录的是某个结点最后的位置，会包含
 				// 根据协议附加的 \r\n，所以真实数据的结束位置
 				// body_data_end 是去掉这些数据后的位置
-				if (last_lf_pos + (off_t) strlen(boundary)
+				if (last_lf_pos + (off_t) bound_len
 					== curr_off - 1)
 				{
 					node->body_data_end--;
@@ -680,7 +680,7 @@ static int mime_bound_body(MIME_STATE *state, const char *boundary,
 #endif
 
 			bound_ptr = NULL;
-		} else if (*bound_ptr == 0) {
+		} else if (*++bound_ptr == 0) {
 			/* 说明完全匹配 */
 			*finish = 1;
 

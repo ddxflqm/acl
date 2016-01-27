@@ -59,7 +59,7 @@ struct MIME_NODE
 
 	char  bound_term[3];
 	ACL_VSTRING *buffer;                    /**< headers, quoted-printable body */
-#ifdef SAVE_BODy
+#ifdef SAVE_BODY
 	ACL_VSTRING *body;
 #endif
 	ACL_RING node;                          /**< 当前结点 */
