@@ -184,7 +184,8 @@ http_header& http_header::add_cookie(const HttpCookie* in)
 	if (in == NULL)
 		return *this;
 
-	HttpCookie* cookie = dbuf_->create<HttpCookie, const HttpCookie&>(*in);
+	HttpCookie* cookie = dbuf_->create<HttpCookie, const HttpCookie*,
+		dbuf_guard*> (in, dbuf_);
 	cookies_.push_back(cookie);
 	return *this;
 }

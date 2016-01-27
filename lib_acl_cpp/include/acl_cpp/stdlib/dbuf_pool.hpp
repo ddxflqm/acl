@@ -500,8 +500,10 @@ private:
 	// 扩充 objs_ 数组对象的空间
 	void extend_objs();
 
+protected:
 	// 禁止引用拷贝
 	dbuf_guard(dbuf_guard&) {}
+	dbuf_guard(const dbuf_guard&) {}
 };
 
 /**

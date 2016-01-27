@@ -162,6 +162,10 @@ private:
 	std::list<HTTP_PARAM*> params_;
 
 	bool splitNameValue(char* data, HTTP_PARAM* param);
+
+protected:
+//	HttpCookie(HttpCookie&) {}
+//	HttpCookie(const HttpCookie&) {}
 };
 
 } // namespace acl end

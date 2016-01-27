@@ -51,7 +51,9 @@ public:
 	 * @return {const char*} 返回 NULL 表示参数不存在
 	 */
 	const char* get_value(void) const;
+
 protected:
+
 private:
 	http_mime_t mime_type_;
 	char* param_value_;
@@ -113,7 +115,11 @@ public:
 	 *  不存在
 	 */
 	const http_mime_node* get_node(const char* name) const;
+
 protected:
+//	http_mime(http_mime&) {}
+//	http_mime(const http_mime&) {}
+
 private:
 	string boundary_;
 	string save_path_;
