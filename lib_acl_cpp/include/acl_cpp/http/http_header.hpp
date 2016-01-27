@@ -419,10 +419,6 @@ private:
 	void init(void);                      // 初始化
 	void clear(void);
 	void build_common(string& buf) const; // 构建通用头
-
-protected:
-//	http_header(http_header&) {}
-//	http_header(const http_header&) {}
 };
 
 }  // namespace acl end

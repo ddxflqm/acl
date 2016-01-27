@@ -116,10 +116,6 @@ public:
 	 */
 	const http_mime_node* get_node(const char* name) const;
 
-protected:
-//	http_mime(http_mime&) {}
-//	http_mime(const http_mime&) {}
-
 private:
 	string boundary_;
 	string save_path_;
