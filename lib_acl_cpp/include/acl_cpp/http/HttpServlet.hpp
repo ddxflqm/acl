@@ -97,7 +97,8 @@ public:
 	 * HttpServlet 对象开始运行，接收 HTTP 请求，并回调以下 doXXX 虚函数，
 	 * 该函数首先会调用 start 过程，然后根据 start 的返回结果及请求/响应
 	 * 对象是否要求保持长连接来决定是否需要与客户端保持长连接
-	 * @return {bool} 返回处理结果，返回 false 表示处理失败，则应关闭连接
+	 * @return {bool} 返回处理结果，返回 false 表示处理失败或处理成功且不保持
+	 *  长连接，应关闭连接
 	 */
 	bool doRun();
 
