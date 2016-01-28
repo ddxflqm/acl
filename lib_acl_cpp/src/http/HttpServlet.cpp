@@ -99,7 +99,7 @@ HttpServlet& HttpServlet::setParseBodyLimit(int length)
 	return *this;
 }
 
-bool HttpServlet::doRun()
+bool HttpServlet::start()
 {
 	socket_stream* in;
 	socket_stream* out;
@@ -202,6 +202,15 @@ bool HttpServlet::doRun()
 		delete in;
 		delete out;
 	}
+
+	return ret;
+}
+
+bool HttpServlet::doRun()
+{
+	bool ret = start();
+	if (req_ == NULL || res_ == NULL)
+		return ret;
 
 	// 返回给上层调用者：true 表示继续保持长连接，否则表示需断开连接
 	return ret && req_->isKeepAlive()

@@ -111,6 +111,8 @@ public:
 	 */
 	bool doRun(const char* memcached_addr, socket_stream* stream);
 
+	bool start(void);
+
 	/**
 	 * 当 HTTP 请求为 GET 方式时的虚函数
 	 */
