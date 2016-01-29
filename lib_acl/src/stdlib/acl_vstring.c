@@ -17,6 +17,7 @@
 
 #include "stdlib/acl_mymalloc.h"
 #include "stdlib/acl_msg.h"
+#include "stdlib/acl_sys_patch.h"
 #include "stdlib/acl_vbuf_print.h"
 #include "stdlib/acl_vstring.h"
 
@@ -31,13 +32,8 @@
 static void vstring_extend(ACL_VBUF *bp, int incr)
 {
 	const char *myname = "vstring_extend";
-	unsigned used = (unsigned) (bp->ptr - bp->data);
-	int     new_len;
+	ssize_t used = (unsigned) (bp->ptr - bp->data), new_len;
 	ACL_VSTRING *vp = (ACL_VSTRING *) bp->ctx;
-
-	if (vp->maxlen > 0 && (int) ACL_VSTRING_LEN(vp) > vp->maxlen)
-		acl_msg_warn("%s(%d), %s: reached the maxlen: %d",
-			__FILE__, __LINE__, myname, vp->maxlen);
 
 	/*
 	 * Note: vp->vbuf.len is the current buffer size (both on entry and on
@@ -59,6 +55,15 @@ static void vstring_extend(ACL_VBUF *bp, int incr)
 	new_len = bp->len + (bp->len > incr ? bp->len : incr);
 #endif
 
+	if (vp->maxlen > 0 && new_len > vp->maxlen) {
+		if (vp->fd != ACL_FILE_INVALID)
+			acl_msg_fatal("%s(%d), %s: reached the maxlen: %d",
+			__FILE__, __LINE__, myname, vp->maxlen);
+		else
+			acl_msg_warn("%s(%d), %s: reached the maxlen: %d",
+			__FILE__, __LINE__, myname, vp->maxlen);
+	}
+
 	if (vp->slice)
 		bp->data = (unsigned char *) acl_slice_pool_realloc(
 			__FILE__, __LINE__, vp->slice, bp->data, new_len);
@@ -68,6 +73,16 @@ static void vstring_extend(ACL_VBUF *bp, int incr)
 			vp->dbuf, new_len);
 		memcpy(bp->data, data, used);
 		acl_dbuf_pool_free(vp->dbuf, data);
+	} else if (vp->fd != ACL_FILE_INVALID) {
+		acl_off_t off = new_len - 1;
+		if (acl_lseek(vp->fd, off, SEEK_SET) != (acl_off_t) off)
+			acl_msg_fatal("lseek failed: %s, off: %lld",
+				acl_last_serror(), off);
+		if (acl_file_write(vp->fd, "\0", 1, 0, NULL, NULL)
+			== ACL_VSTREAM_EOF)
+		{
+			acl_msg_fatal("write error: %s", acl_last_serror());
+		}
 	} else
 		bp->data = (unsigned char *) acl_myrealloc(bp->data, new_len);
 	bp->len = new_len;
@@ -132,7 +147,7 @@ void acl_vstring_free_buf(ACL_VSTRING *vp)
 
 	if (vp->slice)
 		acl_slice_pool_free(__FILE__, __LINE__, vp->vbuf.data);
-	else if (vp->dbuf == NULL)
+	else if (vp->dbuf == NULL && vp->fd == ACL_FILE_INVALID)
 		acl_myfree(vp->vbuf.data);
 	vp->vbuf.data = NULL;
 }
@@ -165,6 +180,7 @@ ACL_VSTRING *acl_vstring_slice_alloc(ACL_SLICE_POOL *slice, size_t len)
 		vp->vbuf.data = (unsigned char *) acl_mymalloc(len);
 	}
 
+	vp->fd = ACL_FILE_INVALID;
 	vp->vbuf.flags = 0;
 	vp->vbuf.len = (int) len;
 	ACL_VSTRING_RESET(vp);
@@ -174,6 +190,7 @@ ACL_VSTRING *acl_vstring_slice_alloc(ACL_SLICE_POOL *slice, size_t len)
 	vp->vbuf.space = vstring_buf_space;
 	vp->vbuf.ctx = vp;
 	vp->maxlen = 0;
+
 	return vp;
 }
 
@@ -182,7 +199,8 @@ ACL_VSTRING *acl_vstring_dbuf_alloc(ACL_DBUF_POOL *dbuf, size_t len)
 	ACL_VSTRING *vp;
 
 	if (len < 1)
-		acl_msg_panic("acl_vstring_alloc: bad length %d", (int) len);
+		len = 64;
+
 	if (dbuf) {
 		vp = (ACL_VSTRING*) acl_dbuf_pool_alloc(dbuf, sizeof(*vp));
 		vp->dbuf = dbuf;
@@ -195,6 +213,7 @@ ACL_VSTRING *acl_vstring_dbuf_alloc(ACL_DBUF_POOL *dbuf, size_t len)
 		vp->vbuf.data = (unsigned char *) acl_mymalloc(len);
 	}
 
+	vp->fd = ACL_FILE_INVALID;
 	vp->vbuf.flags = 0;
 	vp->vbuf.len = (int) len;
 	ACL_VSTRING_RESET(vp);
@@ -204,6 +223,40 @@ ACL_VSTRING *acl_vstring_dbuf_alloc(ACL_DBUF_POOL *dbuf, size_t len)
 	vp->vbuf.space = vstring_buf_space;
 	vp->vbuf.ctx = vp;
 	vp->maxlen = 0;
+
+	return vp;
+}
+
+ACL_VSTRING *acl_vstring_mmap_alloc(ACL_FILE_HANDLE fd,
+	ssize_t max_len, ssize_t init_len)
+{
+	const char *myname = "acl_vstring_mmap_alloc";
+	ACL_VSTRING *vp;
+
+	if (init_len < 1)
+		acl_msg_panic("%s: bad length %ld", myname, (long) init_len);
+
+	if (max_len < init_len)
+		max_len = init_len;
+
+	vp = (ACL_VSTRING *) acl_mymalloc(sizeof(*vp));
+
+	vp->fd = ACL_FILE_INVALID;
+	vp->slice = NULL;
+	vp->dbuf = NULL;
+
+	vp->vbuf.flags = 0;
+	vp->vbuf.len = (int) init_len;
+	ACL_VSTRING_RESET(vp);
+	vp->vbuf.data[0] = 0;
+	vp->vbuf.get_ready = vstring_buf_get_ready;
+	vp->vbuf.put_ready = vstring_buf_put_ready;
+	vp->vbuf.space = vstring_buf_space;
+	vp->vbuf.ctx = vp;
+	vp->maxlen = max_len;
+
+	vstring_buf_space(&vp->vbuf, init_len);
+
 	return vp;
 }
 
@@ -215,6 +268,8 @@ void acl_vstring_free(ACL_VSTRING *vp)
 		if (vp->vbuf.data)
 			acl_slice_pool_free(__FILE__, __LINE__, vp->vbuf.data);
 		acl_slice_pool_free(__FILE__, __LINE__, vp);
+	} else if (vp->fd != ACL_FILE_INVALID) {
+		acl_myfree(vp);
 	} else if (vp->dbuf == NULL) {
 		if (vp->vbuf.data)
 			acl_myfree(vp->vbuf.data);

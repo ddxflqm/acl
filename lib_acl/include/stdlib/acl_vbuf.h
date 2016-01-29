@@ -13,10 +13,10 @@ typedef int (*ACL_VBUF_PUT_READY_FN) (ACL_VBUF *);
 typedef int (*ACL_VBUF_SPACE_FN) (ACL_VBUF *, int);
 
 struct ACL_VBUF {
-    int     flags;			/* status, see below */
+    unsigned flags;			/* status, see below */
     unsigned char *data;		/* variable-length buffer */
-    int     len;			/* buffer length */
-    int     cnt;			/* bytes left to read/write */
+    ssize_t len;			/* buffer length */
+    ssize_t cnt;			/* bytes left to read/write */
     unsigned char *ptr;			/* read/write position */
     ACL_VBUF_GET_READY_FN get_ready;	/* read buffer empty action */
     ACL_VBUF_PUT_READY_FN put_ready;	/* write buffer full action */
