@@ -234,9 +234,11 @@ public:
 		return false;
 	}
 
-private:
+protected:
 	HttpServletRequest* req_;
 	HttpServletResponse* res_;
+
+private:
 	session* session_;
 	session* session_ptr_;
 	socket_stream* stream_;
