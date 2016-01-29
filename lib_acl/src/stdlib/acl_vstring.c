@@ -21,6 +21,10 @@
 #include "stdlib/acl_vbuf_print.h"
 #include "stdlib/acl_vstring.h"
 
+#ifdef ACL_UNIX
+#include <sys/mman.h>
+#endif
+
 #endif
 
 #include "charmap.h"
@@ -29,11 +33,25 @@
 
 /* vstring_extend - variable-length string buffer extension policy */
 
-static void vstring_extend(ACL_VBUF *bp, int incr)
+static int vstring_extend(ACL_VBUF *bp, int incr)
 {
 	const char *myname = "vstring_extend";
 	ssize_t used = (unsigned) (bp->ptr - bp->data), new_len;
 	ACL_VSTRING *vp = (ACL_VSTRING *) bp->ctx;
+
+	if (vp->maxlen > 0 && (ssize_t) ACL_VSTRING_LEN(vp) >= vp->maxlen) {
+		ACL_VSTRING_AT_OFFSET(vp, vp->maxlen - 1);
+		ACL_VSTRING_TERMINATE(vp);
+
+		if (vp->fd != ACL_FILE_INVALID) {
+			acl_msg_warn("%s(%d), %s: reached the maxlen: %ld, %ld",
+				__FILE__, __LINE__, myname, (long) vp->maxlen,
+				(long) ACL_VSTRING_LEN(vp));
+		} else
+			acl_msg_warn("%s(%d), %s: reached the maxlen: %ld",
+				__FILE__, __LINE__, myname, (long) vp->maxlen);
+		return ACL_VBUF_EOF;
+	}
 
 	/*
 	 * Note: vp->vbuf.len is the current buffer size (both on entry and on
@@ -55,14 +73,8 @@ static void vstring_extend(ACL_VBUF *bp, int incr)
 	new_len = bp->len + (bp->len > incr ? bp->len : incr);
 #endif
 
-	if (vp->maxlen > 0 && new_len > vp->maxlen) {
-		if (vp->fd != ACL_FILE_INVALID)
-			acl_msg_fatal("%s(%d), %s: reached the maxlen: %ld",
-				__FILE__, __LINE__, myname, (long) vp->maxlen);
-		else
-			acl_msg_warn("%s(%d), %s: reached the maxlen: %ld",
-				__FILE__, __LINE__, myname, (long) vp->maxlen);
-	}
+	if (vp->maxlen > 0 && new_len > vp->maxlen)
+		new_len = vp->maxlen;
 
 	if (vp->slice)
 		bp->data = (unsigned char *) acl_slice_pool_realloc(
@@ -85,9 +97,12 @@ static void vstring_extend(ACL_VBUF *bp, int incr)
 		}
 	} else
 		bp->data = (unsigned char *) acl_myrealloc(bp->data, new_len);
+
 	bp->len = new_len;
 	bp->ptr = bp->data + used;
 	bp->cnt = bp->len - used;
+
+	return 0;
 }
 
 /* vstring_buf_get_ready - vbuf callback for read buffer empty condition */
@@ -102,8 +117,7 @@ static int vstring_buf_get_ready(ACL_VBUF *buf acl_unused)
 
 static int vstring_buf_put_ready(ACL_VBUF *bp)
 {
-	vstring_extend(bp, 0);
-	return 0;
+	return vstring_extend(bp, 0);
 }
 
 /* vstring_buf_space - vbuf callback to reserve space */
@@ -115,8 +129,9 @@ static int vstring_buf_space(ACL_VBUF *bp, int len)
 	if (len < 0)
 		acl_msg_panic("vstring_buf_space: bad length %d", len);
 	if ((need = len - bp->cnt) > 0)
-		vstring_extend(bp, need);
-	return 0;
+		return vstring_extend(bp, need);
+	else
+		return 0;
 }
 
 void acl_vstring_init(ACL_VSTRING *vp, size_t len)
@@ -227,6 +242,24 @@ ACL_VSTRING *acl_vstring_dbuf_alloc(ACL_DBUF_POOL *dbuf, size_t len)
 	return vp;
 }
 
+static void vstring_buf_init(ACL_VSTRING *vp, ssize_t init_len)
+{
+	if (acl_lseek(vp->fd, init_len, SEEK_SET) != (ssize_t) init_len)
+		acl_msg_fatal("lseek failed: %s, off: %ld",
+			acl_last_serror(), (long) init_len);
+	if (acl_file_write(vp->fd, "\0", 1, 0, NULL, NULL) == ACL_VSTREAM_EOF)
+		acl_msg_fatal("write error: %s", acl_last_serror());
+
+#ifdef ACL_UNIX
+	vp->vbuf.data = (unsigned char*) mmap(NULL, vp->maxlen,
+			PROT_READ | PROT_WRITE, MAP_SHARED, vp->fd, 0);
+	if (vp->vbuf.data == MAP_FAILED)
+		acl_msg_fatal("mmap error: %s", acl_last_serror());
+#else
+	acl_msg_fatal("%s: not supported yet!", __FUNCTION__);
+#endif
+}
+
 ACL_VSTRING *acl_vstring_mmap_alloc(ACL_FILE_HANDLE fd,
 	ssize_t max_len, ssize_t init_len)
 {
@@ -247,16 +280,16 @@ ACL_VSTRING *acl_vstring_mmap_alloc(ACL_FILE_HANDLE fd,
 
 	vp->vbuf.flags = 0;
 	vp->vbuf.len = (int) init_len;
-	ACL_VSTRING_RESET(vp);
-	vp->vbuf.data[0] = 0;
 	vp->vbuf.get_ready = vstring_buf_get_ready;
 	vp->vbuf.put_ready = vstring_buf_put_ready;
 	vp->vbuf.space = vstring_buf_space;
 	vp->vbuf.ctx = vp;
 	vp->maxlen = max_len;
 
-	vstring_buf_space(&vp->vbuf, init_len);
+	vstring_buf_init(vp, init_len);
 
+	ACL_VSTRING_RESET(vp);
+	vp->vbuf.data[0] = 0;
 	return vp;
 }
 
@@ -268,9 +301,17 @@ void acl_vstring_free(ACL_VSTRING *vp)
 		if (vp->vbuf.data)
 			acl_slice_pool_free(__FILE__, __LINE__, vp->vbuf.data);
 		acl_slice_pool_free(__FILE__, __LINE__, vp);
-	} else if (vp->fd != ACL_FILE_INVALID) {
+	}
+#ifdef ACL_UNIX
+	else if (vp->fd != ACL_FILE_INVALID && vp->vbuf.data != NULL) {
+		if (munmap(vp->vbuf.data, vp->maxlen) < 0)
+			acl_msg_error("%s(%d), %s: munmap error %s",
+				__FILE__, __LINE__, __FUNCTION__,
+				acl_last_serror());
 		acl_myfree(vp);
-	} else if (vp->dbuf == NULL) {
+	}
+#endif
+	else if (vp->dbuf == NULL) {
 		if (vp->vbuf.data)
 			acl_myfree(vp->vbuf.data);
 		acl_myfree(vp);
