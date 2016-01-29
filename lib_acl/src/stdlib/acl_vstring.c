@@ -57,11 +57,11 @@ static void vstring_extend(ACL_VBUF *bp, int incr)
 
 	if (vp->maxlen > 0 && new_len > vp->maxlen) {
 		if (vp->fd != ACL_FILE_INVALID)
-			acl_msg_fatal("%s(%d), %s: reached the maxlen: %d",
-			__FILE__, __LINE__, myname, vp->maxlen);
+			acl_msg_fatal("%s(%d), %s: reached the maxlen: %ld",
+				__FILE__, __LINE__, myname, (long) vp->maxlen);
 		else
-			acl_msg_warn("%s(%d), %s: reached the maxlen: %d",
-			__FILE__, __LINE__, myname, vp->maxlen);
+			acl_msg_warn("%s(%d), %s: reached the maxlen: %ld",
+				__FILE__, __LINE__, myname, (long) vp->maxlen);
 	}
 
 	if (vp->slice)
@@ -241,7 +241,7 @@ ACL_VSTRING *acl_vstring_mmap_alloc(ACL_FILE_HANDLE fd,
 
 	vp = (ACL_VSTRING *) acl_mymalloc(sizeof(*vp));
 
-	vp->fd = ACL_FILE_INVALID;
+	vp->fd = fd;
 	vp->slice = NULL;
 	vp->dbuf = NULL;
 
@@ -293,8 +293,8 @@ void  acl_vstring_ctl(ACL_VSTRING *vp,...)
 		case ACL_VSTRING_CTL_MAXLEN:
 			vp->maxlen = va_arg(ap, int);
 			if (vp->maxlen < 0)
-				acl_msg_panic("%s: bad max length %d",
-					myname, vp->maxlen);
+				acl_msg_panic("%s: bad max length %ld",
+					myname, (long) vp->maxlen);
 			break;
 		}
 	}
