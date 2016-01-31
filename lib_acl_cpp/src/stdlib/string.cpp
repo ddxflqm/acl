@@ -71,7 +71,7 @@ string::string(int fd, size_t max, size_t n)
 	if (fd >= 0)
 		vbf_ = acl_vstring_mmap_alloc(fd, max, n);
 	else
-		vbf_ = ALLOC(len);
+		vbf_ = ALLOC(n);
 	list_tmp_ = NULL;
 	vector_tmp_ = NULL;
 	pair_tmp_ = NULL;
