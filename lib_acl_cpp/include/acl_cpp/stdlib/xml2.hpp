@@ -131,6 +131,7 @@ public:
 
 protected:
 	friend class xml2;
+	friend class dbuf_guard;
 
 	xml2_node(xml* xml_ptr, ACL_XML2_NODE* node);
 	~xml2_node(void);

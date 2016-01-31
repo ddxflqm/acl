@@ -308,7 +308,10 @@ const std::vector<xml_node*>& xml2::getElementsByTagName(const char* tag) const
 	acl_foreach(iter, a)
 	{
 		ACL_XML2_NODE *tmp = (ACL_XML2_NODE*) iter.data;
-		xml2_node* node = NEW xml2_node(const_cast<xml2*>(this), tmp);
+//		xml2_node* node = NEW xml2_node(const_cast<xml2*>(this), tmp);
+		xml2_node* node = const_cast<dbuf_guard&>(dbuf_)
+			.create<xml2_node, xml2*, ACL_XML2_NODE*>
+			(const_cast<xml2*>(this), tmp);
 		const_cast<xml2*>(this)->elements_.push_back(node);
 	}
 
@@ -322,8 +325,11 @@ xml_node* xml2::getFirstElementByTag(const char* tag) const
 	if (node == NULL)
 		return NULL;
 
-	xml2_node* n = NEW xml2_node(const_cast<xml2*>(this), node);
-	const_cast<xml2*>(this)->nodes_tmp_.push_back(n);
+//	xml2_node* n = NEW xml2_node(const_cast<xml2*>(this), node);
+//	const_cast<xml2*>(this)->nodes_tmp_.push_back(n);
+	xml2_node* n = const_cast<dbuf_guard&>(dbuf_)
+		.create<xml2_node, xml2*, ACL_XML2_NODE*>
+		(const_cast<xml2*>(this), node);
 	return n;
 }
 
@@ -339,7 +345,10 @@ const std::vector<xml_node*>& xml2::getElementsByTags(const char* tags) const
 	acl_foreach(iter, a)
 	{
 		ACL_XML2_NODE *tmp = (ACL_XML2_NODE*) iter.data;
-		xml2_node* node = NEW xml2_node(const_cast<xml2*>(this), tmp);
+//		xml2_node* node = NEW xml2_node(const_cast<xml2*>(this), tmp);
+		xml2_node* node = const_cast<dbuf_guard&>(dbuf_)
+			.create<xml2_node, xml2*, ACL_XML2_NODE*>
+			(const_cast<xml2*>(this), tmp);
 		const_cast<xml2*>(this)->elements_.push_back(node);
 	}
 
@@ -356,8 +365,11 @@ xml_node* xml2::getFirstElementByTags(const char* tags) const
 	ACL_XML2_NODE* node = (ACL_XML2_NODE*) acl_array_index(a, 0);
 	acl_assert(node);
 
-	xml2_node* n = NEW xml2_node(const_cast<xml2*>(this), node);
-	const_cast<xml2*>(this)->nodes_tmp_.push_back(n);
+//	xml2_node* n = NEW xml2_node(const_cast<xml2*>(this), node);
+//	const_cast<xml2*>(this)->nodes_tmp_.push_back(n);
+	xml2_node* n = const_cast<dbuf_guard&>(dbuf_)
+		.create<xml2_node, xml2*, ACL_XML2_NODE*>
+		(const_cast<xml2*>(this), node);
 
 	acl_xml_free_array(a);
 	return n;
@@ -374,7 +386,10 @@ const std::vector<xml_node*>& xml2::getElementsByName(const char* value) const
 	acl_foreach(iter, a)
 	{
 		ACL_XML2_NODE *tmp = (ACL_XML2_NODE*) iter.data;
-		xml2_node* node = NEW xml2_node(const_cast<xml2*>(this), tmp);
+//		xml2_node* node = NEW xml2_node(const_cast<xml2*>(this), tmp);
+		xml2_node* node = const_cast<dbuf_guard&>(dbuf_)
+			.create<xml2_node, xml2*, ACL_XML2_NODE*>
+			(const_cast<xml2*>(this), tmp);
 		const_cast<xml2*>(this)->elements_.push_back(node);
 	}
 
@@ -394,7 +409,10 @@ const std::vector<xml_node*>& xml2::getElementsByAttr(
 	acl_foreach(iter, a)
 	{
 		ACL_XML2_NODE *tmp = (ACL_XML2_NODE*) iter.data;
-		xml2_node* node = NEW xml2_node(const_cast<xml2*>(this), tmp);
+//		xml2_node* node = NEW xml2_node(const_cast<xml2*>(this), tmp);
+		xml2_node* node = const_cast<dbuf_guard&>(dbuf_)
+			.create<xml2_node, xml2*, ACL_XML2_NODE*>
+			(const_cast<xml2*>(this), tmp);
 		const_cast<xml2*>(this)->elements_.push_back(node);
 	}
 
@@ -408,8 +426,11 @@ xml_node* xml2::getElementById(const char* id) const
 	if (node == NULL)
 		return (NULL);
 
-	xml2_node* n = NEW xml2_node(const_cast<xml2*>(this), node);
-	const_cast<xml2*>(this)->nodes_tmp_.push_back(n);
+//	xml2_node* n = NEW xml2_node(const_cast<xml2*>(this), node);
+//	const_cast<xml2*>(this)->nodes_tmp_.push_back(n);
+	xml2_node* n = const_cast<dbuf_guard&>(dbuf_)
+		.create<xml2_node, xml2*, ACL_XML2_NODE*>
+		(const_cast<xml2*>(this), node);
 	return n;
 }
 
@@ -427,8 +448,9 @@ const acl::string& xml2::getText()
 xml_node& xml2::create_node(const char* tag, const char* text /* = NULL */)
 {
 	ACL_XML2_NODE* node = acl_xml2_create_node(xml_, tag, text);
-	xml2_node* n = NEW xml2_node(this, node);
-	nodes_tmp_.push_back(n);
+//	xml2_node* n = NEW xml2_node(this, node);
+//	nodes_tmp_.push_back(n);
+	xml2_node* n = dbuf_.create<xml2_node>(this, node);
 	return *n;
 }
 
@@ -449,8 +471,9 @@ xml_node* xml2::first_node(void)
 	if (node == NULL)
 		return NULL;
 
-	xml2_node* n = NEW xml2_node(this, node);
-	nodes_tmp_.push_back(n);
+//	xml2_node* n = NEW xml2_node(this, node);
+//	nodes_tmp_.push_back(n);
+	xml2_node* n = dbuf_.create<xml2_node>(this, node);
 	return n;
 }
 
@@ -462,8 +485,9 @@ xml_node* xml2::next_node(void)
 	if (node == NULL)
 		return NULL;
 
-	xml2_node* n = NEW xml2_node(this, node);
-	nodes_tmp_.push_back(n);
+//	xml2_node* n = NEW xml2_node(this, node);
+//	nodes_tmp_.push_back(n);
+	xml2_node* n = dbuf_.create<xml2_node>(this, node);
 	return n;
 }
 

@@ -270,6 +270,7 @@ public:
 
 protected:
 	friend class xml;
+	friend class dbuf_guard;
 
 	/**
 	 * xml 节点构造函数
@@ -476,12 +477,13 @@ public:
 	virtual void clear(void);
 
 protected:
+	dbuf_guard dbuf_;
 	std::vector<xml_node*> elements_;
 	string* buf_;
 	//bool dummyRootAdded_;
 
 	ACL_TOKEN* m_pTokenTree;
-	std::list<xml_node*> nodes_tmp_;
+	//std::list<xml_node*> nodes_tmp_;
 };
 
 } // namespace acl
