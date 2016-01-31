@@ -613,17 +613,19 @@ static int mime_state_head(MIME_STATE *state, const char *s, int n)
 static int mime_bound_body(MIME_STATE *state, const char * const boundary,
 	MIME_NODE *node, const char *s, int n, int *finish)
 {
-	const unsigned char *cp, *end = (const unsigned char*) s + n;
+	const unsigned char *cp = (const unsigned char*) s;
+	const unsigned char *end = (const unsigned char*) s + n;
+	size_t bound_len = strlen(boundary);
+	off_t curr_off = state->curr_off;
+	off_t last_cr_pos = node->last_cr_pos;
+	off_t last_lf_pos = node->last_lf_pos;
+	const char *bound_ptr = node->bound_ptr;
+	unsigned char ch;
 #ifdef SAVE_BODY
 	const unsigned char *startn = NULL;
 #endif
-	size_t bound_len = strlen(boundary);
-	unsigned char ch;
-	off_t curr_off = state->curr_off;
-	off_t last_cr_pos = node->last_cr_pos, last_lf_pos = node->last_lf_pos;
-	const char *bound_ptr = node->bound_ptr;
 
-	for (cp = (const unsigned char *) s; cp < end; cp++) {
+	for (; cp < end; cp++) {
 		ch = *cp;
 
 		// 记录下 \r\n 的位置
@@ -663,8 +665,7 @@ static int mime_bound_body(MIME_STATE *state, const char * const boundary,
 			/* 说明完全匹配 */
 			*finish = 1;
 
-			node->body_end = curr_off
-				- (off_t) strlen(state->curr_bound);
+			node->body_end = curr_off - bound_len;
 			node->body_data_end = node->body_end;
 
 			// 因为 body_end 记录的是某个结点最后的位置，
@@ -691,10 +692,10 @@ static int mime_bound_body(MIME_STATE *state, const char * const boundary,
 		}
 	}
 
-	node->bound_ptr = bound_ptr;
+	node->bound_ptr   = bound_ptr;
 	node->last_cr_pos = last_cr_pos;
 	node->last_lf_pos = last_lf_pos;
-	state->curr_off = curr_off;
+	state->curr_off   = curr_off;
 
 	return (int) (n - ((const char*) cp - s));
 }
