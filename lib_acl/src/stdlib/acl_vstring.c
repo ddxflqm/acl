@@ -42,15 +42,9 @@ static int vstring_extend(ACL_VBUF *bp, ssize_t incr)
 	if (vp->maxlen > 0 && (ssize_t) ACL_VSTRING_LEN(vp) >= vp->maxlen) {
 		ACL_VSTRING_AT_OFFSET(vp, vp->maxlen - 1);
 		ACL_VSTRING_TERMINATE(vp);
-
-		if (vp->fd != ACL_FILE_INVALID)
-			acl_msg_warn("%s(%d), %s: overflow maxlen: %ld, %ld",
-				__FILE__, __LINE__, myname, (long) vp->maxlen,
-				(long) ACL_VSTRING_LEN(vp));
-		else
-			acl_msg_warn("%s(%d), %s: overflow maxlen: %ld, %ld",
-				__FILE__, __LINE__, myname, (long) vp->maxlen,
-				(long) ACL_VSTRING_LEN(vp));
+		acl_msg_warn("%s(%d), %s: overflow maxlen: %ld, %ld",
+			__FILE__, __LINE__, myname, (long) vp->maxlen,
+			(long) ACL_VSTRING_LEN(vp));
 		return ACL_VBUF_EOF;
 	}
 
