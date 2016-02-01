@@ -403,7 +403,7 @@ ACL_VSTRING *acl_vstring_memcpy(ACL_VSTRING *vp, const char *src, size_t len)
 
 		n = acl_vstring_avail(vp);
 
-		if ((size_t) n > len)
+		if ((size_t) n >= len)
 			n = (ssize_t) len;
 		else
 			acl_msg_warn("%s(%d): space not enough, avail: %ld, "
@@ -478,7 +478,7 @@ ACL_VSTRING *acl_vstring_memcat(ACL_VSTRING *vp, const char *src, size_t len)
 
 		n = acl_vstring_avail(vp);
 
-		if ((size_t) n > len)
+		if ((size_t) n >= len)
 			n = (ssize_t) len;
 		else
 			acl_msg_warn("%s(%d): space not enough, avail: %ld, "
@@ -689,7 +689,7 @@ ACL_VSTRING *acl_vstring_prepend(ACL_VSTRING *vp, const char *buf, size_t len)
 	if (len > (size_t) n)
 		len = (size_t) n;
 
-	if (len >0) {
+	if (len > 0) {
 		memmove(acl_vstring_str(vp) + len, acl_vstring_str(vp),
 			ACL_VSTRING_LEN(vp));
 		memcpy(acl_vstring_str(vp), buf, len);
