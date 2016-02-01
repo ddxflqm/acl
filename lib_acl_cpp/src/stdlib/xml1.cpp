@@ -485,7 +485,8 @@ xml_node& xml1::create_node(const char* tag, const char* text /* = NULL */)
 	ACL_XML_NODE* node = acl_xml_create_node(xml_, tag, text);
 //	xml1_node* n = NEW xml1_node(this, node);
 //	nodes_tmp_.push_back(n);
-	xml1_node* n = dbuf_.create<xml1_node>(this, node);
+	xml1_node* n = dbuf_.create<xml1_node, xml1*, ACL_XML_NODE*>
+		(this, node);
 	return *n;
 }
 
@@ -508,7 +509,8 @@ xml_node* xml1::first_node(void)
 
 //	xml1_node* n = NEW xml1_node(this, node);
 //	nodes_tmp_.push_back(n);
-	xml1_node* n = dbuf_.create<xml1_node>(this, node);
+	xml1_node* n = dbuf_.create<xml1_node, xml1*, ACL_XML_NODE*>
+		(this, node);
 	return n;
 }
 
@@ -522,7 +524,8 @@ xml_node* xml1::next_node(void)
 
 //	xml1_node* n = NEW xml1_node(this, node);
 //	nodes_tmp_.push_back(n);
-	xml1_node* n = dbuf_.create<xml1_node>(this, node);
+	xml1_node* n = dbuf_.create<xml1_node, xml1*, ACL_XML_NODE*>
+		(this, node);
 	return n;
 }
 
