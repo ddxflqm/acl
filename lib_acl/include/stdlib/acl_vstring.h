@@ -15,8 +15,8 @@ extern "C" {
  * 封装了 ACL_VBUF，ACL_VSTRING 结构类型定义
  */
 typedef struct ACL_VSTRING {
-    ACL_VBUF  vbuf;
-    ssize_t   maxlen;
+    ACL_VBUF        vbuf;
+    ssize_t         maxlen;
     ACL_SLICE_POOL *slice;
     ACL_DBUF_POOL  *dbuf;
     ACL_FILE_HANDLE fd;

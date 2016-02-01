@@ -33,7 +33,7 @@
 
 /* vstring_extend - variable-length string buffer extension policy */
 
-static int vstring_extend(ACL_VBUF *bp, int incr)
+static int vstring_extend(ACL_VBUF *bp, ssize_t incr)
 {
 	const char *myname = "vstring_extend";
 	ssize_t used = (unsigned) (bp->ptr - bp->data), new_len;
@@ -43,13 +43,14 @@ static int vstring_extend(ACL_VBUF *bp, int incr)
 		ACL_VSTRING_AT_OFFSET(vp, vp->maxlen - 1);
 		ACL_VSTRING_TERMINATE(vp);
 
-		if (vp->fd != ACL_FILE_INVALID) {
-			acl_msg_warn("%s(%d), %s: reached the maxlen: %ld, %ld",
+		if (vp->fd != ACL_FILE_INVALID)
+			acl_msg_warn("%s(%d), %s: overflow maxlen: %ld, %ld",
 				__FILE__, __LINE__, myname, (long) vp->maxlen,
 				(long) ACL_VSTRING_LEN(vp));
-		} else
-			acl_msg_warn("%s(%d), %s: reached the maxlen: %ld",
-				__FILE__, __LINE__, myname, (long) vp->maxlen);
+		else
+			acl_msg_warn("%s(%d), %s: overflow maxlen: %ld, %ld",
+				__FILE__, __LINE__, myname, (long) vp->maxlen,
+				(long) ACL_VSTRING_LEN(vp));
 		return ACL_VBUF_EOF;
 	}
 
@@ -57,8 +58,8 @@ static int vstring_extend(ACL_VBUF *bp, int incr)
 	 * Note: vp->vbuf.len is the current buffer size (both on entry and on
 	 * exit of this routine). We round up the increment size to the buffer
 	 * size to avoid silly little buffer increments. With really large
-	 * strings we might want to abandon the length doubling strategy, and go
-	 * to fixed increments.
+	 * strings we might want to abandon the length doubling strategy, and
+	 * go to fixed increments.
 	 */
 #ifdef INCR_NO_DOUBLE
 	/* below come from redis-server/sds.c/sdsMakeRoomFor, which can
@@ -122,12 +123,12 @@ static int vstring_buf_put_ready(ACL_VBUF *bp)
 
 /* vstring_buf_space - vbuf callback to reserve space */
 
-static int vstring_buf_space(ACL_VBUF *bp, int len)
+static int vstring_buf_space(ACL_VBUF *bp, ssize_t len)
 {
-	int     need;
+	ssize_t need;
 
 	if (len < 0)
-		acl_msg_panic("vstring_buf_space: bad length %d", len);
+		acl_msg_panic("vstring_buf_space: bad length %ld", (long) len);
 	if ((need = len - bp->cnt) > 0)
 		return vstring_extend(bp, need);
 	else
@@ -162,7 +163,15 @@ void acl_vstring_free_buf(ACL_VSTRING *vp)
 
 	if (vp->slice)
 		acl_slice_pool_free(__FILE__, __LINE__, vp->vbuf.data);
-	else if (vp->dbuf == NULL && vp->fd == ACL_FILE_INVALID)
+#ifdef ACL_UNIX
+	if (vp->fd != ACL_FILE_INVALID) {
+		if (vp->maxlen > 0 && munmap(vp->vbuf.data, vp->maxlen) < 0)
+			acl_msg_error("%s(%d), %s: munmap error %s",
+				__FILE__, __LINE__, __FUNCTION__,
+				acl_last_serror());
+	}
+#endif
+	else if (vp->dbuf == NULL)
 		acl_myfree(vp->vbuf.data);
 	vp->vbuf.data = NULL;
 }
@@ -220,7 +229,8 @@ ACL_VSTRING *acl_vstring_dbuf_alloc(ACL_DBUF_POOL *dbuf, size_t len)
 		vp = (ACL_VSTRING*) acl_dbuf_pool_alloc(dbuf, sizeof(*vp));
 		vp->dbuf = dbuf;
 		vp->slice = NULL;
-		vp->vbuf.data = (unsigned char *) acl_dbuf_pool_alloc(dbuf, len);
+		vp->vbuf.data = (unsigned char *)
+			acl_dbuf_pool_alloc(dbuf, len);
 	} else {
 		vp = (ACL_VSTRING *) acl_mymalloc(sizeof(*vp));
 		vp->slice = NULL;
@@ -244,7 +254,7 @@ ACL_VSTRING *acl_vstring_dbuf_alloc(ACL_DBUF_POOL *dbuf, size_t len)
 
 static void vstring_buf_init(ACL_VSTRING *vp, ssize_t init_len)
 {
-	if (acl_lseek(vp->fd, init_len, SEEK_SET) != (ssize_t) init_len)
+	if (acl_lseek(vp->fd, init_len, SEEK_SET) != init_len)
 		acl_msg_fatal("lseek failed: %s, off: %ld",
 			acl_last_serror(), (long) init_len);
 	if (acl_file_write(vp->fd, "\0", 1, 0, NULL, NULL) == ACL_VSTREAM_EOF)
@@ -279,7 +289,7 @@ ACL_VSTRING *acl_vstring_mmap_alloc(ACL_FILE_HANDLE fd,
 	vp->dbuf = NULL;
 
 	vp->vbuf.flags = 0;
-	vp->vbuf.len = (int) init_len;
+	vp->vbuf.len = init_len;
 	vp->vbuf.get_ready = vstring_buf_get_ready;
 	vp->vbuf.put_ready = vstring_buf_put_ready;
 	vp->vbuf.space = vstring_buf_space;
@@ -297,25 +307,16 @@ ACL_VSTRING *acl_vstring_mmap_alloc(ACL_FILE_HANDLE fd,
 
 void acl_vstring_free(ACL_VSTRING *vp)
 {
-	if (vp->slice) {
-		if (vp->vbuf.data)
-			acl_slice_pool_free(__FILE__, __LINE__, vp->vbuf.data);
+	acl_vstring_free_buf(vp);
+
+	if (vp->slice)
 		acl_slice_pool_free(__FILE__, __LINE__, vp);
-	}
 #ifdef ACL_UNIX
-	else if (vp->fd != ACL_FILE_INVALID && vp->vbuf.data != NULL) {
-		if (munmap(vp->vbuf.data, vp->maxlen) < 0)
-			acl_msg_error("%s(%d), %s: munmap error %s",
-				__FILE__, __LINE__, __FUNCTION__,
-				acl_last_serror());
+	else if (vp->fd != ACL_FILE_INVALID)
 		acl_myfree(vp);
-	}
 #endif
-	else if (vp->dbuf == NULL) {
-		if (vp->vbuf.data)
-			acl_myfree(vp->vbuf.data);
+	else if (vp->dbuf == NULL)
 		acl_myfree(vp);
-	}
 }
 
 /* acl_vstring_ctl - modify memory management policy */
@@ -357,52 +358,36 @@ ACL_VSTRING *acl_vstring_truncate(ACL_VSTRING *vp, size_t len)
 
 ACL_VSTRING *acl_vstring_strcpy(ACL_VSTRING *vp, const char *src)
 {
-	ACL_VSTRING_RESET(vp);
-
-	while (*src) {
-		ACL_VSTRING_ADDCH(vp, *src);
-		src++;
-	}
-	ACL_VSTRING_TERMINATE(vp);
-	return vp;
+	return acl_vstring_memcpy(vp, src, strlen(src));
 }
 
 /* acl_vstring_strncpy - copy string of limited length */
 
 ACL_VSTRING *acl_vstring_strncpy(ACL_VSTRING *vp, const char *src, size_t len)
 {
-	ACL_VSTRING_RESET(vp);
+	size_t n = strlen(src);
 
-	while (len-- > 0 && *src) {
-		ACL_VSTRING_ADDCH(vp, *src);
-		src++;
-	}
-	ACL_VSTRING_TERMINATE(vp);
-	return vp;
+	if (n > len)
+		n = len;
+	return acl_vstring_memcpy(vp, src, n);
 }
 
 /* acl_vstring_strcat - append string */
 
 ACL_VSTRING *acl_vstring_strcat(ACL_VSTRING *vp, const char *src)
 {
-	while (*src) {
-		ACL_VSTRING_ADDCH(vp, *src);
-		src++;
-	}
-	ACL_VSTRING_TERMINATE(vp);
-	return vp;
+	return acl_vstring_memcat(vp, src, strlen(src));
 }
 
 /* acl_vstring_strncat - append string of limited length */
 
 ACL_VSTRING *acl_vstring_strncat(ACL_VSTRING *vp, const char *src, size_t len)
 {
-	while (len-- > 0 && *src) {
-		ACL_VSTRING_ADDCH(vp, *src);
-		src++;
-	}
-	ACL_VSTRING_TERMINATE(vp);
-	return vp;
+	size_t n = strlen(src);
+
+	if (n > len)
+		n = len;
+	return acl_vstring_memcat(vp, src, n);
 }
 
 /* acl_vstring_memcpy - copy buffer of limited length */
@@ -412,10 +397,27 @@ ACL_VSTRING *acl_vstring_memcpy(ACL_VSTRING *vp, const char *src, size_t len)
 	ACL_VSTRING_RESET(vp);
 
 	if (len > 0) {
-		ACL_VSTRING_SPACE(vp, (int) len);
-		memcpy(acl_vstring_str(vp), src, len);
-		ACL_VSTRING_AT_OFFSET(vp, (int) len);
+		ssize_t n;
+
+		ACL_VSTRING_SPACE(vp, (ssize_t) len);
+
+		n = acl_vstring_avail(vp);
+
+		if ((size_t) n > len)
+			n = (ssize_t) len;
+		else
+			acl_msg_warn("%s(%d): space not enough, avail: %ld, "
+				"len: %ld", __FUNCTION__, __LINE__,
+				(long) n, (long) len);
+
+		if (n > 0) {
+			memcpy(acl_vstring_str(vp), src, n);
+			ACL_VSTRING_AT_OFFSET(vp, n);
+		} else
+			acl_msg_warn("%s(%d): no space, avail: 0, len: %ld",
+				__FUNCTION__, __LINE__, (long) len);
 	}
+
 	ACL_VSTRING_TERMINATE(vp);
 	return vp;
 }
@@ -435,19 +437,34 @@ ACL_VSTRING *acl_vstring_memmove(ACL_VSTRING *vp, const char *src, size_t len)
 		ACL_VSTRING_AT_OFFSET(vp, (int) len);
 		ACL_VSTRING_TERMINATE(vp);
 		return vp;
-	} else {
-		/* 说明不是同一内存区间的数据移动 */
-		char *ptr = acl_mymalloc(len);
-
-		memcpy(ptr, src, len);
-		acl_myfree(vp->vbuf.data);
-		vp->vbuf.data = (unsigned char *) ptr;
-		vp->vbuf.len = (int) len;
-		ACL_VSTRING_AT_OFFSET(vp, (int) len);
-		ACL_VSTRING_TERMINATE(vp);
-		vp->maxlen = 0;
-		return vp;
 	}
+
+	/* 说明不是同一内存区间的数据移动 */
+
+	acl_vstring_free_buf(vp);
+
+	if (vp->slice != NULL)
+		vp->vbuf.data = (unsigned char *) acl_slice_pool_alloc(
+			__FILE__, __LINE__, vp->slice, len);
+	else if (vp->dbuf != NULL)
+		vp->vbuf.data = (unsigned char *)
+			acl_dbuf_pool_alloc(vp->dbuf, len);
+#ifdef ACL_UNIX
+	else if (vp->fd != ACL_FILE_INVALID) {
+		if (len > (size_t) vp->maxlen)
+			vp->maxlen = (ssize_t) len;
+		vstring_buf_init(vp, len);
+	}
+#endif
+	else
+		vp->vbuf.data = acl_mymalloc(len);
+
+	memcpy(vp->vbuf.data, src, len);
+	vp->vbuf.len = (ssize_t) len;
+	ACL_VSTRING_AT_OFFSET(vp, len);
+	ACL_VSTRING_TERMINATE(vp);
+
+	return vp;
 }
 
 /* acl_vstring_memcat - append buffer of limited length */
@@ -455,11 +472,28 @@ ACL_VSTRING *acl_vstring_memmove(ACL_VSTRING *vp, const char *src, size_t len)
 ACL_VSTRING *acl_vstring_memcat(ACL_VSTRING *vp, const char *src, size_t len)
 {
 	if (len > 0) {
-		ACL_VSTRING_SPACE(vp, (int) len);
-		memcpy(acl_vstring_end(vp), src, len);
-		len += ACL_VSTRING_LEN(vp);
-		ACL_VSTRING_AT_OFFSET(vp, (int) len);
+		ssize_t n;
+
+		ACL_VSTRING_SPACE(vp, (ssize_t) len);
+
+		n = acl_vstring_avail(vp);
+
+		if ((size_t) n > len)
+			n = (ssize_t) len;
+		else
+			acl_msg_warn("%s(%d): space not enough, avail: %ld, "
+				"len: %ld", __FUNCTION__, __LINE__,
+				(long) n, (long) len);
+
+		if (n > 0 ) {
+			memcpy(acl_vstring_end(vp), src, n);
+			n += ACL_VSTRING_LEN(vp);
+			ACL_VSTRING_AT_OFFSET(vp, n);
+		} else
+			acl_msg_warn("%s(%d): no space, avail: 0, len: %ld",
+				__FUNCTION__, __LINE__, (long) len);
 	}
+
 	ACL_VSTRING_TERMINATE(vp);
 	return vp;
 }
@@ -608,7 +642,7 @@ ACL_VSTRING *acl_vstring_insert(ACL_VSTRING *vp, size_t start,
 	const char *buf, size_t len)
 {
 	const char *myname = "acl_vstring_insert";
-	size_t new_len;
+	size_t new_len, n;
 
 	/*
 	 * Sanity check.
@@ -621,13 +655,21 @@ ACL_VSTRING *acl_vstring_insert(ACL_VSTRING *vp, size_t start,
 	 * Move the existing content and copy the new content.
 	 */
 	new_len = ACL_VSTRING_LEN(vp) + len;
-	ACL_VSTRING_SPACE(vp, (int) len);
-	memmove(acl_vstring_str(vp) + start + len,
-		acl_vstring_str(vp) + start,
-		ACL_VSTRING_LEN(vp) - start);
-	memcpy(acl_vstring_str(vp) + start, buf, len);
-	ACL_VSTRING_AT_OFFSET(vp, (int) new_len);
-	ACL_VSTRING_TERMINATE(vp);
+	ACL_VSTRING_SPACE(vp, (ssize_t) len);
+
+	n = acl_vstring_avail(vp);
+	if (len > (size_t) n)
+		len = n;
+
+	if (len > 0) {
+		memmove(acl_vstring_str(vp) + start + len,
+			acl_vstring_str(vp) + start,
+			ACL_VSTRING_LEN(vp) - start);
+		memcpy(acl_vstring_str(vp) + start, buf, len);
+		ACL_VSTRING_AT_OFFSET(vp, (int) new_len);
+		ACL_VSTRING_TERMINATE(vp);
+	}
+
 	return vp;
 }
 
@@ -635,17 +677,26 @@ ACL_VSTRING *acl_vstring_insert(ACL_VSTRING *vp, size_t start,
 
 ACL_VSTRING *acl_vstring_prepend(ACL_VSTRING *vp, const char *buf, size_t len)
 {
-	ssize_t new_len;
+	ssize_t new_len, n;
 
 	/*
 	 * Move the existing content and copy the new content.
 	 */
 	new_len = (ssize_t) (ACL_VSTRING_LEN(vp) + len);
 	ACL_VSTRING_SPACE(vp, (int) len);
-	memmove(acl_vstring_str(vp) + len, acl_vstring_str(vp), ACL_VSTRING_LEN(vp));
-	memcpy(acl_vstring_str(vp), buf, len);
-	ACL_VSTRING_AT_OFFSET(vp, new_len);
-	ACL_VSTRING_TERMINATE(vp);
+
+	n = acl_vstring_avail(vp);
+	if (len > (size_t) n)
+		len = (size_t) n;
+
+	if (len >0) {
+		memmove(acl_vstring_str(vp) + len, acl_vstring_str(vp),
+			ACL_VSTRING_LEN(vp));
+		memcpy(acl_vstring_str(vp), buf, len);
+		ACL_VSTRING_AT_OFFSET(vp, new_len);
+		ACL_VSTRING_TERMINATE(vp);
+	}
+
 	return vp;
 }
 

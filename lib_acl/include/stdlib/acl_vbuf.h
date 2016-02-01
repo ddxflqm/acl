@@ -11,7 +11,7 @@ extern "C" {
 typedef struct ACL_VBUF ACL_VBUF;
 typedef int (*ACL_VBUF_GET_READY_FN) (ACL_VBUF *);
 typedef int (*ACL_VBUF_PUT_READY_FN) (ACL_VBUF *);
-typedef int (*ACL_VBUF_SPACE_FN) (ACL_VBUF *, int);
+typedef int (*ACL_VBUF_SPACE_FN) (ACL_VBUF *, ssize_t);
 
 struct ACL_VBUF {
     unsigned flags;			/* status, see below */
