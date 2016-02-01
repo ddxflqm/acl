@@ -22,6 +22,7 @@
 #include "stdlib/acl_msg.h"
 #include "stdlib/acl_ring.h"
 #include "stdlib/acl_vstream.h"
+#include "net/acl_sane_socket.h"
 #include "event/acl_events.h"
 
 #endif
@@ -52,9 +53,7 @@ static void event_enable_read(ACL_EVENT *eventp, ACL_VSTREAM *fp,
 	struct epoll_event ev;
 	int   fd_ready;
 
-	if (ACL_VSTREAM_BFRD_CNT(stream) > 0
-		|| (stream->flag & ACL_VSTREAM_FLAG_BAD))
-	{
+	if (ACL_VSTREAM_BFRD_CNT(fp) > 0 || (fp->flag & ACL_VSTREAM_FLAG_BAD)) {
 		fd_ready = 1;
 	} else
 		fd_ready = 0;
@@ -104,7 +103,7 @@ static void event_enable_read(ACL_EVENT *eventp, ACL_VSTREAM *fp,
 	ev.data.u64 = 0;  /* avoid valgrind warning */
 	ev.data.ptr = fdp;
 
-	THREAD_LOCK(&event_thr->event.tb_mutex);
+	THREAD_LOCK(&evthr->event.tb_mutex);
 
 	fdp->fdidx = eventp->fdcnt;
 	eventp->fdtabs[eventp->fdcnt++] = fdp;
