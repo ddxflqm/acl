@@ -42,13 +42,14 @@ struct ACL_VBUF {
 #define	ACL_VBUF_FLAG_ERR	(1<<0)		/* some I/O error */
 #define ACL_VBUF_FLAG_EOF	(1<<1)		/* end of data */
 #define ACL_VBUF_FLAG_TIMEOUT	(1<<2)		/* timeout error */
-#define ACL_VBUF_FLAG_BAD	(ACL_VBUF_FLAG_ERR | ACL_VBUF_FLAG_EOF | ACL_VBUF_FLAG_TIMEOUT)
+#define ACL_VBUF_FLAG_BAD \
+	(ACL_VBUF_FLAG_ERR | ACL_VBUF_FLAG_EOF | ACL_VBUF_FLAG_TIMEOUT)
 #define ACL_VBUF_FLAG_FIXED	(1<<3)		/* fixed-size buffer */
 
-#define acl_vbuf_error(v)	((v)->flags & ACL_VBUF_FLAG_ERR)
-#define acl_vbuf_eof(v)	((v)->flags & ACL_VBUF_FLAG_EOF)
+#define acl_vbuf_error(v)	((v)->flags & ACL_VBUF_FLAG_BAD)
+#define acl_vbuf_eof(v)		((v)->flags & ACL_VBUF_FLAG_EOF)
 #define acl_vbuf_timeout(v)	((v)->flags & ACL_VBUF_FLAG_TIMEOUT)
-#define acl_vbuf_clearerr(v) ((v)->flags &= ~ACL_VBUF_FLAG_BAD)
+#define acl_vbuf_clearerr(v)	((v)->flags &= ~ACL_VBUF_FLAG_BAD)
 
  /*
   * Buffer I/O-like operations and results.

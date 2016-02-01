@@ -396,6 +396,7 @@ ACL_API const ACL_VSTRING *acl_buffer_gets(ACL_VSTRING *vp,
 #define ACL_VSTRING_RESET(vp) {	\
 	(vp)->vbuf.ptr = (vp)->vbuf.data; \
 	(vp)->vbuf.cnt = (vp)->vbuf.len; \
+	acl_vbuf_clearerr(&(vp)->vbuf); \
 }
 
 /**

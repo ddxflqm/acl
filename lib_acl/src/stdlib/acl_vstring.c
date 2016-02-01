@@ -37,7 +37,7 @@ static int vstring_extend(ACL_VBUF *bp, ssize_t incr)
 {
 	const char *myname = "vstring_extend";
 	ssize_t used = (unsigned) (bp->ptr - bp->data), new_len;
-	ACL_VSTRING *vp = (ACL_VSTRING *) bp->ctx;
+	ACL_VSTRING *vp = (ACL_VSTRING *) bp;
 
 	if (vp->maxlen > 0 && (ssize_t) ACL_VSTRING_LEN(vp) >= vp->maxlen) {
 		ACL_VSTRING_AT_OFFSET(vp, vp->maxlen - 1);
@@ -45,6 +45,7 @@ static int vstring_extend(ACL_VBUF *bp, ssize_t incr)
 		acl_msg_warn("%s(%d), %s: overflow maxlen: %ld, %ld",
 			__FILE__, __LINE__, myname, (long) vp->maxlen,
 			(long) ACL_VSTRING_LEN(vp));
+		bp->flags |= ACL_VBUF_FLAG_EOF;
 		return ACL_VBUF_EOF;
 	}
 
@@ -145,7 +146,7 @@ void acl_vstring_init(ACL_VSTRING *vp, size_t len)
 	vp->vbuf.get_ready = vstring_buf_get_ready;
 	vp->vbuf.put_ready = vstring_buf_put_ready;
 	vp->vbuf.space = vstring_buf_space;
-	vp->vbuf.ctx = vp;
+	vp->vbuf.ctx = NULL;
 	vp->maxlen = 0;
 	vp->slice = NULL;
 }
@@ -206,7 +207,7 @@ ACL_VSTRING *acl_vstring_slice_alloc(ACL_SLICE_POOL *slice, size_t len)
 	vp->vbuf.get_ready = vstring_buf_get_ready;
 	vp->vbuf.put_ready = vstring_buf_put_ready;
 	vp->vbuf.space = vstring_buf_space;
-	vp->vbuf.ctx = vp;
+	vp->vbuf.ctx = NULL;
 	vp->maxlen = 0;
 
 	return vp;
@@ -240,7 +241,7 @@ ACL_VSTRING *acl_vstring_dbuf_alloc(ACL_DBUF_POOL *dbuf, size_t len)
 	vp->vbuf.get_ready = vstring_buf_get_ready;
 	vp->vbuf.put_ready = vstring_buf_put_ready;
 	vp->vbuf.space = vstring_buf_space;
-	vp->vbuf.ctx = vp;
+	vp->vbuf.ctx = NULL;
 	vp->maxlen = 0;
 
 	return vp;
@@ -287,7 +288,7 @@ ACL_VSTRING *acl_vstring_mmap_alloc(ACL_FILE_HANDLE fd,
 	vp->vbuf.get_ready = vstring_buf_get_ready;
 	vp->vbuf.put_ready = vstring_buf_put_ready;
 	vp->vbuf.space = vstring_buf_space;
-	vp->vbuf.ctx = vp;
+	vp->vbuf.ctx = NULL;
 	vp->maxlen = max_len;
 
 	vstring_buf_init(vp, init_len);
