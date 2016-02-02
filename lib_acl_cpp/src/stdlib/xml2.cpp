@@ -206,66 +206,52 @@ int xml2_node::children_count(void) const
 
 //////////////////////////////////////////////////////////////////////
 
-xml2::xml2(char* addr, size_t size, const char* data /* = NULL */)
-{
-	acl_assert(addr && size > 0);
-
-	iter_ = NULL;
-	root_ = NULL;
-
-	xml_ = acl_xml2_alloc(addr, size);
-
-	if (data && *data)
-		update(data);
-}
-
-xml2::xml2(const char* filepath, size_t size, const char* data /* = NULL */,
-	size_t block /* = 8192 */, bool keep_open /* = true */)
+xml2::xml2(const char* filepath, size_t max_len, const char* data /* = NULL */,
+	size_t init_len /* = 8192 */)
 {
 	acl_assert(filepath && size > 0 && block > 0);
 
-	if (block > size)
-		block = size;
+	if (max_len < init_len)
+		max_len = init_len;
 
 	iter_ = NULL;
 	root_ = NULL;
 
-	xml_ = acl_xml2_mmap_file(filepath, size, block,
-			keep_open ? 1 : 0, NULL);
+	xml_ = acl_xml2_mmap_file(filepath, max_len, init_len, NULL);
 
 	if (data && *data)
 		update(data);
 
 }
 
-xml2::xml2(fstream& fp, size_t size, const char* data /* = NULL */,
-	size_t block /* = 8192 */)
+xml2::xml2(fstream& fp, size_t max_len, const char* data /* = NULL */,
+	size_t init_len /* = 8192 */)
 {
 	acl_assert(size > 0 && block > 0);
 
-	if (block > size)
-		block = size;
+	if (max_len < init_len)
+		max_len = init_len;
 
 	iter_ = NULL;
 	root_ = NULL;
 
 	xml_ = acl_xml2_mmap_fd((ACL_FILE_HANDLE) fp.file_handle(),
-		size, block, NULL);
+		max_len, init_len, NULL);
 
 	if (data && *data)
 		update(data);
 }
 
-xml2::xml2(ACL_FILE_HANDLE fd, size_t size, const char* data /* = NULL */,
-	size_t block /* = 8192 */)
+xml2::xml2(ACL_FILE_HANDLE fd, size_t max_len, const char* data /* = NULL */,
+	size_t init_len /* = 8192 */)
 {
 	acl_assert(fd != ACL_FILE_INVALID);
 	acl_assert(size > 0);
 
-	if (block > size)
-		block = size;
+	if (init_len > max_len)
+		max_len = init_len;
 
-	xml_ = acl_xml2_mmap_fd(fd, size, block, NULL);
+	xml_ = acl_xml2_mmap_fd(fd, max_len, init_len, NULL);
 
 	if (data && *data)
 		update(data);
