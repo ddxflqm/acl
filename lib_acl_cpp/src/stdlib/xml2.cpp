@@ -209,7 +209,7 @@ int xml2_node::children_count(void) const
 xml2::xml2(const char* filepath, size_t max_len, const char* data /* = NULL */,
 	size_t init_len /* = 8192 */)
 {
-	acl_assert(filepath && size > 0 && block > 0);
+	acl_assert(filepath && max_len > 0 && init_len > 0);
 
 	if (max_len < init_len)
 		max_len = init_len;
@@ -227,7 +227,7 @@ xml2::xml2(const char* filepath, size_t max_len, const char* data /* = NULL */,
 xml2::xml2(fstream& fp, size_t max_len, const char* data /* = NULL */,
 	size_t init_len /* = 8192 */)
 {
-	acl_assert(size > 0 && block > 0);
+	acl_assert(max_len > 0 && init_len > 0);
 
 	if (max_len < init_len)
 		max_len = init_len;
@@ -246,7 +246,7 @@ xml2::xml2(ACL_FILE_HANDLE fd, size_t max_len, const char* data /* = NULL */,
 	size_t init_len /* = 8192 */)
 {
 	acl_assert(fd != ACL_FILE_INVALID);
-	acl_assert(size > 0);
+	acl_assert(max_len > 0);
 
 	if (init_len > max_len)
 		max_len = init_len;
@@ -491,7 +491,7 @@ void xml2::build_xml(string& out) const
 const char* xml2::to_string(size_t* len /* = NULL */) const
 {
 	const char* dat = acl_xml2_build(xml_);
-	if (dat <= xml_->addr)
+	if (dat >= acl_vstring_end(xml_->vbuf))
 	{
 		if (len)
 			*len = 0;
@@ -499,7 +499,7 @@ const char* xml2::to_string(size_t* len /* = NULL */) const
 	}
 
 	if (len)
-		*len = xml_->ptr - dat;
+		*len = acl_vstring_end(xml_->vbuf) - dat;
 	return dat;
 }
 
