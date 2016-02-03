@@ -629,14 +629,16 @@ static void test1(void)
 
 static void build_xml(void)
 {
-	size_t size = 1000;
+	size_t size = 2000;
 	ACL_VSTRING *vbuf = acl_vstring_alloc(size);
 	ACL_XML2 *xml = acl_xml2_alloc(vbuf);
 	ACL_XML2_NODE *node1, *node2, *node3;
 	const char *buf;
 	const char* pp = "<users name=\"users list\">text1<user name=\"user11\" value=\"zsx11\">text11<age name=\"user111\" value=\"zsx111\">text111</age></user><user name=\"value2\" value=\"zsx2\">text2</user><user name=\"value3\" value=\"zsx3\">text3</user></users>";
 
+	/*
 	vbuf->maxlen = size;
+	*/
 
 	node1 = acl_xml2_create_node(xml, "users", "text1");
 	acl_xml2_node_add_child(xml->root, node1);
@@ -661,13 +663,22 @@ static void build_xml(void)
 	printf("--------------------xml string-------------------\r\n");
 	buf = acl_xml2_build(xml);
 	printf("[%s]\n", buf);
+
+	if (strlen(buf) != (size_t) (acl_vstring_end(xml->vbuf) - buf)) {
+		printf("invalid length: %ld, %ld, %p\r\n", (long) strlen(buf),
+			(long) (acl_vstring_end(xml->vbuf) - buf),
+			acl_vstring_end(xml->vbuf));
+		assert(0);
+	}
 	printf("length: %ld, %ld\r\n", (long) strlen(buf),
 		(long) (acl_vstring_end(xml->vbuf) - buf));
 
 	if (strcmp(pp, buf) == 0)
 		printf(">>>>>>>>OK<<<<<<<<<<<\r\n");
-	else
+	else {
 		printf(">>>>>>>>Error<<<<<<<<\r\n");
+		assert(0);
+	}
 
 	printf("--------------------xml string end---------------\r\n");
 
@@ -706,7 +717,7 @@ int main(int argc, char *argv[])
 	const char* root = "root";
 	char  filepath[256];
 
-	acl_msg_stdout_enable(1);
+//	acl_msg_stdout_enable(1);
 
 	filepath[0] = 0;
 

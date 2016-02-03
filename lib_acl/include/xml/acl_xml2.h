@@ -111,6 +111,7 @@ struct ACL_XML2 {
 	ACL_XML2_NODE *root;            /**< XML 根节点 */
 
 	/* private */
+	ACL_FILE_HANDLE fd;		/** 保存由本对象打开的文件句柄 */
 	ACL_VSTRING *vbuf;		/**< 基于内存映射文件的缓冲区  */
 	ACL_VSTRING *vbuf_inner;	/**< 内部创建的缓冲区对象 */
 	char  dummy[1];

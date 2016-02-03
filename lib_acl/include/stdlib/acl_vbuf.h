@@ -54,15 +54,17 @@ struct ACL_VBUF {
  /*
   * Buffer I/O-like operations and results.
   */
-#define ACL_VBUF_GET(v)	((v)->cnt < 0 ? ++(v)->cnt, \
-				(int) *(v)->ptr++ : acl_vbuf_get(v))
-#define ACL_VBUF_PUT(v,c)	((v)->cnt > 0 ? --(v)->cnt, \
-				(int) (*(v)->ptr++ = (c)) : acl_vbuf_put((v),(c)))
+#define ACL_VBUF_GET(v) ((v)->cnt < 0 ? ++(v)->cnt, \
+	(int) *(v)->ptr++ : acl_vbuf_get(v))
+
+#define ACL_VBUF_PUT(v,c) ((v)->cnt > 0 ? --(v)->cnt, \
+	(int) (*(v)->ptr++ = (c)) : acl_vbuf_put((v),(c)))
+
 #define ACL_VBUF_SPACE(v,n) ((v)->space((v),(n)))
 
-#define	ACL_VBUF_CHARAT(v, offset)	((int) (v).data[offset])
+#define	ACL_VBUF_CHARAT(v, offset) ((int) (v).data[offset])
 
-#define ACL_VBUF_EOF	(-1)		/* no more space or data */
+#define ACL_VBUF_EOF		(-1)		/* no more space or data */
 
 ACL_API int acl_vbuf_get(ACL_VBUF *);
 ACL_API int acl_vbuf_put(ACL_VBUF *, int);

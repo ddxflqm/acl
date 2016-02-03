@@ -418,6 +418,9 @@ ACL_XML2 *acl_xml2_mmap_file(const char *filepath, size_t max_len,
 		return NULL;
 	}
 
+	/* save the fd will be closed in acl_vstring_free */
+	xml->fd = fd;
+
 	return xml;
 }
 
@@ -437,6 +440,13 @@ ACL_XML2 *acl_xml2_mmap_fd(ACL_FILE_HANDLE fd, size_t max_len,
 
 ACL_XML2 *acl_xml2_alloc(ACL_VSTRING *buf)
 {
+#ifdef ACL_WINDOWS
+	if (buf->fd == ACL_FILE_INVALID)
+#else
+	if (buf->fd < 0)
+#endif
+		buf->vbuf.flags |= ACL_VBUF_FLAG_FIXED;
+
 	return acl_xml2_dbuf_alloc(buf, NULL);
 }
 
@@ -453,6 +463,7 @@ ACL_XML2 *acl_xml2_dbuf_alloc(ACL_VSTRING *vbuf, ACL_DBUF_POOL *dbuf)
 		xml->dbuf_inner = NULL;
 	}
 
+	xml->fd         = ACL_FILE_INVALID;
 	xml->dbuf       = dbuf;
 	xml->vbuf       = vbuf;
 	xml->vbuf_inner = NULL;
@@ -477,6 +488,13 @@ int acl_xml2_free(ACL_XML2 *xml)
 	int  node_cnt = xml->node_cnt;
 
 	acl_htable_free(xml->id_table, NULL);
+
+#ifdef ACL_UNIX
+	if (xml->fd >= 0)
+#else
+	if (xml->fd != ACL_FILE_INVALID)
+#endif
+		acl_file_close(xml->fd);
 
 	if (xml->vbuf_inner != NULL)
 		acl_vstring_free(xml->vbuf_inner);

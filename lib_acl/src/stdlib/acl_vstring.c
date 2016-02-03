@@ -49,6 +49,17 @@ static int vstring_extend(ACL_VBUF *bp, ssize_t incr)
 		return ACL_VBUF_EOF;
 	}
 
+#ifdef ACL_WINDOWS
+	if (vp->fd == ACL_FILE_INVALID && (bp->flags & ACL_VBUF_FLAG_FIXED))
+#else
+	if (vp->fd < 0 && (bp->flags & ACL_VBUF_FLAG_FIXED))
+#endif
+	{
+		acl_msg_warn("%s(%d), %s: can't extend fixed buffer",
+			__FILE__, __LINE__, myname);
+		return ACL_VBUF_EOF;
+	}
+
 	/*
 	 * Note: vp->vbuf.len is the current buffer size (both on entry and on
 	 * exit of this routine). We round up the increment size to the buffer

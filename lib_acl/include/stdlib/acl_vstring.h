@@ -384,8 +384,14 @@ ACL_API const ACL_VSTRING *acl_buffer_gets(ACL_VSTRING *vp,
  */
 #define ACL_VSTRING_TERMINATE(vp) { \
 	if ((vp)->vbuf.cnt <= 0) \
-		ACL_VSTRING_SPACE((vp),1); \
-	*(vp)->vbuf.ptr = 0; \
+		ACL_VSTRING_SPACE((vp), 1); \
+	if ((vp)->vbuf.cnt > 0) \
+		*(vp)->vbuf.ptr = 0; \
+	else if ((vp)->vbuf.ptr > (vp)->vbuf.data) { \
+		(vp)->vbuf.ptr--; \
+		*(vp)->vbuf.ptr = 0; \
+		(vp)->vbuf.cnt++; \
+	} \
 }
 
 /**
