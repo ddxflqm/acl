@@ -235,7 +235,7 @@ xml2::xml2(fstream& fp, size_t max_len, const char* data /* = NULL */,
 	iter_ = NULL;
 	root_ = NULL;
 
-	xml_ = acl_xml2_mmap_fd((ACL_FILE_HANDLE) fp.file_handle(),
+	xml_ = acl_xml2_mmap_fd(fp.file_handle(),
 		max_len, init_len, NULL);
 
 	if (data && *data)
