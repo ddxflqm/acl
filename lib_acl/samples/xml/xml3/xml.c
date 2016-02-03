@@ -73,8 +73,8 @@ static const char* __data4 = "<?xml version=\"1.0\" encoding=\"gb2312\"?>\r\n"
   "  </tags1>\r\n"
   "  <tags2>\r\n"
   "    <tags21/>\r\n"
-  "    <tags22/>\r\n"
-  "    <tags23/>\r\n"
+  "    <tags22 />\r\n"
+  "    <tags23 />\r\n"
   "    <module name=\"mail_ud_user\" />\r\n"
   "  </tags2>\r\n"
   "  <tag3>\r\n"
@@ -248,10 +248,8 @@ static void walk_xml(ACL_XML2* xml)
 		for (i = 1; i < node->depth; i++)
 			printf("\t");
 
-		printf("%s(%d): tag->%s, size: %ld\n",
-			__FUNCTION__, __LINE__,
-			node->ltag ? node->ltag : "[null]",
-			(long) node->ltag_size);
+		printf("%s(%d): tag->%s, size: %ld\n", __FUNCTION__, __LINE__,
+			node->ltag, (long) node->ltag_size);
 
 		/* 遍历 xml 结点的属性 */
 		acl_foreach(iter2, node->attr_list) {
@@ -260,18 +258,14 @@ static void walk_xml(ACL_XML2* xml)
 			for (i = 1; i < node->depth + 1; i++)
 				printf("\t");
 
-			printf("%s(%d): attr->%s=\"%s\"\n",
-				__FUNCTION__, __LINE__,
-				attr->name ? attr->name : "[null]",
-				attr->value ? attr->value : "[null]");
+			printf("%s(%d): attr->%s=\"%s\"\n", __FUNCTION__,
+				__LINE__, attr->name, attr->value);
 		}
 
 		for (i = 1; i < node->depth + 1; i++)
 			printf("\t");
-		printf("%s(%d): text->%s, size: %ld\n",
-			__FUNCTION__, __LINE__,
-			node->text ? node->text : "[null]",
-			(long) node->text_size);
+		printf("%s(%d): text->%s, size: %ld\n", __FUNCTION__,
+			__LINE__, node->text, (long) node->text_size);
 	}
 
 	printf("-------------- walk_xml end -------------------\r\n");
@@ -292,26 +286,23 @@ static void xml_node_attrs(ACL_XML2_NODE* node, int n)
 			printf("\t");
 
 		printf("%s(%d): attr->%s(%ld, %ld)=\"%s(%ld, %ld)\"\n",
-			__FUNCTION__, __LINE__,
-			attr->name ? attr->name : "[null]",
-			(long) attr->name_size,
-			attr->name ? (long) strlen(attr->name) : 0,
-			attr->value ? attr->value : "[null]",
-			(long) attr->value_size,
-			attr->value ? (long) strlen(attr->value) : 0);
+			__FUNCTION__, __LINE__, attr->name,
+			(long) attr->name_size, (long) strlen(attr->name),
+			attr->value, (long) attr->value_size,
+			(long) strlen(attr->value));
 
-		if (attr->name && (size_t) attr->name_size
-			!= strlen(attr->name))
-		{
-			printf("%s(%d): name_size invalie\r\n",
-				__FUNCTION__, __LINE__);
+		if ((size_t) attr->name_size != strlen(attr->name)) {
+			printf("%s(%d): name_size invalie: %ld, %ld, %s\r\n",
+				__FUNCTION__, __LINE__,
+				(long) attr->name_size,
+				(long) strlen(attr->name), attr->name);
 			assert(0);
 		}
-		if (attr->value && (size_t) attr->value_size
-			!= strlen(attr->value))
-		{
-			printf("%s(%d): value_size invalie\r\n",
-				__FUNCTION__, __LINE__);
+		if ((size_t) attr->value_size != strlen(attr->value)) {
+			printf("%s(%d): value_size invalie, value: %s, "
+				"len: %ld, %ld\r\n", __FUNCTION__, __LINE__,
+				attr->value, (long) attr->value_size,
+				(long) strlen(attr->value));
 			assert(0);
 		}
 	}
@@ -330,14 +321,15 @@ static void walk_xml_node(ACL_XML2_NODE *node, int n)
 		for (i = 0; i < n; i++)
 			printf("\t");
 
-		printf("%s(%d): tag->%s, size: %ld, %ld\n",
-			__FUNCTION__, __LINE__,
-			child->ltag ? child->ltag : "[null]",
-			(long) child->ltag_size, (long) strlen(child->ltag));
+		printf("%s(%d): tag->%s, size: %ld, %ld\n", __FUNCTION__,
+			__LINE__, child->ltag, (long) child->ltag_size,
+			(long) strlen(child->ltag));
 
 		if ((size_t) child->ltag_size != strlen(child->ltag)) {
-			printf("%s(%d): ltag_size invalid\r\n",
-				__FUNCTION__, __LINE__);
+			printf("%s(%d): ltag_size invalid, ltag: %s, "
+				"len: %ld, %ld\r\n", __FUNCTION__, __LINE__,
+				child->ltag, (long) child->ltag_size,
+				(long) strlen(child->ltag));
 			assert(0);
 		}
 
@@ -346,17 +338,14 @@ static void walk_xml_node(ACL_XML2_NODE *node, int n)
 		for (i = 0; i < n + 1; i++)
 			printf("\t");
 
-		printf("%s(%d): text->%s, size: %ld, %ld\n",
-			__FUNCTION__, __LINE__,
-			child->text ? child->text : "[null]",
-			(long) child->text_size,
-			child->text ? (long) strlen(child->text) : 0);
-		if (child->text && (size_t) child->text_size
-			!= strlen(child->text))
-		{
-			printf("%s(%d): text_size invalid: %ld, %ld\r\n",
-				__FUNCTION__, __LINE__, (long) child->text_size,
-				(long) strlen(child->text));
+		printf("%s(%d): text->%s, size: %ld, %ld\n", __FUNCTION__,
+			__LINE__, child->text, (long) child->text_size,
+			(long) strlen(child->text));
+		if ((size_t) child->text_size != strlen(child->text)) {
+			printf("%s(%d): text_size invalid: %ld, %ld, "
+				"text: %s\r\n", __FUNCTION__, __LINE__,
+				(long) child->text_size,
+				(long) strlen(child->text), child->text);
 			assert(0);
 		}
 
@@ -372,7 +361,7 @@ static void list_xml_tags(ACL_XML2 *xml)
 	acl_foreach(iter, xml) {
 		ACL_XML2_NODE *node = (ACL_XML2_NODE*) iter.data;
 		printf("%s(%d): tag: %s\n", __FUNCTION__, __LINE__,
-			node->ltag ? node->ltag : "[null]");
+			node->ltag);
 	}
 
 	printf("-------------- list xml's all tags end ----------------\r\n");
@@ -559,6 +548,13 @@ static void parse_xml(int once, const char *data,
 	ptr = acl_xml2_build(xml);
 	printf("%s, len: %ld, %ld\r\n", ptr, (long) strlen(ptr),
 		(long) (acl_vstring_end(xml->vbuf) - ptr));
+	if (strlen(ptr) != (size_t) (acl_vstring_end(xml->vbuf) - ptr)) {
+		printf("%s(%d): invalid xml size: %ld, %ld\r\n", __FUNCTION__,
+			__LINE__, (long) strlen(ptr),
+			(long) (acl_vstring_end(xml->vbuf) - ptr));
+		assert(0);
+	}
+
 	printf("----------------- build xml end ---------------------\r\n");
 
 	/* 释放 xml 对象 */

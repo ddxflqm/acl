@@ -563,21 +563,24 @@ static const char *xml_parse_left_tag(ACL_XML2 *xml, const char *data)
 		if (ch == '>') {
 			if (NO_SPACE(xml))
 				return data;
-			data++;
 			xml->curr_node->ltag_size =
 				END(xml) - xml->curr_node->ltag;
 			ADD(xml, '\0');
+			data++;
 
 			xml_parse_check_self_closed(xml);
 
 			if ((xml->curr_node->flag & ACL_XML2_F_SELF_CL)
 				&& xml->curr_node->last_ch == '/')
 			{
-				size_t n = xml->curr_node->ltag_size;
-				if (n >= 2)
-					xml->curr_node->ltag[n - 2] = 0;
-				xml->curr_node->status = ACL_XML2_S_RGT;
+				if (xml->curr_node->ltag_size > 0) {
+					size_t n;
 
+					xml->curr_node->ltag_size--;
+					n = xml->curr_node->ltag_size;
+					xml->curr_node->ltag[n] = 0;
+				}
+				xml->curr_node->status = ACL_XML2_S_RGT;
 			} else
 				xml->curr_node->status = ACL_XML2_S_LGT;
 			break;
@@ -721,8 +724,8 @@ static const char *xml_parse_attr_val(ACL_XML2 *xml, const char *data)
 			if ((xml->curr_node->flag & ACL_XML2_F_SELF_CL)
 				&& xml->curr_node->last_ch == '/')
 			{
-				if (attr->value_size >= 2)
-					attr->value[attr->value_size - 2] = 0;
+				if (--attr->value_size >= 0)
+					attr->value[attr->value_size] = 0;
 				xml->curr_node->status = ACL_XML2_S_RGT;
 			} else
 				xml->curr_node->status = ACL_XML2_S_LGT;
@@ -757,7 +760,7 @@ static const char *xml_parse_attr_val(ACL_XML2 *xml, const char *data)
 
 		attr->value = END(xml);
 		(void) acl_xml_decode(val, xml->vbuf);
-		attr->value_size = END(xml) - attr->value - 1;
+		attr->value_size = END(xml) - attr->value;
 		ADD(xml, '\0');  /* skip one byte */
 	}
 
