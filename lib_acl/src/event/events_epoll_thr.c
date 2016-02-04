@@ -170,7 +170,7 @@ static void event_enable_listen(ACL_EVENT *eventp, ACL_VSTREAM *fp,
 		fp->fdp = (void *) fdp;
 	} else if (fdp->flag & EVENT_FDTABLE_FLAG_WRITE)
 		acl_msg_panic("%s(%d)->%s: fd %d: multiple I/O request",
-			__FILE__, __LINE__, myname, sockfd);
+			__FILE__, __LINE__, myname, fd);
 	else {
 		fdp->stream = fp;
 		fdp->listener = 1;
@@ -199,12 +199,12 @@ static void event_enable_listen(ACL_EVENT *eventp, ACL_VSTREAM *fp,
 	ev.data.u64 = 0;  /* avoid valgrind warning */
 	ev.data.ptr = fdp;
 
-	THREAD_LOCK(&event_thr->event.tb_mutex);
+	THREAD_LOCK(&evthr->event.tb_mutex);
 
 	fdp->fdidx = eventp->fdcnt;
 	eventp->fdtabs[eventp->fdcnt++] = fdp;
 
-	THREAD_UNLOCK(&event_thr->event.tb_mutex);
+	THREAD_UNLOCK(&evthr->event.tb_mutex);
 
 	if (epoll_ctl(evthr->handle, EPOLL_CTL_ADD, fd, &ev) < 0) {
 		if (errno == EEXIST)
@@ -237,7 +237,7 @@ static void event_enable_write(ACL_EVENT *eventp, ACL_VSTREAM *fp,
 		fdp = event_fdtable_alloc();
 		fdp->listener = 0;
 		fdp->stream = fp;
-		stream->fdp = (void *) fdp;
+		fp->fdp = (void *) fdp;
 	} else if (fdp->flag & EVENT_FDTABLE_FLAG_READ)
 		acl_msg_panic("%s(%d)->%s: fd %d: multiple I/O request",
 			__FILE__, __LINE__, myname, fd);
@@ -263,13 +263,13 @@ static void event_enable_write(ACL_EVENT *eventp, ACL_VSTREAM *fp,
 		return;
 
 	fdp->flag = EVENT_FDTABLE_FLAG_WRITE | EVENT_FDTABLE_FLAG_EXPT;
-	stream->nrefer++;
+	fp->nrefer++;
 
 	ev.events = EPOLLIN | EPOLLHUP | EPOLLERR;
 	ev.data.u64 = 0;  /* avoid valgrind warning */
 	ev.data.ptr = fdp;
 
-	THREAD_LOCK(&event_thr->event.tb_mutex);
+	THREAD_LOCK(&evthr->event.tb_mutex);
 
 	fdp->fdidx = eventp->fdcnt;
 	eventp->fdtabs[eventp->fdcnt++] = fdp;
@@ -290,11 +290,11 @@ static void event_enable_write(ACL_EVENT *eventp, ACL_VSTREAM *fp,
 					fd, evthr->handle);
 		}
 
-		THREAD_UNLOCK(&event_thr->event.tb_mutex);
+		THREAD_UNLOCK(&evthr->event.tb_mutex);
 		return;
 	}
 
-	THREAD_UNLOCK(&event_thr->event.tb_mutex);
+	THREAD_UNLOCK(&evthr->event.tb_mutex);
 	
 	if (epoll_ctl(evthr->handle, EPOLL_CTL_ADD, fd, &ev) < 0) {
 		if (errno == EEXIST)
