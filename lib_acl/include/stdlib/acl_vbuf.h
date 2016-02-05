@@ -6,7 +6,6 @@ extern "C" {
 #endif
 
 #include "acl_define.h"
-#include <stdio.h>
 
 typedef struct ACL_VBUF ACL_VBUF;
 typedef int (*ACL_VBUF_GET_READY_FN) (ACL_VBUF *);
@@ -77,4 +76,3 @@ ACL_API int acl_vbuf_write(ACL_VBUF *, const char *, int);
 #endif
 
 #endif
-
