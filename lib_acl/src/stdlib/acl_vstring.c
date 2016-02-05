@@ -476,6 +476,8 @@ ACL_VSTRING *acl_vstring_memmove(ACL_VSTRING *vp, const char *src, size_t len)
 
 	acl_vstring_free_buf(vp);
 
+	vp->vbuf.len = (ssize_t) len;
+
 	if (vp->slice != NULL)
 		vp->vbuf.data = (unsigned char *) acl_slice_pool_alloc(
 			__FILE__, __LINE__, vp->slice, len);
@@ -486,14 +488,19 @@ ACL_VSTRING *acl_vstring_memmove(ACL_VSTRING *vp, const char *src, size_t len)
 	else if (vp->fd != ACL_FILE_INVALID) {
 		if (len > (size_t) vp->maxlen)
 			vp->maxlen = (ssize_t) len;
-		vstring_buf_init(vp, len);
+		mmap_buf_init(vp);
+	}
+#elif defined(_WIN32) || defined(_WIN64)
+	else if (vp->fd != ACL_FILE_INVALID && vp->hmap != NULL) {
+		if (len > (size_t) vp->maxlen)
+			vp->maxlen = (ssize_t) len;
+		mmap_buf_init(vp);
 	}
 #endif
 	else
 		vp->vbuf.data = acl_mymalloc(len);
 
 	memcpy(vp->vbuf.data, src, len);
-	vp->vbuf.len = (ssize_t) len;
 	ACL_VSTRING_AT_OFFSET(vp, len);
 	ACL_VSTRING_TERMINATE(vp);
 
