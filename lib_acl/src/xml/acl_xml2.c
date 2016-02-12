@@ -219,7 +219,7 @@ ACL_XML2_NODE *acl_xml2_node_prev(ACL_XML2_NODE *node)
 	return acl_ring_to_appl(ring_ptr, ACL_XML2_NODE, node);
 }
 
-static ACL_XML2_NODE *xml_iter_head(ACL_ITER *it, ACL_XML2 *xml)
+static ACL_XML2_NODE *xml_iter_head(ACL_ITER *it, const ACL_XML2 *xml)
 {
 	ACL_RING *ring_ptr;
 
@@ -242,7 +242,7 @@ static ACL_XML2_NODE *xml_iter_head(ACL_ITER *it, ACL_XML2 *xml)
 	return it->ptr;
 }
 
-static ACL_XML2_NODE *xml_iter_next(ACL_ITER *it, ACL_XML2 *xml)
+static ACL_XML2_NODE *xml_iter_next(ACL_ITER *it, const ACL_XML2 *xml)
 {
 	ACL_RING *ring_ptr;
 	struct ACL_XML2_NODE *node, *parent;
@@ -297,7 +297,7 @@ static ACL_XML2_NODE *xml_iter_next(ACL_ITER *it, ACL_XML2 *xml)
 	return NULL;
 }
 
-static ACL_XML2_NODE *xml_iter_tail(ACL_ITER *it, ACL_XML2 *xml)
+static ACL_XML2_NODE *xml_iter_tail(ACL_ITER *it, const ACL_XML2 *xml)
 {
 	ACL_RING *ring_ptr;
 
@@ -318,7 +318,7 @@ static ACL_XML2_NODE *xml_iter_tail(ACL_ITER *it, ACL_XML2 *xml)
 	return it->ptr;
 }
 
-static ACL_XML2_NODE *xml_iter_prev(ACL_ITER *it, ACL_XML2 *xml)
+static ACL_XML2_NODE *xml_iter_prev(ACL_ITER *it, const ACL_XML2 *xml)
 {
 	ACL_RING *ring_ptr;
 	struct ACL_XML2_NODE *node, *parent;

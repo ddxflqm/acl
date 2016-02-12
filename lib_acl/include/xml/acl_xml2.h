@@ -136,13 +136,13 @@ struct ACL_XML2 {
 	/* for acl_iterator, 通过 acl_foreach 可以列出所有子节点 */
 
 	/* 取迭代器头函数 */
-	ACL_XML2_NODE *(*iter_head)(ACL_ITER*, ACL_XML2*);
+	ACL_XML2_NODE *(*iter_head)(ACL_ITER*, const ACL_XML2*);
 	/* 取迭代器下一个函数 */
-	ACL_XML2_NODE *(*iter_next)(ACL_ITER*, ACL_XML2*);
+	ACL_XML2_NODE *(*iter_next)(ACL_ITER*, const ACL_XML2*);
 	/* 取迭代器尾函数 */
-	ACL_XML2_NODE *(*iter_tail)(ACL_ITER*, ACL_XML2*);
+	ACL_XML2_NODE *(*iter_tail)(ACL_ITER*, const ACL_XML2*);
 	/* 取迭代器上一个函数 */
-	ACL_XML2_NODE *(*iter_prev)(ACL_ITER*, ACL_XML2*);
+	ACL_XML2_NODE *(*iter_prev)(ACL_ITER*, const ACL_XML2*);
 };
 
 /****************************************************************************/
@@ -495,6 +495,14 @@ ACL_API void acl_xml2_node_set_text(ACL_XML2_NODE *node, const char *text);
  * @return {const char*} 返回转换后字符串的起始地址
  */
 ACL_API const char *acl_xml2_build(ACL_XML2* xml);
+
+/**
+ * 将 xml 对象转成字符串内容
+ * @param xml {const ACL_XML2*} xml 对象
+ * @param vbuf {ACL_VSTRING*} 存储结果
+ * @return {const char*} 返回转换后字符串的起始地址
+ */
+ACL_API const char *acl_xml2_build2(const ACL_XML2* xml, ACL_VSTRING *vbuf);
 
 /**
  * 将 xml 对象转储于指定流中，注：该转储信息仅为调试用的数据
