@@ -493,10 +493,7 @@ xml_node* xml2::next_node(void)
 
 void xml2::build_xml(string& out) const
 {
-	size_t len;
-	const char* dat = to_string(&len);
-	if (*dat && len > 0)
-		out.copy(dat, len);
+	acl_xml2_build2(xml_, out.vstring());
 }
 
 const char* xml2::to_string(size_t* len /* = NULL */) const
