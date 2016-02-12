@@ -9,6 +9,7 @@
 #include "stdlib/acl_token_tree.h"
 #include "stdlib/acl_array.h"
 #include "stdlib/acl_argv.h"
+#include "stdlib/acl_msg.h"
 #include "code/acl_xmlcode.h"
 #include "xml/acl_xml2.h"
 
