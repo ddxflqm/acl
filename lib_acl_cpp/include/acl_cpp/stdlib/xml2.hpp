@@ -19,13 +19,11 @@ class ACL_CPP_API xml2_attr : public xml_attr
 public:
 	/**
 	 * @override
-	 * @return {const char*}
 	 */
 	const char* get_name() const;
 
 	/**
 	 * @override
-	 * @return {const char*}
 	 */
 	const char* get_value() const;
 
@@ -95,6 +93,11 @@ public:
 	/**
 	 * @override
 	 */
+	xml_node& set_parent(xml_node* node);
+
+	/**
+	 * @override
+	 */
 	xml_node& get_parent(void) const;
 
 	/**
@@ -114,7 +117,6 @@ public:
 
 	/**
 	 * @override
-	 * @return {bool}
 	 */
 	bool is_root(void) const;
 
@@ -127,7 +129,6 @@ public:
 	void set_xml2_node(ACL_XML2_NODE* node);
 
 	ACL_XML2_NODE* get_xml_node(void) const;
-	xml_node& set_parent(xml_node* node);
 
 protected:
 	friend class xml2;
@@ -205,7 +206,17 @@ public:
 	/**
 	 * @override
 	 */
+	xml& xml_multi_root(bool on);
+
+	/**
+	 * @override
+	 */
 	void update(const char* data);
+
+	/**
+	 * @override
+	 */
+	bool complete(const char* root_tag);
 
 	/**
 	 * @override

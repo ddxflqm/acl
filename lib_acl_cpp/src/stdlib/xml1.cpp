@@ -247,9 +247,20 @@ xml& xml1::xml_decode(bool on)
 	return *this;
 }
 
+xml& xml1::xml_multi_root(bool on)
+{
+	acl_xml_multi_root(xml_, on ? 1 : 0);
+	return *this;
+}
+
 void xml1::update(const char* data)
 {
 	acl_xml_update(xml_, data);
+}
+
+bool xml1::complete(const char* root_tag)
+{
+	return acl_xml_is_complete(xml_, root_tag) != 0 ? true : false;
 }
 
 const std::vector<xml_node*>& xml1::getElementsByTagName(const char* tag) const

@@ -312,6 +312,13 @@ public:
 	virtual xml& xml_decode(bool on) = 0;
 
 	/**
+	 * 解析 xml 时是否允许有多个根节点（内部缺省为允许）
+	 * @param on {bool}
+	 * @retrn {xml&}
+	 */
+	virtual xml& xml_multi_root(bool on) = 0;
+
+	/**
 	 * 以流式方式循环调用本函数添加 XML 数据，也可以一次性添加
 	 * 完整的 XML 数据，如果是重复使用该 XML 解析器解析多个 XML
 	 * 对象，则应该在解析下一个 XML 对象前调用 reset() 方法来清
@@ -319,6 +326,14 @@ public:
 	 * @param data {const char*} xml 数据
 	 */
 	virtual void update(const char* data) = 0;
+
+	/**
+	 * 判断 XML 解析是否完毕
+	 * @param root_tag {const char*} 根节点标签名，非 NULL 字符串，用该标签名
+	 *  与 xml 对象中最外层的标签名比较是否相同
+	 * @return {bool}
+	 */
+	virtual bool complete(const char* root_tag) = 0;
 
 	/**
 	 * 重置 XML 解析器状态，该 XML 对象可以用来对多个 XML 数据

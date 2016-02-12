@@ -396,18 +396,19 @@ static void escape_append(ACL_VSTRING *vbuf, const char *in, int quoted)
 
 const char *acl_xml2_build(ACL_XML2 *xml)
 {
-	return acl_xml2_build2(xml, NULL);
+	return acl_xml2_build2(xml, xml->vbuf);
 }
 
 const char *acl_xml2_build2(const ACL_XML2 *xml, ACL_VSTRING *vbuf)
 {
+	const char *myname = "acl_xml2_build2";
 	ACL_XML2_ATTR *attr;
 	ACL_XML2_NODE *node;
 	ACL_ITER iter1, iter2;
 	char *res;
 
 	if (vbuf == NULL)
-		vbuf = xml->vbuf;
+		acl_msg_fatal("%s: vbuf can't be NULL!", myname);
 	res = END(xml->vbuf);
 
 	acl_foreach(iter1, xml) {
