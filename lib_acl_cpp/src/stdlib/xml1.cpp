@@ -542,8 +542,7 @@ xml_node* xml1::next_node(void)
 
 void xml1::build_xml(string& out) const
 {
-	ACL_VSTRING* buf = out.vstring();
-	(void) acl_xml_build(xml_, buf);
+	(void) acl_xml_build(xml_, out.vstring());
 }
 
 const char* xml1::to_string(size_t* len /* = NULL */) const
