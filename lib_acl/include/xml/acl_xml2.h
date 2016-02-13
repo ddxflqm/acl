@@ -242,14 +242,14 @@ ACL_API void acl_xml2_multi_root(ACL_XML2 *xml, int on);
 ACL_API void acl_xml2_slash(ACL_XML2 *xml, int ignore);
 
 /**
- * 解析 xml 对象时是否对属性值及文本值进行 xml 解码，内部缺省为不解码
+ * 解析 xml 对象时是否对属性值及文本值进行 xml 解码，内部缺省解码
  * @param xml {ACL_XML2*}
  * @param on {int} 非 0 表示进行 xml 解码
  */
 ACL_API void acl_xml2_decode_enable(ACL_XML2 *xml, int on);
 
 /**
- * 创建 xml 对象时是否对属性值及文本值进行 xml 编码，内部缺省为不编码
+ * 创建 xml 对象时是否对属性值及文本值进行 xml 编码，内部缺省编码
  */
 ACL_API void acl_xml2_encode_enable(ACL_XML2 *xml, int on);
 

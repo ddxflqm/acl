@@ -118,6 +118,10 @@ struct ACL_XML {
 
 	/**< 是否需要对文本数据进行 xml 解码  */
 #define	ACL_XML_FLAG_XML_DECODE		(1 << 2)
+
+	/**< 创建 xml 对象时是否需要对数据进行 xml 编码 */
+#define ACL_XML_FLAG_XML_ENCODE		(1 << 3)
+
 	ACL_VSTRING *decode_buf;        /**< 当需要进行 xml 解码时非空 */
 
 	/* public: for acl_iterator, 通过 acl_foreach 可以列出所有子节点 */
@@ -199,11 +203,16 @@ ACL_API void acl_xml_multi_root(ACL_XML *xml, int on);
 ACL_API void acl_xml_slash(ACL_XML *xml, int ignore);
 
 /**
- * 设置是否需要对 xml 对象中的属性值及文本值进行 xml 解码，内部缺省为不解
+ * 解析 xml 对象时是否对属性值及文本值进行 xml 解码，内部缺省解码
  * @param xml {ACL_XML*}
  * @param on {int} 非 0 表示进行 xml 解码
  */
 ACL_API void acl_xml_decode_enable(ACL_XML *xml, int on);
+
+/**
+ * 创建 xml 对象时是否对属性值及文本值进行 xml 编码，内部缺省编码
+ */
+ACL_API void acl_xml_encode_enable(ACL_XML *xml, int on);
 
 /**
  * 释放一个 xml 对象, 同时释放该对象里容纳的所有 xml 节点

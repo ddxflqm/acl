@@ -376,6 +376,8 @@ void acl_xml_decode_enable(ACL_XML *xml, int on)
 	if (on) {
 		if (xml->decode_buf == NULL)
 			xml->decode_buf = acl_vstring_alloc(256);
+		else
+			ACL_VSTRING_RESET(xml->decode_buf);
 		xml->flag |= ACL_XML_FLAG_XML_DECODE;
 	} else {
 		if (xml->decode_buf != NULL) {
@@ -384,6 +386,14 @@ void acl_xml_decode_enable(ACL_XML *xml, int on)
 		}
 		xml->flag &= ~ACL_XML_FLAG_XML_DECODE;
 	}
+}
+
+void acl_xml_encode_enable(ACL_XML2 *xml, int on)
+{
+	if (on)
+		xml->flag |= ACL_XML_FLAG_XML_ENCODE;
+	else
+		xml->flag &=~ACL_XML_FLAG_XML_ENCODE;
 }
 
 ACL_XML *acl_xml_alloc()
@@ -404,19 +414,20 @@ ACL_XML *acl_xml_dbuf_alloc(ACL_DBUF_POOL *dbuf)
 		xml->dbuf_inner = NULL;
 	}
 
-	xml->dbuf = dbuf;
-	xml->dbuf_keep = sizeof(ACL_XML);
-	xml->flag     |= ACL_XML_FLAG_MULTI_ROOT;
+	xml->dbuf       = dbuf;
+	xml->dbuf_keep  = sizeof(ACL_XML);
+	xml->flag       = ACL_XML_FLAG_MULTI_ROOT |
+			  ACL_XML_FLAG_XML_DECODE |
+			  ACL_XML_FLAG_XML_ENCODE;
+	xml->decode_buf = acl_vstring_alloc(256);
+	xml->id_table   = acl_htable_create(100, 0);
+	xml->root       = acl_xml_node_alloc(xml);
+	xml->node_cnt   = 1;
 
-	xml->id_table = acl_htable_create(100, 0);
-
-	xml->root = acl_xml_node_alloc(xml);
-	xml->node_cnt = 1;
-
-	xml->iter_head = xml_iter_head;
-	xml->iter_next = xml_iter_next;
-	xml->iter_tail = xml_iter_tail;
-	xml->iter_prev = xml_iter_prev;
+	xml->iter_head  = xml_iter_head;
+	xml->iter_next  = xml_iter_next;
+	xml->iter_tail  = xml_iter_tail;
+	xml->iter_prev  = xml_iter_prev;
 
 	return xml;
 }
