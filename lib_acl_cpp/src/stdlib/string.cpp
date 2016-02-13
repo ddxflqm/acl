@@ -1,8 +1,10 @@
 #include "acl_stdafx.hpp"
+#ifndef ACL_PREPARE_COMPILE
 #include <utility>
 #include <stdarg.h>
 #include "acl_cpp/stdlib/dbuf_pool.hpp"
 #include "acl_cpp/stdlib/string.hpp"
+#endif
 
 #define ALLOC(n) acl_vstring_alloc((n))
 #define FREE(x) acl_vstring_free((x))

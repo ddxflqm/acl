@@ -17,10 +17,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <stdarg.h>
+#include <assert.h>
 #include <vector>
 #include <map>
 #include <list>
 #include <memory>
+#include <string>
+#include <utility>
 
 #include "acl_cpp/stdlib/malloc.hpp"
 
@@ -42,9 +46,13 @@
 # define NEW new
 #endif
 
+#if defined(ACL_UNIX)
+#include <pthread.h>
+#include <unistd.h>
+#include <zlib.h>
+#endif
+
 // 加入下面一行可以加快在 VC 下的编译速度
 //#if defined(_WIN32) || defined(_WIN64)
-//#include "acl_cpp/lib_acl.hpp"
-//#else
 #include "acl_cpp/lib_acl.hpp"
-//#endif
+//endif

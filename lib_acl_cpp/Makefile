@@ -19,7 +19,7 @@ CFLAGS = -c -g -W \
 -Wformat \
 -DHAS_MYSQL_DLL \
 -Winvalid-pch \
--D__NO_INLINE__
+-DACL_PREPARE_COMPILE
 #-DHAS_POLARSSL
 #-DUSE_DYNAMIC
 # -Wcast-align
@@ -306,7 +306,7 @@ clean:
 	rm -f $(LIB_PATH_DST)/lib_acl_cpp.so
 	rm -f $(OBJS_DST)
 	rm -f $(OBJS_DEF)
-	rm -f acl_stdafx.hpp.gch
+	rm -f src/acl_stdafx.hpp.gch
 	@(cd samples; make clean)
 
 rebuild rb: clean static
