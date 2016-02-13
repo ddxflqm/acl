@@ -282,7 +282,7 @@ endif
 clean: clean_lib clean_master
 rebuild: clean all
 
-LIB_GCH = StdAfx.h.gch
+PCH = StdAfx.h.gch
 
 ###########################################################
 
@@ -293,7 +293,7 @@ CREATE_DEF = @(echo 'creating $@'; rm -f $@; \
 	sed 's,.*.o\( \)*:,$(patsubst %.inc,%.o,$@) $@ :,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$)
 
-static: depends $(OBJS_DST)
+static: depends pch $(OBJS_DST)
 	@echo 'creating $(LIB_PATH_DST)/$(STATIC_LIBNAME)'
 	@$(AR) $(ARFL) $(LIB_PATH_DST)/$(STATIC_LIBNAME) $(OBJS_DST)
 	@$(RANLIB) $(LIB_PATH_DST)/$(STATIC_LIBNAME)
@@ -329,10 +329,9 @@ shared: depends $(OBJS_DST)
 	fi
 
 depends: $(OBJS_DEF)
-	$(CC) -x c-header $(CFLAGS) StdAfx.h
 
-lib_gch: include/StdAfx.h
-	$(CC) -o include/$(LIB_GCH) -x c-header $(CFLAGS) include/StdAfx.h
+pch: StdAfx.h
+	$(CC) -o $(PCH) -x c-header $(CFLAGS) StdAfx.h
 
 ###########################################################
 
@@ -521,8 +520,7 @@ clean_lib:
 	rm -f $(LIB_PATH_DST)/lib_acl.so
 	rm -f $(OBJS_DST)
 	rm -f $(OBJS_DEF)
-	rm -f StdAfx.h.gch
-	rm -f include/$(LIB_GCH)
+	rm -f $(PCH)
 
 ###########################################################
 

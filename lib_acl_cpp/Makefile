@@ -139,7 +139,7 @@ OBJS_DST = $(patsubst %.cpp, $(OBJ_PATH_DST)/%.o, $(notdir $(wildcard src/*.cpp)
 	   $(patsubst %.cpp, $(OBJ_PATH_DST)/%.o, $(notdir $(wildcard src/redis/*.cpp))) \
 	   $(patsubst %.cpp, $(OBJ_PATH_DST)/%.o, $(notdir $(wildcard src/disque/*.cpp)))
 
-OBJS_DEF = $(patsubst %.cpp, $(DEF_PATH_DST)/%.inc, $(notdir $(wildcard src/*.cpp))) \
+OBJS_DEF1 = $(patsubst %.cpp, $(DEF_PATH_DST)/%.inc, $(notdir $(wildcard src/*.cpp))) \
 	   $(patsubst %.cpp, $(DEF_PATH_DST)/%.inc, $(notdir $(wildcard src/stdlib/*.cpp))) \
 	   $(patsubst %.cpp, $(DEF_PATH_DST)/%.inc, $(notdir $(wildcard src/stream/*.cpp))) \
 	   $(patsubst %.cpp, $(DEF_PATH_DST)/%.inc, $(notdir $(wildcard src/master/*.cpp))) \
@@ -166,6 +166,7 @@ DATE_NOW = 20`date +%y`.`date +%m`.`date +%d`
 
 STATIC_LIBNAME = lib_acl_cpp.a
 SHARED_LIBNAME = lib_acl_cpp.so
+PCH = src/acl_stdafx.hpp.gch
 
 lib: static
 all: static shared sample
@@ -187,13 +188,13 @@ CREATE_DEF = @(echo 'creating $@'; rm -f $@; \
 sample: static
 	@(cd samples; make)
 
-static: depends $(OBJS_DST)
+static: depends pch $(OBJS_DST)
 	@echo 'creating $(LIB_PATH_DST)/$(STATIC_LIBNAME)'
 	@$(AR) $(ARFL) $(LIB_PATH_DST)/$(STATIC_LIBNAME) $(OBJS_DST)
 	@$(RANLIB) $(LIB_PATH_DST)/$(STATIC_LIBNAME)
 	@echo 'create $(LIB_PATH_DST)/$(STATIC_LIBNAME) ok!'
 
-shared: depends $(OBJS_DST)
+shared: depends pch $(OBJS_DST)
 	@echo 'creating $(SHARED_LIBNAME)'
 	@if test -n "$(rpath)" && test "$(UNIXTYPE)" = "LINUX"; then \
 		echo "building for linux"; \
@@ -220,7 +221,8 @@ shared: depends $(OBJS_DST)
 	fi
 
 depends: $(OBJS_DEF)
-	$(CC) $(CFLAGS) src/acl_stdafx.hpp
+pch: src/acl_stdafx.hpp
+	$(CC) -o $(PCH) -x c++-header $(CFLAGS) src/acl_stdafx.hpp
 
 # src
 $(OBJ_PATH_DST)/%.o: ./src/%.cpp
@@ -306,7 +308,7 @@ clean:
 	rm -f $(LIB_PATH_DST)/lib_acl_cpp.so
 	rm -f $(OBJS_DST)
 	rm -f $(OBJS_DEF)
-	rm -f src/acl_stdafx.hpp.gch
+	rm -f $(PCH)
 	@(cd samples; make clean)
 
 rebuild rb: clean static
