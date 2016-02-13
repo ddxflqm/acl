@@ -388,7 +388,7 @@ void acl_xml_decode_enable(ACL_XML *xml, int on)
 	}
 }
 
-void acl_xml_encode_enable(ACL_XML2 *xml, int on)
+void acl_xml_encode_enable(ACL_XML *xml, int on)
 {
 	if (on)
 		xml->flag |= ACL_XML_FLAG_XML_ENCODE;
