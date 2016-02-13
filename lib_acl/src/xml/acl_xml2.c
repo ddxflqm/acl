@@ -396,6 +396,14 @@ void acl_xml2_decode_enable(ACL_XML2 *xml, int on)
 		xml->flag &= ~ACL_XML2_FLAG_XML_DECODE;
 }
 
+void acl_xml2_encode_enable(ACL_XML2 *xml, int on)
+{
+	if (on)
+		xml->flag |= ACL_XML2_FLAG_XML_ENCODE;
+	else
+		xml->flag &=~ACL_XML2_FLAG_XML_ENCODE;
+}
+
 ACL_XML2 *acl_xml2_mmap_file(const char *filepath, size_t max_len,
 	size_t init_len, ACL_DBUF_POOL *dbuf)
 {
@@ -469,7 +477,7 @@ ACL_XML2 *acl_xml2_dbuf_alloc(ACL_VSTRING *vbuf, ACL_DBUF_POOL *dbuf)
 	xml->vbuf_inner = NULL;
 	xml->dummy[0]   = '\0';
 	xml->dbuf_keep  = sizeof(ACL_XML2);
-	xml->flag      |= ACL_XML2_FLAG_MULTI_ROOT;
+	xml->flag       = ACL_XML2_FLAG_MULTI_ROOT;
 
 	xml->iter_head  = xml_iter_head;
 	xml->iter_next  = xml_iter_next;

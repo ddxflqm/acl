@@ -381,18 +381,15 @@ ACL_XML2_ATTR *acl_xml2_addElementAttr(ACL_XML2_NODE *node,
 
 /***************************************************************************/
 
-static void escape_append(ACL_VSTRING *vbuf, const char *in, int quoted)
+static void escape_append(ACL_VSTRING *vbuf, const char *in,
+	const ACL_XML2 *xml)
 {
-	if (quoted)
-		ADD(vbuf, '"');
-
-	if (in && *in)
-		(void) acl_xml_encode(in, vbuf);
-
-	if (quoted)
-		ADD(vbuf, '"');
-
-	TERM(vbuf);
+	if (in && *in) {
+		if ((xml->flag & ACL_XML2_FLAG_XML_ENCODE) != 0)
+			acl_xml_encode(in, vbuf);
+		else
+			APPEND(vbuf, in);
+	}
 }
 
 const char *acl_xml2_build(ACL_XML2 *xml)
@@ -425,7 +422,7 @@ const char *acl_xml2_build2(const ACL_XML2 *xml, ACL_VSTRING *vbuf)
 		} else if (ACL_XML2_IS_COMMENT(node)) {
 			APPEND(vbuf, "<!--");
 			if (node->text_size > 0)
-				APPEND(vbuf, node->text);
+				escape_append(vbuf, node->text, xml);
 		} else if ((node->flag & ACL_XML2_F_META_QM)) {
 			APPEND(vbuf, "<?");
 			if (node->ltag_size > 0)
@@ -434,11 +431,9 @@ const char *acl_xml2_build2(const ACL_XML2 *xml, ACL_VSTRING *vbuf)
 			APPEND(vbuf, "<!");
 			if (node->ltag_size > 0)
 				APPEND(vbuf, node->ltag);
-
 			ADD(vbuf, ' ');
-
 			if (node->text_size > 0)
-				APPEND(vbuf, node->text);
+				escape_append(vbuf, node->text, xml);
 		} else {
 			ADD(vbuf, '<');
 			if (node->ltag_size > 0)
@@ -450,14 +445,16 @@ const char *acl_xml2_build2(const ACL_XML2 *xml, ACL_VSTRING *vbuf)
 			ADD(vbuf, ' ');
 			APPEND(vbuf, attr->name);
 			ADD(vbuf, '=');
-			escape_append(vbuf, attr->value, 1);
+			ADD(vbuf, '"');
+			escape_append(vbuf, attr->value, xml);
+			ADD(vbuf, '"');
 		}
 
 		if (acl_ring_size(&node->children) > 0) {
 			ADD(vbuf, '>');
 
 			if (node->text_size > 0)
-				escape_append(vbuf, node->text, 0);
+				escape_append(vbuf, node->text, xml);
 
 			continue;
 		}
@@ -472,13 +469,13 @@ const char *acl_xml2_build2(const ACL_XML2 *xml, ACL_VSTRING *vbuf)
 			ADD(vbuf, '>');
 		} else if (node->text_size == 0) {
 			APPEND(vbuf, "></");
-			escape_append(vbuf, node->ltag, 0);
+			APPEND(vbuf, node->ltag);
 			ADD(vbuf, '>');
 		} else {
 			ADD(vbuf, '>');
-			escape_append(vbuf, node->text, 0);
+			escape_append(vbuf, node->text, xml);
 			APPEND(vbuf, "</");
-			escape_append(vbuf, node->ltag, 0);
+			APPEND(vbuf, node->ltag);
 			ADD(vbuf, '>');
 		}
 
@@ -486,7 +483,7 @@ const char *acl_xml2_build2(const ACL_XML2 *xml, ACL_VSTRING *vbuf)
 			&& acl_xml2_node_next(node) == NULL)
 		{
 			APPEND(vbuf, "</");
-			escape_append(vbuf, node->parent->ltag, 0);
+			APPEND(vbuf, node->parent->ltag);
 			ADD(vbuf, '>');
 			node = node->parent;
 		}
