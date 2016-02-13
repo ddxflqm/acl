@@ -277,6 +277,12 @@ xml& xml2::xml_decode(bool on)
 	return *this;
 }
 
+xml& xml2::xml_encode(bool on)
+{
+	acl_xml2_decode_enable(xml_, on ? 1 : 0);
+	return *this;
+}
+
 xml& xml2::xml_multi_root(bool on)
 {
 	acl_xml2_multi_root(xml_, on ? 1 : 0);

@@ -206,6 +206,11 @@ public:
 	/**
 	 * @override
 	 */
+	xml& xml_encode(bool on);
+
+	/**
+	 * @override
+	 */
 	xml& xml_multi_root(bool on);
 
 	/**

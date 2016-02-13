@@ -305,11 +305,18 @@ public:
 	virtual xml& ignore_slash(bool on) = 0;
 
 	/**
-	 * 是否自动进行 xml 解码，缺少为不解码
+	 * 解析 xml 对象时，是否自动进行 xml 解码，缺省解码
 	 * @param on {bool}
 	 * @return {xml&}
 	 */
 	virtual xml& xml_decode(bool on) = 0;
+
+	/**
+	 * 创建 xml 对象时，是否自动进行 xml 编码，缺省编码
+	 * @param on {bool}
+	 * @return {xml&}
+	 */
+	virtual xml& xml_encode(bool on) = 0;
 
 	/**
 	 * 解析 xml 时是否允许有多个根节点（内部缺省为允许）
