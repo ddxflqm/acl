@@ -220,8 +220,7 @@ shared: depends $(OBJS_DST)
 	fi
 
 depends: $(OBJS_DEF)
-	g++ -DLINUX2 -D_REENTRANT -D__OPTIMIZE__ -fPIC -g src/acl_stdafx.hpp \
-		-I./include -I../lib_acl/include -I../lib_protocol/include
+	g++ $(CFLAGS) src/acl_stdafx.hpp
 
 # src
 $(OBJ_PATH_DST)/%.o: ./src/%.cpp
@@ -307,6 +306,7 @@ clean:
 	rm -f $(LIB_PATH_DST)/lib_acl_cpp.so
 	rm -f $(OBJS_DST)
 	rm -f $(OBJS_DEF)
+	rm -f acl_stdafx.hpp.gch
 	@(cd samples; make clean)
 
 rebuild rb: clean static
