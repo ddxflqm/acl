@@ -220,7 +220,7 @@ shared: depends $(OBJS_DST)
 	fi
 
 depends: $(OBJS_DEF)
-	g++ $(CFLAGS) src/acl_stdafx.hpp
+	$(CC) $(CFLAGS) src/acl_stdafx.hpp
 
 # src
 $(OBJ_PATH_DST)/%.o: ./src/%.cpp

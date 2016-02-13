@@ -27,7 +27,8 @@ CFLAGS = -c -g -W \
 -Wno-long-long \
 -Wuninitialized \
 -D_POSIX_PTHREAD_SEMANTICS \
--DACL_PREPARE_COMPILE
+-DACL_PREPARE_COMPILE \
+-Winvalid-pch
 #-Wno-invalid-source-encoding \
 #-Wno-extended-offsetof
 #-Wcast-align
@@ -328,7 +329,7 @@ shared: depends $(OBJS_DST)
 	fi
 
 depends: $(OBJS_DEF)
-	gcc $(CFLAGS) StdAfx.h
+	$(CC) -x c-header $(CFLAGS) StdAfx.h
 
 lib_gch: include/StdAfx.h
 	$(CC) -o include/$(LIB_GCH) -x c-header $(CFLAGS) include/StdAfx.h
