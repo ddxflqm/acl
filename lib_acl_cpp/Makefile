@@ -17,7 +17,9 @@ CFLAGS = -c -g -W \
 -D_POSIX_PTHREAD_SEMANTICS \
 -Wno-long-long \
 -Wformat \
--DHAS_MYSQL_DLL
+-DHAS_MYSQL_DLL \
+-Winvalid-pch \
+-D__NO_INLINE__
 #-DHAS_POLARSSL
 #-DUSE_DYNAMIC
 # -Wcast-align
@@ -218,6 +220,8 @@ shared: depends $(OBJS_DST)
 	fi
 
 depends: $(OBJS_DEF)
+	g++ -DLINUX2 -D_REENTRANT -D__OPTIMIZE__ -fPIC -g src/acl_stdafx.hpp \
+		-I./include -I../lib_acl/include -I../lib_protocol/include
 
 # src
 $(OBJ_PATH_DST)/%.o: ./src/%.cpp
