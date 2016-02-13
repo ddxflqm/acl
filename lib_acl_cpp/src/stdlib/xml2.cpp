@@ -279,7 +279,7 @@ xml& xml2::xml_decode(bool on)
 
 xml& xml2::xml_encode(bool on)
 {
-	acl_xml2_decode_enable(xml_, on ? 1 : 0);
+	acl_xml2_encode_enable(xml_, on ? 1 : 0);
 	return *this;
 }
 
