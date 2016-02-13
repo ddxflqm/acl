@@ -139,7 +139,7 @@ OBJS_DST = $(patsubst %.cpp, $(OBJ_PATH_DST)/%.o, $(notdir $(wildcard src/*.cpp)
 	   $(patsubst %.cpp, $(OBJ_PATH_DST)/%.o, $(notdir $(wildcard src/redis/*.cpp))) \
 	   $(patsubst %.cpp, $(OBJ_PATH_DST)/%.o, $(notdir $(wildcard src/disque/*.cpp)))
 
-OBJS_DEF1 = $(patsubst %.cpp, $(DEF_PATH_DST)/%.inc, $(notdir $(wildcard src/*.cpp))) \
+OBJS_DEF = $(patsubst %.cpp, $(DEF_PATH_DST)/%.inc, $(notdir $(wildcard src/*.cpp))) \
 	   $(patsubst %.cpp, $(DEF_PATH_DST)/%.inc, $(notdir $(wildcard src/stdlib/*.cpp))) \
 	   $(patsubst %.cpp, $(DEF_PATH_DST)/%.inc, $(notdir $(wildcard src/stream/*.cpp))) \
 	   $(patsubst %.cpp, $(DEF_PATH_DST)/%.inc, $(notdir $(wildcard src/master/*.cpp))) \
