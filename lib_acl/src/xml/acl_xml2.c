@@ -40,6 +40,7 @@ ACL_XML2_ATTR *acl_xml2_attr_alloc(ACL_XML2_NODE *node)
 	attr->backslash  = 0;
 
 	acl_array_append(node->attr_list, attr);
+	node->xml->attr_cnt++;
 
 	return attr;
 }
@@ -162,6 +163,12 @@ int acl_xml2_node_delete(ACL_XML2_NODE *node)
 
 	if (node->id != NULL)
 		acl_htable_delete(node->xml->id_table, node->id, NULL);
+
+	if (node->attr_list != NULL) {
+		int k = acl_array_size(node->attr_list);
+		if (node->xml->attr_cnt >= k)
+			node->xml->attr_cnt -= k;
+	}
 
 	acl_ring_detach(&node->node);
 	node->xml->node_cnt--;
@@ -489,8 +496,19 @@ ACL_XML2 *acl_xml2_dbuf_alloc(ACL_VSTRING *vbuf, ACL_DBUF_POOL *dbuf)
 	xml->id_table   = acl_htable_create(100, 0);
 	xml->root       = acl_xml2_node_alloc(xml);
 	xml->node_cnt   = 1;
+	xml->attr_cnt   = 0;
 
 	return xml;
+}
+
+size_t acl_xml2_space(ACL_XML2 *xml)
+{
+	return LEN(xml->vbuf);
+}
+
+void acl_xml2_space_clear(ACL_XML2 *xml)
+{
+	ACL_VSTRING_RESET(xml->vbuf);
 }
 
 int acl_xml2_free(ACL_XML2 *xml)
@@ -527,6 +545,7 @@ void acl_xml2_reset(ACL_XML2 *xml)
 	xml->depth     = 0;
 	xml->node_cnt  = 1;
 	xml->root_cnt  = 0;
+	xml->attr_cnt  = 0;
 	xml->curr_node = NULL;
 }
 

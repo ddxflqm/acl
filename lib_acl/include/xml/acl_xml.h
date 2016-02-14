@@ -99,6 +99,7 @@ struct ACL_XML {
 	int   depth;                    /**< 最大深度 */
 	int   node_cnt;                 /**< 节点总数, 包括 root 节点 */
 	int   root_cnt;                 /**< 根节点个数 */
+	int   attr_cnt;                 /**< 属性总数 */
 	ACL_XML_NODE *root;             /**< XML 根节点 */
 
 	/* private */
@@ -107,6 +108,7 @@ struct ACL_XML {
 	ACL_DBUF_POOL *dbuf;            /**< 内存池对象 */
 	ACL_DBUF_POOL *dbuf_inner;      /**< 内部分布的内存池对象 */
 	size_t dbuf_keep;               /**< 内存池中保留的长度 */
+	size_t space;                   /**< 在创建 xml 对象时已分配的内存大小 */
 
 	unsigned flag;                  /**< 标志位: ACL_XML_FLAG_xxx */ 
 
@@ -174,6 +176,19 @@ ACL_API ACL_XML *acl_xml_alloc(void);
  * @return {ACL_XML*} 新创建的 xml 对象
  */
 ACL_API ACL_XML *acl_xml_dbuf_alloc(ACL_DBUF_POOL *dbuf);
+
+/**
+ * 获得当前 xml 对象内部已经分配的内存空间大小
+ * @param xml {ACL_XML*}
+ * @return {size_t} 当前 xml 对象内部已分配的内存大小
+ */
+ACL_API size_t acl_xml_space(ACL_XML *xml);
+
+/**
+ * 将 xml 对象内部记录内存大小的变量清 0
+ * @param xml {ACL_XML*}
+ */
+ACL_API void acl_xml_space_clear(ACL_XML *xml);
 
 /**
  * 将某一个 ACL_XML_NODE 节点作为一个 XML 对象的根节点，从而可以方便地遍历出该

@@ -490,6 +490,29 @@ public:
 	 */
 	virtual const char* to_string(size_t* len = NULL) const = 0;
 
+	/**
+	 * 获得当前 xml 对象已经分配的内存大小总和
+	 * @return {size_t}
+	 */
+	virtual size_t space(void) const = 0;
+
+	/**
+	 * 将记录 xml 已分配内存大小的变量清 0
+	 */
+	virtual void space_clear(void);
+
+	/**
+	 * 获得当前 xml 对象中 xml 节点的总数
+	 * @return {size_t}
+	 */
+	virtual size_t node_count(void) const = 0;
+
+	/**
+	 * 获得当前 xml 对象中所有 xml 节点属性的总数
+	 * @return {size_t}
+	 */
+	virtual size_t attr_count(void) const = 0;
+
 public:
 	// pipe_stream 虚函数重载
 

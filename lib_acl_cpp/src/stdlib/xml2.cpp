@@ -528,4 +528,24 @@ void xml2::reset(void)
 	//dummyRootAdded_ = false;
 }
 
+size_t xml2::space(void) const
+{
+	return acl_xml2_space(xml_);
+}
+
+void xml2::space_clear(void)
+{
+	acl_xml2_space_clear(xml_);
+}
+
+size_t xml2::node_count(void) const
+{
+	return (size_t) xml_->node_cnt;
+}
+
+size_t xml2::attr_count(void) const
+{
+	return (size_t) xml_->attr_cnt;
+}
+
 } // namespace acl

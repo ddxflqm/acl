@@ -302,6 +302,26 @@ public:
 	 */
 	const char* to_string(size_t* len = NULL) const;
 
+	/**
+	 * @override
+	 */
+	size_t space(void) const;
+
+	/**
+	 * @override
+	 */
+	void space_clear(void);
+
+	/**
+	 * @override
+	 */
+	size_t node_count(void) const;
+
+	/**
+	 * @override
+	 */
+	size_t attr_count(void) const;
+
 public:
 	ACL_XML2* get_xml2(void) const
 	{

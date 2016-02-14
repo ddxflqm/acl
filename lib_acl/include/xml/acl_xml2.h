@@ -108,6 +108,7 @@ struct ACL_XML2 {
 	int   depth;                    /**< 最大深度 */
 	int   node_cnt;                 /**< 节点总数, 包括 root 节点 */
 	int   root_cnt;                 /**< 根节点个数 */
+	int   attr_cnt;                 /**< 属性总数 */
 	ACL_XML2_NODE *root;            /**< XML 根节点 */
 
 	/* private */
@@ -213,6 +214,19 @@ ACL_API ACL_XML2 *acl_xml2_mmap_file(const char *filepath, size_t max_len,
  */
 ACL_API ACL_XML2 *acl_xml2_mmap_fd(ACL_FILE_HANDLE fd, size_t max_len,
 		size_t init_len, ACL_DBUF_POOL *dbuf);
+
+/**
+ * 获得当前 xml 对象内部已经分配的内存空间大小
+ * @param xml {ACL_XML2*}
+ * @return {size_t} 当前 xml 对象内部已分配的内存大小
+ */
+ACL_API size_t acl_xml2_space(ACL_XML2 *xml);
+
+/**
+ * 将 xml 对象内部记录内存大小的变量清 0
+ * @param xml {ACL_XML2*}
+ */
+ACL_API void acl_xml2_space_clear(ACL_XML2 *xml);
 
 /**
  * 将某一个 ACL_XML2_NODE 节点作为一个 XML 对象的根节点，从而可以方便地遍历出该

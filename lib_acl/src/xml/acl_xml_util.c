@@ -298,12 +298,15 @@ ACL_XML_ATTR *acl_xml_addElementAttr(ACL_XML_NODE *node,
 
 	if (attr) {
 		escape_copy(attr->value, value, node->xml);
+		node->xml->space += LEN(attr->value);
 		return attr;
 	}
 
 	attr = acl_xml_attr_alloc(node);
 	acl_vstring_strcpy(attr->name, name);
+	node->xml->space += LEN(attr->name);
 	escape_copy(attr->value, value, node->xml);
+	node->xml->space += LEN(attr->value);
 	acl_array_append(node->attr_list, attr);
 
 	return attr;
@@ -316,7 +319,10 @@ ACL_XML_NODE *acl_xml_create_node(ACL_XML *xml, const char* tag,
 
 	acl_assert(tag && *tag);
 	acl_vstring_strcpy(node->ltag, tag);
+	xml->space += LEN(node->ltag);
 	escape_copy(node->text, text, xml);
+	xml->space += LEN(node->text);
+
 	return node;
 }
 
@@ -327,7 +333,10 @@ ACL_XML_ATTR *acl_xml_node_add_attr(ACL_XML_NODE *node, const char *name,
 
 	acl_assert(name && *name);
 	acl_vstring_strcpy(attr->name, name);
+	node->xml->space += LEN(attr->name);
 	escape_copy(attr->value, value, node->xml);
+	node->xml->space += LEN(attr->value);
+
 	return attr;
 }
 
@@ -347,7 +356,11 @@ void acl_xml_node_add_attrs(ACL_XML_NODE *node, ...)
 
 void acl_xml_node_set_text(ACL_XML_NODE *node, const char *text)
 {
+	size_t n1 = LEN(node->text), n2;
 	escape_copy(node->text, text, node->xml);
+	n2 = LEN(node->text);
+	if (n2 > n1)
+		node->xml->space += n2 - n1;
 }
 
 /***************************************************************************/
