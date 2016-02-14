@@ -499,7 +499,7 @@ public:
 	/**
 	 * 将记录 xml 已分配内存大小的变量清 0
 	 */
-	virtual void space_clear(void);
+	virtual void space_clear(void) = 0;
 
 	/**
 	 * 获得当前 xml 对象中 xml 节点的总数
