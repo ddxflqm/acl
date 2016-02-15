@@ -188,7 +188,7 @@ CREATE_DEF = @(echo 'creating $@'; rm -f $@; \
 sample: static
 	@(cd samples; make)
 
-static: depends pch $(OBJS_DST)
+static: depends $(OBJS_DST)
 	@echo 'creating $(LIB_PATH_DST)/$(STATIC_LIBNAME)'
 	@$(AR) $(ARFL) $(LIB_PATH_DST)/$(STATIC_LIBNAME) $(OBJS_DST)
 	@$(RANLIB) $(LIB_PATH_DST)/$(STATIC_LIBNAME)

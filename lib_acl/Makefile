@@ -293,7 +293,7 @@ CREATE_DEF = @(echo 'creating $@'; rm -f $@; \
 	sed 's,.*.o\( \)*:,$(patsubst %.inc,%.o,$@) $@ :,g' < $@.$$$$ > $@; \
 	rm -f $@.$$$$)
 
-static: depends pch $(OBJS_DST)
+static: depends $(OBJS_DST)
 	@echo 'creating $(LIB_PATH_DST)/$(STATIC_LIBNAME)'
 	@$(AR) $(ARFL) $(LIB_PATH_DST)/$(STATIC_LIBNAME) $(OBJS_DST)
 	@$(RANLIB) $(LIB_PATH_DST)/$(STATIC_LIBNAME)
