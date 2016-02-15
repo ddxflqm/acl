@@ -286,7 +286,6 @@ AGAIN:
 	}
 
 	if (read_cnt > 0) {
-		in->read_ptr = in->read_buf;
 		in->flag &= ~ACL_VSTREAM_FLAG_BAD;
 		in->errnum = 0;
 		in->errbuf[0] = 0;
@@ -332,12 +331,17 @@ AGAIN:
 static int read_once(ACL_VSTREAM *fp)
 {
 	fp->read_cnt = sys_read(fp, fp->read_buf, (size_t) fp->read_buf_len);
-
 	if (fp->read_cnt < 0) {
 		fp->read_cnt = 0;
 		return -1;
-	} else
-		return fp->read_cnt;
+	}
+
+	/**
+	 * 当读到数据时，需要重置指针位置
+	 */
+	if (fp->read_cnt > 0)
+		fp->read_ptr = fp->read_buf;
+	return fp->read_cnt;
 }
 
 static int read_char(ACL_VSTREAM *fp)
@@ -922,6 +926,7 @@ int acl_vstream_readn(ACL_VSTREAM *fp, void *buf, size_t size)
 			n = sys_read(fp, ptr, size);
 			if (n <= 0)
 				return ACL_VSTREAM_EOF;
+			fp->read_ptr = fp->read_buf;
 			size -= n;
 			ptr += n;
 		}
