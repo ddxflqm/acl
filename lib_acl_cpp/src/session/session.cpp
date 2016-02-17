@@ -193,6 +193,8 @@ const char* session::get(const char* name)
 
 const session_string* session::get_buf(const char* name)
 {
+	attrs_clear(attrs_);
+
 	if (get_attrs(attrs_) == false)
 		return NULL;
 
@@ -200,6 +202,28 @@ const session_string* session::get_buf(const char* name)
 	if (cit == attrs_.end())
 		return NULL;
 	return &cit->second;
+}
+
+bool session::get_attrs(const std::vector<string>& names,
+	std::vector<session_string>& values)
+{
+	attrs_clear(attrs_);
+
+	if (get_attrs(attrs_) == false)
+		return false;
+
+	for (std::vector<string>::const_iterator cit = names.begin();
+		cit != names.end(); ++cit)
+	{
+		std::map<string, session_string>::const_iterator cit2
+			= attrs_.find(*cit);
+		if (cit2 != attrs_.end())
+			values.push_back(cit2->second);
+		else
+			values.push_back("");
+	}
+
+	return true;
 }
 
 bool session::set_ttl(time_t ttl, bool delay)
