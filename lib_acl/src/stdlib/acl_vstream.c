@@ -330,23 +330,18 @@ AGAIN:
 
 static int read_to_buffer(ACL_VSTREAM *fp, void *buf, size_t size)
 {
-	fp->read_cnt = sys_read(fp, buf, size);
-	if (fp->read_cnt <= 0) {
-		fp->read_cnt = 0;
+	int n = sys_read(fp, buf, size);
+	if (n <= 0)
 		return -1;
-	}
-
-	/**
-	 * 当读到数据时，需要重置指针位置
-	 */
-	if (fp->read_cnt > 0)
-		fp->read_ptr = fp->read_buf;
-	return fp->read_cnt;
+	return n;
 }
 
 static int read_buffed(ACL_VSTREAM *fp)
 {
-	return read_to_buffer(fp, fp->read_buf, (size_t) fp->read_buf_len);
+	fp->read_ptr = fp->read_buf;
+	fp->read_cnt =  read_to_buffer(fp, fp->read_buf,
+		(size_t) fp->read_buf_len);
+	return fp->read_cnt;
 }
 
 static int read_char(ACL_VSTREAM *fp)
@@ -928,7 +923,7 @@ int acl_vstream_readn(ACL_VSTREAM *fp, void *buf, size_t size)
 		}
 	}
 
-	/* 否则，则直接将读到的数据存入输入缓冲区，从而避免大数据的二次拷贝 */
+	/* 否则，则直接将读到的数据存入缓冲区，从而避免大数据的二次拷贝 */
 	else {
 		while (size > 0) {
 			n = read_to_buffer(fp, ptr, size);
@@ -963,14 +958,11 @@ int acl_vstream_read(ACL_VSTREAM *fp, void *buf, size_t size)
 
 	/* fp->read_cnt == 0 */
 
-#if 0
-	/* 当参数的缓冲区较大时，则直接将数据读到该缓冲区从而避免大数据拷贝 */
-	else if (size >= (size_t) fp->read_buf_len / 4) {
+	/* 当缓冲区较大时，则直接将数据读到该缓冲区从而避免大数据拷贝 */
+	if (size >= (size_t) fp->read_buf_len / 4) {
 		int n = read_to_buffer(fp, buf, size);
 		return n <= 0 ? ACL_VSTREAM_EOF : n;
 	}
-#endif
-
 	/* 否则将数据读到流缓冲区中，然后再拷贝，从而减少 read 次数 */
 	else {
 		int   read_cnt = read_buffed(fp);
