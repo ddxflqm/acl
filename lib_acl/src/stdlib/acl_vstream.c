@@ -331,7 +331,7 @@ AGAIN:
 static int read_to_buffer(ACL_VSTREAM *fp, void *buf, size_t size)
 {
 	fp->read_cnt = sys_read(fp, buf, size);
-	if (fp->read_cnt < 0) {
+	if (fp->read_cnt <= 0) {
 		fp->read_cnt = 0;
 		return -1;
 	}
@@ -964,8 +964,10 @@ int acl_vstream_read(ACL_VSTREAM *fp, void *buf, size_t size)
 	/* fp->read_cnt == 0 */
 
 	/* 当参数的缓冲区较大时，则直接将数据读到该缓冲区从而避免大数据拷贝 */
-	else if (size >= (size_t) fp->read_buf_len / 4)
-		return read_to_buffer(fp, buf, size);
+	else if (size >= (size_t) fp->read_buf_len / 4) {
+		int n = read_to_buffer(fp, buf, size);
+		return n <= 0 ? ACL_VSTREAM_EOF : n;
+	}
 
 	/* 否则将数据读到流缓冲区中，然后再拷贝，从而减少 read 次数 */
 	else {
