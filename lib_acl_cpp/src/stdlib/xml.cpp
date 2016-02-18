@@ -106,7 +106,7 @@ xml_node& xml_node::add_child(const char* tag, acl_int64 number,
 xml_node& xml_node::add_child(const char* tag, istream& in, size_t off /* = 0 */,
 	size_t len /* = 0 */, bool return_child /* = false */)
 {
-	return add_child(xml_->create_node(tag, in, off, len));
+	return add_child(xml_->create_node(tag, in, off, len), return_child);
 }
 
 //////////////////////////////////////////////////////////////////////
