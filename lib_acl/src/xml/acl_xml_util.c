@@ -363,6 +363,43 @@ void acl_xml_node_set_text(ACL_XML_NODE *node, const char *text)
 		node->xml->space += n2 - n1;
 }
 
+void acl_xml_node_set_text_stream(ACL_XML_NODE *node, ACL_VSTREAM *fp,
+	size_t from, size_t to)
+{
+	int   ret;
+	char  buf[8192];
+	size_t n1 = LEN(node->text), n2, len, n;
+
+	if (from > to)
+		to = from;
+	if ((size_t) acl_vstream_fseek(fp, SEEK_SET, (acl_off_t) from) < 0) {
+		const char *path = ACL_VSTREAM_PATH(fp);
+
+		acl_msg_error("%s(%d): fseek error: %s, file: %s, from: %lu",
+			acl_last_serror(), path ? path : "unknown",
+			(unsigned long) from);
+		return;
+	}
+
+	len = to - from + 1;
+	while (len > 0) {
+		if (len > sizeof(buf) - 1)
+			n = sizeof(buf) - 1;
+		else
+			n = len;
+		ret = acl_vstream_read(fp, buf, n);
+		if (ret == ACL_VSTREAM_EOF)
+			break;
+		buf[ret] = 0;
+		len -= ret;
+		escape_copy(node->text, buf, node->xml);
+	}
+
+	n2 = LEN(node->text);
+	if (n2 > n1)
+		node->xml->space += n2 - n1;
+}
+
 /***************************************************************************/
 
 ACL_VSTRING *acl_xml_build(ACL_XML *xml, ACL_VSTRING *buf)

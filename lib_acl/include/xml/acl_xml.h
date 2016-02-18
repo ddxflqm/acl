@@ -473,6 +473,9 @@ ACL_API void acl_xml_node_add_attrs(ACL_XML_NODE *node, ...);
  */
 ACL_API void acl_xml_node_set_text(ACL_XML_NODE *node, const char *text);
 
+ACL_API void acl_xml_node_set_text_stream(ACL_XML_NODE *node, ACL_VSTREAM *fp,
+	size_t from, size_t to);
+
 /**
  * 将 xml 对象转成字符串内容
  * @param xml {ACL_XML*} xml 对象
