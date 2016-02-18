@@ -3,6 +3,7 @@
 #include "acl_cpp/stdlib/snprintf.hpp"
 #include "acl_cpp/stdlib/string.hpp"
 #include "acl_cpp/stdlib/log.hpp"
+#include "acl_cpp/stream/istream.hpp"
 #include "acl_cpp/stdlib/xml1.hpp"
 #endif
 
@@ -131,6 +132,13 @@ xml_node& xml1_node::add_attr(const char* name, const char* value)
 xml_node& xml1_node::set_text(const char* str)
 {
 	acl_xml_node_set_text(node_, str);
+	return *this;
+}
+
+xml_node& xml1_node::set_text(istream& in, size_t off /* = 0 */,
+	size_t len /* = 0 */)
+{
+	acl_xml_node_set_text_stream(node_, in.get_vstream(),  off, len);
 	return *this;
 }
 
@@ -283,7 +291,6 @@ const std::vector<xml_node*>& xml1::getElementsByTagName(const char* tag) const
 	acl_foreach(iter, a)
 	{
 		ACL_XML_NODE *tmp = (ACL_XML_NODE*) iter.data;
-//		xml1_node* node = NEW xml1_node(const_cast<xml1*>(this), tmp);
 		xml1_node* node = const_cast<dbuf_guard&>(dbuf_)
 			.create<xml1_node, xml1*, ACL_XML_NODE*>
 			(const_cast<xml1*>(this), tmp);
@@ -300,8 +307,6 @@ xml_node* xml1::getFirstElementByTag(const char* tag) const
 	if (node == NULL)
 		return NULL;
 
-//	xml1_node* n = NEW xml1_node(const_cast<xml1*>(this), node);
-//	const_cast<xml1*>(this)->nodes_tmp_.push_back(n);
 	xml1_node* n = const_cast<dbuf_guard&>(dbuf_)
 		.create<xml1_node, xml1*, ACL_XML_NODE*>
 		(const_cast<xml1*>(this), node);
@@ -320,7 +325,6 @@ const std::vector<xml_node*>& xml1::getElementsByTags(const char* tags) const
 	acl_foreach(iter, a)
 	{
 		ACL_XML_NODE *tmp = (ACL_XML_NODE*) iter.data;
-//		xml1_node* node = NEW xml1_node(const_cast<xml1*>(this), tmp);
 		xml1_node* node = const_cast<dbuf_guard&>(dbuf_)
 			.create<xml1_node, xml1*, ACL_XML_NODE*>
 			(const_cast<xml1*>(this), tmp);
@@ -340,8 +344,6 @@ xml_node* xml1::getFirstElementByTags(const char* tags) const
 	ACL_XML_NODE* node = (ACL_XML_NODE*) acl_array_index(a, 0);
 	acl_assert(node);
 
-//	xml1_node* n = NEW xml1_node(const_cast<xml1*>(this), node);
-//	const_cast<xml1*>(this)->nodes_tmp_.push_back(n);
 	xml1_node* n = const_cast<dbuf_guard&>(dbuf_)
 		.create<xml1_node, xml1*, ACL_XML_NODE*>
 		(const_cast<xml1*>(this), node);
@@ -361,7 +363,6 @@ const std::vector<xml_node*>& xml1::getElementsByName(const char* value) const
 	acl_foreach(iter, a)
 	{
 		ACL_XML_NODE *tmp = (ACL_XML_NODE*) iter.data;
-//		xml1_node* node = NEW xml1_node(const_cast<xml1*>(this), tmp);
 		xml1_node* node = const_cast<dbuf_guard&>(dbuf_)
 			.create<xml1_node, xml1*, ACL_XML_NODE*>
 			(const_cast<xml1*>(this), tmp);
@@ -384,7 +385,6 @@ const std::vector<xml_node*>& xml1::getElementsByAttr(
 	acl_foreach(iter, a)
 	{
 		ACL_XML_NODE *tmp = (ACL_XML_NODE*) iter.data;
-//		xml1_node* node = NEW xml1_node(const_cast<xml1*>(this), tmp);
 		xml1_node* node = const_cast<dbuf_guard&>(dbuf_)
 			.create<xml1_node, xml1*, ACL_XML_NODE*>
 			(const_cast<xml1*>(this), tmp);
@@ -401,8 +401,6 @@ xml_node* xml1::getElementById(const char* id) const
 	if (node == NULL)
 		return NULL;
 
-//	xml1_node* n = NEW xml1_node(const_cast<xml1*>(this), node);
-//	const_cast<xml1*>(this)->nodes_tmp_.push_back(n);
 	xml1_node* n = const_cast<dbuf_guard&>(dbuf_)
 		.create<xml1_node, xml1*, ACL_XML_NODE*>
 		(const_cast<xml1*>(this), node);
@@ -502,8 +500,16 @@ const acl::string& xml1::getText()
 xml_node& xml1::create_node(const char* tag, const char* text /* = NULL */)
 {
 	ACL_XML_NODE* node = acl_xml_create_node(xml_, tag, text);
-//	xml1_node* n = NEW xml1_node(this, node);
-//	nodes_tmp_.push_back(n);
+	xml1_node* n = dbuf_.create<xml1_node, xml1*, ACL_XML_NODE*>
+		(this, node);
+	return *n;
+}
+
+xml_node& xml1::create_node(const char* tag, istream& in,
+	size_t off /* = 0 */, size_t len /* = 0 */)
+{
+	ACL_XML_NODE* node = acl_xml_create_node_with_text_stream(xml_, tag,
+		in.get_vstream(), off, len);
 	xml1_node* n = dbuf_.create<xml1_node, xml1*, ACL_XML_NODE*>
 		(this, node);
 	return *n;
@@ -526,8 +532,6 @@ xml_node* xml1::first_node(void)
 	if (node == NULL)
 		return NULL;
 
-//	xml1_node* n = NEW xml1_node(this, node);
-//	nodes_tmp_.push_back(n);
 	xml1_node* n = dbuf_.create<xml1_node, xml1*, ACL_XML_NODE*>
 		(this, node);
 	return n;
@@ -541,8 +545,6 @@ xml_node* xml1::next_node(void)
 	if (node == NULL)
 		return NULL;
 
-//	xml1_node* n = NEW xml1_node(this, node);
-//	nodes_tmp_.push_back(n);
 	xml1_node* n = dbuf_.create<xml1_node, xml1*, ACL_XML_NODE*>
 		(this, node);
 	return n;

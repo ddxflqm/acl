@@ -296,16 +296,67 @@ static void escape_append(ACL_VSTRING *vbuf, const char *in,
 
 void acl_xml2_node_set_text(ACL_XML2_NODE *node, const char *text)
 {
-	if (text == NULL || *text == 0) {
+	if (text != NULL && *text != 0) {
+		node->text = END(node->xml->vbuf);
+		escape_append(node->xml->vbuf, text, node->xml);
+		node->text_size = END(node->xml->vbuf) - node->text;
+		ADD(node->xml->vbuf, '\0');
+	} else {
 		node->text_size = 0;
 		node->text = node->xml->dummy;
+	}
+}
+
+void acl_xml2_node_set_text_stream(ACL_XML2_NODE *node, ACL_VSTREAM *in,
+	size_t off, size_t len)
+{
+	const char *myname = "acl_xml2_node_set_text_stream";
+	char  buf[8192];
+	int   ret;
+	size_t n;
+
+	if (in == NULL)
+		return;
+
+	if (in->type == ACL_VSTREAM_TYPE_FILE
+		&& acl_vstream_fseek(in, SEEK_SET, (acl_off_t) off) < 0)
+	{
+		const char *path = ACL_VSTREAM_PATH(in);
+
+		acl_msg_error("%s(%d): fseek error: %s, file: %s, from: %lu",
+			myname, __LINE__, acl_last_serror(),
+			path ? path : "unknown", (unsigned long) off);
 		return;
 	}
 
 	node->text = END(node->xml->vbuf);
-	escape_append(node->xml->vbuf, text, node->xml);
+
+	if (len == 0) {
+		while (1) {
+			ret = acl_vstream_read(in, buf, sizeof(buf) - 1);
+			if (ret == ACL_VSTREAM_EOF)
+				break;
+			buf[ret] = 0;
+			len -= ret;
+			escape_append(node->xml->vbuf, buf, node->xml);
+		}
+	} else {
+		while (len > 0) {
+			n = len > sizeof(buf) - 1 ? sizeof(buf) - 1 : len;
+			ret = acl_vstream_read(in, buf, n);
+			if (ret == ACL_VSTREAM_EOF)
+				break;
+			buf[ret] = 0;
+			len -= ret;
+			escape_append(node->xml->vbuf, buf, node->xml);
+		}
+	}
+
 	node->text_size = END(node->xml->vbuf) - node->text;
-	ADD(node->xml->vbuf, '\0');
+	if (node->text_size == 0)
+		node->text = node->xml->dummy;
+	else
+		ADD(node->xml->vbuf, '\0');
 }
 
 ACL_XML2_NODE *acl_xml2_create_node(ACL_XML2 *xml, const char* tag,
@@ -320,12 +371,27 @@ ACL_XML2_NODE *acl_xml2_create_node(ACL_XML2 *xml, const char* tag,
 	node->ltag_size = END(xml->vbuf) - node->ltag;
 	ADD(xml->vbuf, '\0');
 
-	if (text && *text) {
-		node->text = END(xml->vbuf);
-		escape_append(xml->vbuf, text, xml);
-		node->text_size = END(xml->vbuf) - node->text;
-		ADD(xml->vbuf, '\0');
-	} else {
+	if (text && *text)
+		acl_xml2_node_set_text(node, text);
+
+	return node;
+}
+
+ACL_XML2_NODE *acl_xml2_create_node_with_text_stream(ACL_XML2 *xml,
+	const char *tag, ACL_VSTREAM *fp, size_t off, size_t len)
+{
+	ACL_XML2_NODE *node = acl_xml2_node_alloc(xml);
+
+	acl_assert(tag && *tag);
+
+	node->ltag = END(xml->vbuf);
+	APPEND(xml->vbuf, tag);
+	node->ltag_size = END(xml->vbuf) - node->ltag;
+	ADD(xml->vbuf, '\0');
+
+	if (fp != NULL)
+		acl_xml2_node_set_text_stream(node, fp, off, len);
+	else {
 		node->text_size = 0;
 		node->text = xml->dummy;
 	}

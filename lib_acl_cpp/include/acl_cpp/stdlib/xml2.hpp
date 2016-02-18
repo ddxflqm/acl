@@ -83,6 +83,11 @@ public:
 	/**
 	 * @override
 	 */
+	xml_node& set_text(istream& in, size_t off = 0, size_t len = 0);
+
+	/**
+	 * @override
+	 */
 	xml_node& add_child(xml_node* child, bool return_child = false);
 
 	/**
@@ -276,6 +281,12 @@ public:
 	 * @override
 	 */
 	xml_node& create_node(const char* tag, const char* text = NULL);
+
+	/**
+	 * @override
+	 */
+	xml_node& create_node(const char* tag, istream& in,
+		size_t off = 0, size_t len = 0);
 
 	/**
 	 * @override

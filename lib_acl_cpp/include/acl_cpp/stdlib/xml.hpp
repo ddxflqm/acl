@@ -20,6 +20,7 @@ namespace acl {
 
 class xml;
 class xml_node;
+class istream;
 
 class ACL_CPP_API xml_attr : public dbuf_obj
 {
@@ -149,6 +150,16 @@ public:
 	virtual xml_node& set_text(const char* str) = 0;
 
 	/**
+	 * 设置 xml 节点，同时将流对象中的数据做为该节点的文本内容
+	 * @param in {istream&} 输入流对象
+	 * @param off {size_t} 对于文件流，则指定要拷贝的数据的起始位置
+	 * @param len {size_t} 要拷贝的最大数据量，当为 0 时，则一直拷贝到流结束
+	 * @return {xml_node&}
+	 */
+	virtual xml_node& set_text(istream& in, size_t off = 0,
+		size_t len = 0) = 0;
+
+	/**
 	 * 设置 xml 节点的文本内容
 	 * @param number {long long int} 64 位整数
 	 * @return {xml_node&}
@@ -167,8 +178,8 @@ public:
 	 *  否则返回本 xml 节点引用
 	 */
 	virtual xml_node& add_child(xml_node* child,
-			bool return_child = false) = 0;
-
+		bool return_child = false) = 0;
+	
 	/**
 	 * 给本 xml 节点添加 xml_node 子节点对象
 	 * @param child {xml_node&} 子节点对象
@@ -204,6 +215,19 @@ public:
 	xml_node& add_child(const char* tag, long long int number,
 		bool return_child = false);
 #endif
+
+	/**
+	 * 给本 xml 节点添加 xml_node 子节点对象，同时使用输入流中的内容做为节点的文本
+	 * @param tag {const char* tag} 子节点对象的标签名
+	 * @param in {istream&} 输入流对象
+	 * @param off {size_t} 对于文件流，则指定要拷贝的数据的起始位置
+	 * @param len {size_t} 要拷贝的最大数据量，当为 0 时，则一直拷贝到流结束
+	 * @param return_child {bool} 是否需要本函数返回新创建的子节点的引用
+	 * @return {xml_node&} return_child 为 true 返回子节点的引用，
+	 *  否则返回本 xml 节点引用
+	 */
+	xml_node& add_child(const char* tag, istream& in,
+		size_t off = 0, size_t len = 0, bool return_child = false);
 
 	/**
 	 * 获得本节点的父级节点对象的引用
@@ -439,6 +463,19 @@ public:
 	 */
 	virtual xml_node& create_node(const char* tag,
 		const char* text = NULL) = 0;
+
+	/**
+	 * 创建一个 xml_node 节点对象，同时指定输入流中的内容做为节点文本内容
+	 * @param tag {const char*} 标签名
+	 * @param in {istream&} 输入流对象
+	 * @param off {size_t} 对于文件流，则指定要拷贝的数据的起始位置
+	 * @param len {size_t} 要拷贝的最大数据量，当为 0 时，则一直拷贝到流结束
+	 * @return {xml_node*} 新产生的 xml_node 对象不需要用户手工释放，因为
+	 *  在 xml 对象被释放时这些节点会自动被释放，当然用户也可以在不用时调
+	 *  用 reset 来释放这些 xml_node 节点对象
+	 */
+	virtual xml_node& create_node(const char* tag, istream& in,
+		size_t off = 0, size_t len = 0) = 0;
 
 	/**
 	 * 创建一个 xml_node 节点对象

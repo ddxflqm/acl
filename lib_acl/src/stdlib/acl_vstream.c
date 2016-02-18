@@ -2059,7 +2059,7 @@ ACL_VSTREAM *acl_vstream_fdopen(ACL_SOCKET fd, unsigned int oflags,
 	}
 #endif
 
-	if (acl_is_listening_socket(fd)) {
+	if (fd != ACL_SOCKET_INVALID && acl_is_listening_socket(fd)) {
 		int ret = acl_getsocktype(fd);
 		if (ret == AF_INET)
 			fdtype |= ACL_VSTREAM_TYPE_LISTEN_INET;

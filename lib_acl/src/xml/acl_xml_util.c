@@ -320,8 +320,24 @@ ACL_XML_NODE *acl_xml_create_node(ACL_XML *xml, const char* tag,
 	acl_assert(tag && *tag);
 	acl_vstring_strcpy(node->ltag, tag);
 	xml->space += LEN(node->ltag);
-	escape_copy(node->text, text, xml);
-	xml->space += LEN(node->text);
+	if (text && *text) {
+		escape_copy(node->text, text, xml);
+		xml->space += LEN(node->text);
+	}
+
+	return node;
+}
+
+ACL_XML_NODE *acl_xml_create_node_with_text_stream(ACL_XML *xml,
+	const char *tag, ACL_VSTREAM *in, size_t off, size_t len)
+{
+	ACL_XML_NODE *node = acl_xml_node_alloc(xml);
+
+	acl_assert(tag && *tag);
+	acl_vstring_strcpy(node->ltag, tag);
+	xml->space += LEN(node->ltag);
+	if (in != NULL)
+		acl_xml_node_set_text_stream(node, in, off, len);
 
 	return node;
 }
@@ -357,37 +373,56 @@ void acl_xml_node_add_attrs(ACL_XML_NODE *node, ...)
 void acl_xml_node_set_text(ACL_XML_NODE *node, const char *text)
 {
 	size_t n1 = LEN(node->text), n2;
-	escape_copy(node->text, text, node->xml);
-	n2 = LEN(node->text);
-	if (n2 > n1)
-		node->xml->space += n2 - n1;
+
+	if (text != NULL && *text != 0) {
+		escape_copy(node->text, text, node->xml);
+		n2 = LEN(node->text);
+		if (n2 > n1)
+			node->xml->space += n2 - n1;
+	}
 }
 
-void acl_xml_node_set_text_stream(ACL_XML_NODE *node, ACL_VSTREAM *fp,
-	size_t from, size_t to)
+void acl_xml_node_set_text_stream(ACL_XML_NODE *node, ACL_VSTREAM *in,
+	size_t off, size_t len)
 {
+	const char *myname = "acl_xml_node_set_text_stream";
 	int   ret;
 	char  buf[8192];
-	size_t n1 = LEN(node->text), n2, len, n;
+	size_t n1 = LEN(node->text), n2, n;
 
-	if (from > to)
-		to = from;
-	if ((size_t) acl_vstream_fseek(fp, SEEK_SET, (acl_off_t) from) < 0) {
-		const char *path = ACL_VSTREAM_PATH(fp);
+	if (in == NULL)
+		return;
+
+	if (in->type == ACL_VSTREAM_TYPE_FILE
+		&& acl_vstream_fseek(in, SEEK_SET, (acl_off_t) off) < 0)
+	{
+		const char *path = ACL_VSTREAM_PATH(in);
 
 		acl_msg_error("%s(%d): fseek error: %s, file: %s, from: %lu",
-			acl_last_serror(), path ? path : "unknown",
-			(unsigned long) from);
+			myname, __LINE__, acl_last_serror(),
+			path ? path : "unknown", (unsigned long) off);
 		return;
 	}
 
-	len = to - from + 1;
+	if (len == 0) {
+		while (1) {
+			ret = acl_vstream_read(in, buf, sizeof(buf) - 1);
+			if (ret == ACL_VSTREAM_EOF)
+				break;
+			buf[ret] = 0;
+			len -= ret;
+			escape_copy(node->text, buf, node->xml);
+		}
+
+		n2 = LEN(node->text);
+		if (n2 > n1)
+			node->xml->space += n2 - n1;
+		return;
+	}
+
 	while (len > 0) {
-		if (len > sizeof(buf) - 1)
-			n = sizeof(buf) - 1;
-		else
-			n = len;
-		ret = acl_vstream_read(fp, buf, n);
+		n = len > sizeof(buf) - 1 ? sizeof(buf) - 1 : len;
+		ret = acl_vstream_read(in, buf, n);
 		if (ret == ACL_VSTREAM_EOF)
 			break;
 		buf[ret] = 0;
