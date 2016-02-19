@@ -307,6 +307,16 @@ void acl_xml2_node_set_text(ACL_XML2_NODE *node, const char *text)
 	}
 }
 
+void acl_xml2_node_add_text(ACL_XML2_NODE *node, const char *text)
+{
+	if (text != NULL && *text != 0) {
+		node->text = END(node->xml->vbuf);
+		escape_append(node->xml->vbuf, text, node->xml);
+		node->text_size = END(node->xml->vbuf) - node->text;
+		ADD(node->xml->vbuf, '\0');
+	} 
+}
+
 void acl_xml2_node_set_text_stream(ACL_XML2_NODE *node, ACL_VSTREAM *in,
 	size_t off, size_t len)
 {

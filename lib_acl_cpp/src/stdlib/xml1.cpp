@@ -129,9 +129,12 @@ xml_node& xml1_node::add_attr(const char* name, const char* value)
 	return *this;
 }
 
-xml_node& xml1_node::set_text(const char* str)
+xml_node& xml1_node::set_text(const char* str, bool append /* = false */)
 {
-	acl_xml_node_set_text(node_, str);
+	if (append)
+		acl_xml_node_add_text(node_, str);
+	else
+		acl_xml_node_set_text(node_, str);
 	return *this;
 }
 

@@ -480,11 +480,20 @@ ACL_API ACL_XML_ATTR *acl_xml_node_add_attr(ACL_XML_NODE *node,
 ACL_API void acl_xml_node_add_attrs(ACL_XML_NODE *node, ...);
 
 /**
- * 给一个 xml 节点添加文本内容，该函数主要用在构建 xml 对象时
+ * 给一个 xml 节点添加文本内容，该函数主要用在构建 xml 对象时，当该节点之前有文本内容时
+ * 则用新文本覆盖原文本
  * @param node {ACL_XML_NODE*} 由 acl_xml_create_node 创建的节点
  * @param text {const char*} 文本内容
  */
 ACL_API void acl_xml_node_set_text(ACL_XML_NODE *node, const char *text);
+
+/**
+* 给一个 xml 节点的文本追加内容，该函数主要用在构建 xml 对象时，在该节点的文本内容上
+* 追加新的文本内容
+* @param node {ACL_XML_NODE*} 由 acl_xml_create_node 创建的节点
+* @param text {const char*} 文本内容 
+ */
+ACL_API void acl_xml_node_add_text(ACL_XML_NODE *node, const char *text);
 
 /**
  * 用文件流中的内容给一个 xml 节点添加文本内容

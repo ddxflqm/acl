@@ -78,7 +78,7 @@ public:
 	/**
 	 * @override
 	 */
-	xml_node& set_text(const char* str);
+	xml_node& set_text(const char* str, bool append = false);
 
 	/**
 	 * @override

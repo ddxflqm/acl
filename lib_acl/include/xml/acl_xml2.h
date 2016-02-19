@@ -153,7 +153,7 @@ struct ACL_XML2 {
 /*                  公共函数接口，用户可以放心使用该接口集                  */
 /****************************************************************************/
 
-/*----------------------------- in acl_xml2.c ------------------------------*/
+/*----------------------------- in acl_xml2.c ----------------------------*/
 
 /**
  * 判断 xml 对象是否闭合的, 即是否所解析的数据是否完整, 如果该 xml 对象里的
@@ -518,11 +518,20 @@ ACL_API ACL_XML2_ATTR *acl_xml2_node_add_attr(ACL_XML2_NODE *node,
 ACL_API void acl_xml2_node_add_attrs(ACL_XML2_NODE *node, ...);
 
 /**
- * 给一个 xml 节点添加文本内容，该函数主要用在构建 xml 对象时
+ * 给一个 xml 节点添加文本内容，该函数主要用在构建 xml 对象时，当该节点之前有文本内容时
+ * 则用新文本覆盖原文本
  * @param node {ACL_XML2_NODE*} 由 acl_xml2_create_node 创建的节点
  * @param text {const char*} 文本内容
  */
 ACL_API void acl_xml2_node_set_text(ACL_XML2_NODE *node, const char *text);
+
+/**
+* 给一个 xml 节点的文本追加内容，该函数主要用在构建 xml 对象时，在该节点的文本内容上
+* 追加新的文本内容
+* @param node {ACL_XML2_NODE*} 由 acl_xml2_create_node 创建的节点
+* @param text {const char*} 文本内容 
+ */
+ACL_API void acl_xml2_node_add_text(ACL_XML2_NODE *node, const char *text);
 
 /**
  * 用文件流中的内容给一个 xml 节点添加文本内容

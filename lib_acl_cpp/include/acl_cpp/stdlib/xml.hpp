@@ -145,9 +145,11 @@ public:
 	/**
 	 * 设置 xml 节点的文本内容
 	 * @param str {const char*} 字符串内容
+	 * @param append {bool} 添加文本时是采用追加模式还是覆盖模式，如果为追加模式，
+	 *  则当原来该节点上有文本内容时，新添加的内容在原文本后面追加，否则则覆盖
 	 * @return {xml_node&}
 	 */
-	virtual xml_node& set_text(const char* str) = 0;
+	virtual xml_node& set_text(const char* str, bool append = false) = 0;
 
 	/**
 	 * 设置 xml 节点，同时将流对象中的数据做为该节点的文本内容

@@ -289,6 +289,16 @@ static void escape_copy(ACL_VSTRING *buf, const char *src, ACL_XML *xml)
 	}
 }
 
+static void escape_append(ACL_VSTRING *buf, const char *src, ACL_XML *xml)
+{
+	if (src && *src) {
+		if ((xml->flag & ACL_XML_FLAG_XML_ENCODE) != 0)
+			acl_xml_encode(src, buf);
+		else
+			acl_vstring_strcat(buf, src);
+	}
+}
+
 /***************************************************************************/
 
 ACL_XML_ATTR *acl_xml_addElementAttr(ACL_XML_NODE *node,
@@ -376,6 +386,18 @@ void acl_xml_node_set_text(ACL_XML_NODE *node, const char *text)
 
 	if (text != NULL && *text != 0) {
 		escape_copy(node->text, text, node->xml);
+		n2 = LEN(node->text);
+		if (n2 > n1)
+			node->xml->space += n2 - n1;
+	}
+}
+
+void acl_xml_node_add_text(ACL_XML_NODE *node, const char *text)
+{
+	size_t n1 = LEN(node->text), n2;
+
+	if (text != NULL && *text != 0) {
+		escape_append(node->text, text, node->xml);
 		n2 = LEN(node->text);
 		if (n2 > n1)
 			node->xml->space += n2 - n1;
