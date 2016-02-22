@@ -95,6 +95,16 @@ ACL_SOCKET acl_inet_listen(const char *addr, int backlog, int block_mode)
 			myname, acl_last_serror());
 	}
 
+#ifdef SO_REUSEPORT
+	on = 1;
+	if (setsockopt(sock, SOL_SOCKET, SO_REUSEPORT,
+		(char *) &on, sizeof(on)) < 0)
+	{
+		acl_msg_error("%s: setsocket(SO_REUSEPORT): %s",
+			myname, acl_last_serror());
+	}
+#endif
+
 	if (bind(sock, (struct sockaddr *) &sa, sizeof(struct sockaddr)) < 0) {
 		acl_msg_error("%s: bind %s error %s",
 			myname, addr, acl_last_serror());
