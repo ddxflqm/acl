@@ -205,12 +205,12 @@ public:
 	/**
 	 * 给本 xml 节点添加 xml_node 子节点对象
 	 * @param tag {const char* tag} 子节点对象的标签名
-	 * @param text {long long int} 节点中的文本内容，非空字符串
+	 * @param txt {long long int} 节点中的文本内容，非空字符串
 	 * @param return_child {bool} 是否需要本函数返回新创建的子节点的引用
 	 * @return {xml_node&} return_child 为 true 返回子节点的引用，
 	 *  否则返回本 xml 节点引用
 	 */
-	xml_node& add_child(const char* tag, const char* text,
+	xml_node& add_child(const char* tag, const char* txt,
 		bool return_child = false);
 
 	/**
@@ -469,13 +469,13 @@ public:
 	/**
 	 * 创建一个 xml_node 节点对象
 	 * @param tag {const char*} 标签名
-	 * @param text {const char*} 文本字符串
+	 * @param txt {const char*} 文本字符串
 	 * @return {xml_node*} 新产生的 xml_node 对象不需要用户手工释放，因为
 	 *  在 xml 对象被释放时这些节点会自动被释放，当然用户也可以在不用时调
 	 *  用 reset 来释放这些 xml_node 节点对象
 	 */
 	virtual xml_node& create_node(const char* tag,
-		const char* text = NULL) = 0;
+		const char* txt = NULL) = 0;
 
 	/**
 	 * 创建一个 xml_node 节点对象，同时指定输入流中的内容做为节点文本内容
