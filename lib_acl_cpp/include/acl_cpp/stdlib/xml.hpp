@@ -205,6 +205,17 @@ public:
 	/**
 	 * 给本 xml 节点添加 xml_node 子节点对象
 	 * @param tag {const char* tag} 子节点对象的标签名
+	 * @param text {long long int} 节点中的文本内容，非空字符串
+	 * @param return_child {bool} 是否需要本函数返回新创建的子节点的引用
+	 * @return {xml_node&} return_child 为 true 返回子节点的引用，
+	 *  否则返回本 xml 节点引用
+	 */
+	xml_node& add_child(const char* tag, const char* text,
+		bool return_child = false);
+
+	/**
+	 * 给本 xml 节点添加 xml_node 子节点对象
+	 * @param tag {const char* tag} 子节点对象的标签名
 	 * @param number {long long int} 64 位整数
 	 * @param return_child {bool} 是否需要本函数返回新创建的子节点的引用
 	 * @return {xml_node&} return_child 为 true 返回子节点的引用，

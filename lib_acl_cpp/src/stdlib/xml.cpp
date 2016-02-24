@@ -97,6 +97,12 @@ xml_node& xml_node::add_child(const char* tag, bool return_child /* = false */,
 	return add_child(xml_->create_node(tag, str), return_child);
 }
 
+xml_node& xml_node::add_child(const char* tag, const char* text,
+	bool return_child /* = false */)
+{
+	return add_child(xml_->create_node(tag, text), return_child);
+}
+
 xml_node& xml_node::add_child(const char* tag, acl_int64 number,
 	bool return_child /* = false */)
 {
