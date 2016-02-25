@@ -643,6 +643,9 @@ static void __parse_url_and_port(HTTP_HDR_REQ *hh, const char *url)
 		ACL_VSTRING_ADDCH(hh->url_path, '/');
 		ACL_VSTRING_TERMINATE(hh->url_path);
 		return;
+	} else {
+		acl_vstring_strcpy(hh->url_part, url);
+		url++;
 	}
 
 	/* get url_path and url_params */
