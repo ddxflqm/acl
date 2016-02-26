@@ -36,6 +36,18 @@ public:
 	 */
 	bool run_alone(const char* addrs, const char* path = NULL,
 		unsigned int count = 1, int threads_count = 1);
+	
+	/**
+	 * 监听给定流的可读状态
+	 * @param stream {socket_stream*}
+	 */
+	void thread_enable_read(socket_stream* stream);
+
+	/**
+	 * 不再监听给定流的可读状态
+	 * @param stream {socket_stream*}
+	 */
+	void thread_disable_read(socket_stream* stream);
 
 protected:
 	// 该类不能直接被实例化
@@ -61,18 +73,6 @@ protected:
 		(void) stream;
 		return true;
 	}
-
-	/**
-	 * 监听给定流的可读状态
-	 * @param stream {socket_stream*}
-	 */
-	void thread_enable_read(socket_stream* stream);
-
-	/**
-	 * 不再监听给定流的可读状态
-	 * @param stream {socket_stream*}
-	 */
-	void thread_disable_read(socket_stream* stream);
 
 	/**
 	 * 当线程池中的某个线程获得一个连接时的回调函数，子类可以做一些
