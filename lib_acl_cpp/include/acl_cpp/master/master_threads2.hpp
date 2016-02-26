@@ -51,6 +51,30 @@ protected:
 	virtual bool thread_on_read(socket_stream* stream) = 0;
 
 	/**
+	 * 框架在调用 thread_on_read 后且其返回 true 后，会自动调用本函数
+	 * 以判断是否监控流对象是否可读
+	 * @param stream {socket_stream*}
+	 * @return {bool} 如果返回 false，则框架不再监控该流对象
+	 */
+	virtual bool enable_read(socket_stream* stream)
+	{
+		(void) stream;
+		return true;
+	}
+
+	/**
+	 * 监听给定流的可读状态
+	 * @param stream {socket_stream*}
+	 */
+	void thread_enable_read(socket_stream* stream);
+
+	/**
+	 * 不再监听给定流的可读状态
+	 * @param stream {socket_stream*}
+	 */
+	void thread_disable_read(socket_stream* stream);
+
+	/**
 	 * 当线程池中的某个线程获得一个连接时的回调函数，子类可以做一些
 	 * 初始化工作，该函数是在主线程的线程空间中运行
 	 * @param stream {socket_stream*}

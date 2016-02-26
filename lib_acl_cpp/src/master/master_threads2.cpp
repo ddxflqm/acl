@@ -254,6 +254,27 @@ void master_threads2::run_once(ACL_VSTREAM* client)
 		__stop = true;
 }
 
+void master_threads2::thread_enable_read(socket_stream* stream)
+{
+	ACL_EVENT* event = get_event();
+	if (event == NULL)
+		logger_error("event NULL");
+	else
+		acl_event_disable_readwrite(event, stream->get_vstream());
+}
+
+void master_threads2::thread_disable_read(socket_stream* stream)
+{
+	ACL_EVENT* event = get_event();
+	if (event == NULL)
+		logger_error("event NULL");
+	(void) stream;
+	/*
+	else
+		acl_event_enable_read(event, stream->get_vstream());
+		*/
+}
+
 //////////////////////////////////////////////////////////////////////////
 
 void master_threads2::service_pre_jail(void*)
@@ -368,9 +389,13 @@ int master_threads2::service_main(ACL_VSTREAM *client, void*)
 
 	// 调用子类的虚函数实现，如果返回 true 表示让框架继续监控该连接流，
 	// 否则需要关闭该流
-	// 给上层框架返回 0 表示将与该连接保持长连接
+	// 给上层框架返回值函数如下：
+	// 0 表示将与该连接保持长连接，且需要继续监控该连接是否可读
+	// -1 表示需要关闭该连接
+	// 1 表示不再监控该连接
+
 	if (__mt->thread_on_read(stream) == true)
-		return 0;
+		return __mt->enable_read(stream) ? 0 : 1;
 
 	// 返回 -1 表示由上层框架真正关闭流，上层框架在真正关闭流前
 	// 将会回调 service_on_close 过程进行流关闭前的善后处理工作，
