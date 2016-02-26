@@ -124,6 +124,10 @@ ACL_EVENT *acl_threads_server_event(void);
 acl_pthread_pool_t *acl_threads_server_threads(void);
 ACL_VSTREAM **acl_threads_server_streams(void);
 
+void acl_threads_server_enable_read(ACL_EVENT *event,
+	acl_pthread_pool_t *threads, ACL_VSTREAM *stream);
+void acl_threads_server_disable_read(ACL_EVENT *event, ACL_VSTREAM *stream);
+
  /*
   * acl_aio_server.c
   */

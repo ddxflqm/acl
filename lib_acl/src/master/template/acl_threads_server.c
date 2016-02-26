@@ -545,7 +545,7 @@ static void decrease_counter_callback(ACL_VSTREAM *stream acl_unused,
 	decrease_client_counter();
 }
 
-static void create_job(ACL_EVENT *event, acl_pthread_pool_t *threads,
+static READ_CTX *create_job(ACL_EVENT *event, acl_pthread_pool_t *threads,
 	ACL_VSTREAM *stream)
 {
 	READ_CTX *ctx = (READ_CTX*) acl_mymalloc(sizeof(READ_CTX));
@@ -570,20 +570,14 @@ static void create_job(ACL_EVENT *event, acl_pthread_pool_t *threads,
 	stream->ioctl_read_ctx = ctx;
 	acl_vstream_add_close_handle(stream, free_ctx, ctx);
 
-	if (ctx->serv_accept != NULL && ctx->serv_accept(stream) < 0) {
-		if (ctx->serv_close != NULL)
-			ctx->serv_close(stream, ctx->serv_arg);
-		acl_vstream_close(stream);
-	} else {
-		ctx->event_type = ACL_EVENT_ACCEPT;
-		acl_pthread_pool_add_job(ctx->threads, ctx->job);
-	}
+	return ctx;
 }
 
 static void client_open(ACL_EVENT *event, acl_pthread_pool_t *threads,
 	int fd, const char *remote, const char *local)
 {
 	ACL_VSTREAM *stream;
+	READ_CTX *ctx;
 
 	acl_close_on_exec(fd, ACL_CLOSE_ON_EXEC);
 	increase_client_counter();
@@ -612,7 +606,15 @@ static void client_open(ACL_EVENT *event, acl_pthread_pool_t *threads,
 	}
 
 	/* create one job running in one thread*/
-	create_job(event, threads, stream);
+	ctx = create_job(event, threads, stream);
+	if (ctx->serv_accept != NULL && ctx->serv_accept(stream) < 0) {
+		if (ctx->serv_close != NULL)
+			ctx->serv_close(stream, ctx->serv_arg);
+		acl_vstream_close(stream);
+	} else {
+		ctx->event_type = ACL_EVENT_ACCEPT;
+		acl_pthread_pool_add_job(ctx->threads, ctx->job);
+	}
 
 	if (acl_var_threads_status_notify && acl_var_threads_master_maxproc > 1
 	    && acl_master_notify(acl_var_threads_pid, __server_generation,
@@ -621,6 +623,24 @@ static void client_open(ACL_EVENT *event, acl_pthread_pool_t *threads,
 		server_abort(ACL_EVENT_NULL_TYPE, event, stream,
 			ACL_EVENT_NULL_CONTEXT);
 	}
+}
+
+void acl_threads_server_enable_read(ACL_EVENT *event,
+	acl_pthread_pool_t *threads, ACL_VSTREAM *stream)
+{
+	READ_CTX *ctx = (READ_CTX *) stream->ioctl_read_ctx;
+
+	if (ctx == NULL || ctx->read_callback == NULL)
+		ctx = create_job(event, threads, stream);
+
+	ctx->event_type = ACL_EVENT_READ;
+	acl_event_enable_read(event, stream, stream->rw_timeout,
+		ctx->read_callback, ctx);
+}
+
+void acl_threads_server_disable_read(ACL_EVENT *event, ACL_VSTREAM *stream)
+{
+	acl_event_disable_readwrite(event, stream);
 }
 
 /* restart listening */

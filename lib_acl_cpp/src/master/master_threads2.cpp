@@ -254,25 +254,41 @@ void master_threads2::run_once(ACL_VSTREAM* client)
 		__stop = true;
 }
 
-void master_threads2::thread_enable_read(socket_stream* stream)
-{
-	ACL_EVENT* event = get_event();
-	if (event == NULL)
-		logger_error("event NULL");
-	else
-		acl_event_disable_readwrite(event, stream->get_vstream());
-}
-
 void master_threads2::thread_disable_read(socket_stream* stream)
 {
 	ACL_EVENT* event = get_event();
+
 	if (event == NULL)
 		logger_error("event NULL");
-	(void) stream;
-	/*
+	else if (__thread_pool == NULL)
+		acl_event_disable_readwrite(event, stream->get_vstream());
 	else
-		acl_event_enable_read(event, stream->get_vstream());
-		*/
+		logger_error("not support!");
+}
+
+void master_threads2::thread_enable_read(socket_stream* stream)
+{
+	ACL_EVENT* event = get_event();
+
+	if (event == NULL)
+		logger_error("event NULL");
+#ifdef ACL_WINDOWS
+	else
+		logger_error("not support!");
+#else
+	else if (__thread_pool != NULL)
+	{
+		logger_error("not support!");
+		return;
+	}
+
+	acl_pthread_pool_t* threads = acl_threads_server_threads();
+	if (threads != NULL)
+		acl_threads_server_enable_read(event, threads,
+			stream->get_vstream());
+	else
+		logger_error("threads NULL!");
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////
