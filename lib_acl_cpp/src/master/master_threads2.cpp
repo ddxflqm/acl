@@ -411,7 +411,7 @@ int master_threads2::service_main(ACL_VSTREAM *client, void*)
 	// 1 表示不再监控该连接
 
 	if (__mt->thread_on_read(stream) == true)
-		return __mt->enable_read(stream) ? 0 : 1;
+		return __mt->keep_read(stream) ? 0 : 1;
 
 	// 返回 -1 表示由上层框架真正关闭流，上层框架在真正关闭流前
 	// 将会回调 service_on_close 过程进行流关闭前的善后处理工作，

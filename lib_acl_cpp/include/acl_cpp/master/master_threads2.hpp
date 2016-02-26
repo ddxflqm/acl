@@ -56,7 +56,7 @@ protected:
 	 * @param stream {socket_stream*}
 	 * @return {bool} 如果返回 false，则框架不再监控该流对象
 	 */
-	virtual bool enable_read(socket_stream* stream)
+	virtual bool keep_read(socket_stream* stream)
 	{
 		(void) stream;
 		return true;
