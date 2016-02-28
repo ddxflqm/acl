@@ -1064,10 +1064,10 @@ static acl_pthread_pool_t *threads_create(ACL_MASTER_SERVER_THREAD_INIT_FN init_
 
 #ifdef ACL_UNIX
 
-static ACL_VSTREAM **server_open(ACL_EVENT *event,
+static ACL_VSTREAM **server_daemon_open(ACL_EVENT *event,
 	acl_pthread_pool_t *threads, int count, int fdtype)
 {
-	const char *myname = "server_open";
+	const char *myname = "server_daemon_open";
 	ACL_VSTREAM *stream, **streams;
 	ACL_SOCKET fd;
 	int i;
@@ -1107,12 +1107,12 @@ static ACL_VSTREAM **server_open(ACL_EVENT *event,
 	return streams;
 }
 
-#else
+#endif
 
-static ACL_VSTREAM **server_open(ACL_EVENT *event,
+static ACL_VSTREAM **server_alone_open(ACL_EVENT *event,
 	acl_pthread_pool_t *threads, const char *addrs)
 {
-	const char   *myname = "server_open";
+	const char   *myname = "server_alone_open";
 	ACL_ARGV*     tokens = acl_argv_split(addrs, ";,| \t");
 	ACL_ITER      iter;
 	int           i;
@@ -1140,8 +1140,6 @@ static ACL_VSTREAM **server_open(ACL_EVENT *event,
 	return streams;
 }
 
-#endif /* !ACL_UNIX */
-
 static void usage(int argc, char * argv[])
 {
 	int   i;
@@ -1163,7 +1161,7 @@ static void usage(int argc, char * argv[])
 		" -t transport"
 		" -u [use setgid initgroups setuid]"
 		" -v [on acl_msg_verbose]"
-		" -f conf_file",
+		" -f conf_file"
 		" -L listen_addrs",
 		service_name);
 }
@@ -1389,13 +1387,13 @@ void acl_threads_server_main(int argc, char * argv[],
 	/* open all listen streams */
 
 	if (daemon_mode == 0)
-		__sstreams = server_open(__event, __threads, addrs);
+		__sstreams = server_alone_open(__event, __threads, addrs);
 #ifdef ACL_UNIX
 	else if (socket_count <= 0)
 		acl_msg_fatal("%s(%d): invalid socket_count: %d",
 			myname, __LINE__, socket_count);
 	else
-		__sstreams = server_open(__event, __threads,
+		__sstreams = server_daemon_open(__event, __threads,
 			socket_count, fdtype);
 #else
 	else

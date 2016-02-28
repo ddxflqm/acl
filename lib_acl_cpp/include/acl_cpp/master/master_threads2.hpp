@@ -33,6 +33,8 @@ public:
 	 *  该值只有当 count != 1 时才有效，即若 count == 1 则仅运行一次就返回
 	 *  且不会启动线程处理客户端请求
 	 * @return {bool} 监听是否成功
+	 *  注：count, threads_count 两个参数不再有效，将会使用配置文件中的
+	 *  配置值
 	 */
 	bool run_alone(const char* addrs, const char* path = NULL,
 		unsigned int count = 1, int threads_count = 1);
