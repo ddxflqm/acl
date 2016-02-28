@@ -115,8 +115,8 @@ ACL_DEPRECATED void acl_ioctl_server_enable_read(ACL_IOCTL*, ACL_VSTREAM*,
 
 typedef int (*ACL_THREADS_SERVER_FN) (ACL_VSTREAM*, void*);
 
-void acl_threads_server_main(int argc, char **argv, ACL_THREADS_SERVER_FN,
-	void *service_ctx, int name, ...);
+void acl_threads_server_main(int argc, char *argv[],
+	ACL_THREADS_SERVER_FN, void *service_ctx, int name, ...);
 #define	acl_ioctl_app_main	acl_threads_server_main
 
 ACL_EVENT *acl_threads_server_event(void);

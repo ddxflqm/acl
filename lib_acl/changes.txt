@@ -3,6 +3,8 @@
 ------------------------------------------------------------------------
 535) 2016.2.28
 535.1) bugfix: acl_vstream.c 加强了 fp->read_cnt < 0 时的安全处理
+535.2) feature: acl_threads_server.c 支持 WINDOWS 平台，同时支持 daemon 模式
+及独立运行模式
 
 534) 2016.2.26
 534.1) feature: acl_threads_server.c 服务器模板增加了几个接口
