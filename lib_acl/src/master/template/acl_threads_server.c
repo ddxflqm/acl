@@ -774,15 +774,12 @@ static void server_init(const char *procname)
 	acl_var_threads_pid = getpid();
 #elif defined(ACL_WINDOWS)
 	acl_var_threads_pid = _getpid();
+#else
+	acl_var_threads_pid = 0;
 #endif
 	acl_var_threads_procname = acl_mystrdup(acl_safe_basename(procname));
 
-#ifdef ACL_UNIX
-	acl_var_threads_log_file = getenv("SERVICE_LOG");
-#else
-	acl_var_threads_log_file = NULL;
-#endif
-
+	acl_var_threads_log_file = acl_getenv("SERVICE_LOG");
 	if (acl_var_threads_log_file == NULL) {
 		acl_var_threads_log_file = acl_mystrdup("acl_master.log");
 		acl_msg_info("%s(%d)->%s: can't get SERVICE_LOG's env value,"
