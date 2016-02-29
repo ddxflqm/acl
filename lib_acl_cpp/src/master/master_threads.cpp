@@ -2,8 +2,8 @@
 #ifndef ACL_PREPARE_COMPILE
 #include "acl_cpp/stdlib/log.hpp"
 #include "acl_cpp/stream/socket_stream.hpp"
-#endif
 #include "acl_cpp/master/master_threads.hpp"
+#endif
 
 namespace acl
 {
