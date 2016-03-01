@@ -1389,7 +1389,7 @@ void acl_threads_server_main(int argc, char * argv[],
 	if (daemon_mode == 0)
 		__sstreams = server_alone_open(__event, __threads, addrs);
 #ifdef ACL_UNIX
-	else if (socket_count <= 0)
+	else if (socket_count < 0)
 		acl_msg_fatal("%s(%d): invalid socket_count: %d",
 			myname, __LINE__, socket_count);
 	else
