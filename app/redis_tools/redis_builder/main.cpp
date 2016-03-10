@@ -16,6 +16,7 @@ static void usage(const char* procname)
 		" -r replicas[default 0]\r\n"
 		" -d [if just display the result for create command]\r\n"
 		" -k key\r\n"
+		" -P [show nodes in no tree mode]\r\n"
 		" -f configure_file\r\n",
 		procname);
 
@@ -31,7 +32,7 @@ static void usage(const char* procname)
 	printf("\r\nfor samples:\r\n"
 		" %s -s 127.0.0.1:6379 -a create -f cluster.xml\r\n"
 		" %s -s 127.0.0.1:6379 -a create -f nodes4.xml -r 2\r\n"
-		" %s -s 127.0.0.1:6379 -a nodes\r\n"
+		" %s -s 127.0.0.1:6379 -a nodes -T\r\n"
 		" %s -s 127.0.0.1:6379 -a slots\r\n"
 		" %s -s 127.0.0.1:6379 -a del_node -I node_id\r\n"
 		" %s -s 127.0.0.1:6379 -a node_id\r\n"
@@ -50,10 +51,10 @@ int main(int argc, char* argv[])
 
 	int  ch;
 	size_t replicas = 0;
-	bool add_slave = false, just_display = false, show_tree = false;
+	bool add_slave = false, just_display = false, show_tree = true;
 	acl::string addr, cmd, conf, new_addr, node_id, key;
 
-	while ((ch = getopt(argc, argv, "hs:a:f:N:SI:r:dk:T")) > 0)
+	while ((ch = getopt(argc, argv, "hs:a:f:N:SI:r:dk:P")) > 0)
 	{
 		switch (ch)
 		{
@@ -87,8 +88,8 @@ int main(int argc, char* argv[])
 		case 'k':
 			key = optarg;
 			break;
-		case 'T':
-			show_tree = true;
+		case 'P':
+			show_tree = false;
 			break;
 		default:
 			break;
