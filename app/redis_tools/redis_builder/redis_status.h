@@ -12,6 +12,7 @@ public:
 	static void show_nodes_tree(
 		const std::map<acl::string, acl::redis_node*>&);
 	static void show_nodes_tree(const std::vector<acl::redis_node*>& nodes);
+	static void show_slave_tree(const std::vector<acl::redis_node*>& slaves);
 
 	static bool show_nodes(const std::map<acl::string,
 		acl::redis_node*>* masters);

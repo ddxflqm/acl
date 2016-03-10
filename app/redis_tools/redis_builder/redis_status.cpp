@@ -88,6 +88,8 @@ void redis_status::show_nodes(acl::redis& redis, bool tree_mode /* = false */)
 		show_nodes(masters);
 }
 
+//////////////////////////////////////////////////////////////////////////
+
 void redis_status::show_nodes_tree(
 	const std::map<acl::string, acl::redis_node*>& nodes)
 {
@@ -98,7 +100,7 @@ void redis_status::show_nodes_tree(
 		::const_iterator cit = sorted_nodes.begin();
 	for (; cit != sorted_nodes.end(); ++cit)
 	{
-		printf("%s\r\n", cit->first.c_str());
+		printf("\033[7;37;40m%s\033[0m\r\n", cit->first.c_str());
 		show_nodes_tree(*cit->second);
 	}
 
@@ -107,12 +109,34 @@ void redis_status::show_nodes_tree(
 
 void redis_status::show_nodes_tree(const std::vector<acl::redis_node*>& nodes)
 {
+	const std::vector<acl::redis_node*>* slaves;
+
 	for (std::vector<acl::redis_node*>::const_iterator cit = nodes.begin();
 		cit != nodes.end(); ++cit)
 	{
-		printf("|----%s\r\n", (*cit)->get_addr());
+		printf("\033[1;32;40m|---%s\033[0m: "
+			"\033[0;34;40m%s\033[0m, "
+			"\033[1;33;40mslots\033[0m:",
+			(*cit)->get_addr(), (*cit)->get_id());
+		slaves = (*cit)->get_slaves();
+		show_master_slots(*cit);
+		printf("\r\n");
+		show_slave_tree(*slaves);
 	}
 }
+
+void redis_status::show_slave_tree(const std::vector<acl::redis_node*>& slaves)
+{
+	for (std::vector<acl::redis_node*>::const_iterator cit =
+		slaves.begin(); cit != slaves.end(); ++cit)
+	{
+		printf("\t\033[1;32;40m|---%s\033[0m: "
+			"\033[0;34;40m%s\033[0m\r\n",
+			(*cit)->get_addr(), (*cit)->get_id());
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////
 
 bool redis_status::show_nodes(
 	const std::map<acl::string, acl::redis_node*>* masters)
@@ -126,7 +150,11 @@ bool redis_status::show_nodes(
 		
 		printf("master, id: %s, addr: %s\r\n",
 			cit->first.c_str(), cit->second->get_addr());
+
+		printf("slots range: ");
 		show_master_slots(cit->second);
+		printf("\r\n");
+
 		slaves = cit->second->get_slaves();
 		show_slave_nodes(*slaves);
 	}
@@ -153,10 +181,11 @@ void redis_status::show_master_slots(const acl::redis_node* master)
 
 	std::vector<std::pair<size_t, size_t> >::const_iterator cit;
 	for (cit = slots.begin(); cit != slots.end(); ++cit)
-		printf("slots range: %d-%d\r\n",
+		printf(" \033[1;33;40m[%d-%d]\033[0m",
 			(int) (*cit).first, (int) (*cit).second);
 }
 
+//////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
 void redis_status::show_slots()
