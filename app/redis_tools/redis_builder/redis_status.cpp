@@ -100,7 +100,7 @@ void redis_status::show_nodes_tree(
 		::const_iterator cit = sorted_nodes.begin();
 	for (; cit != sorted_nodes.end(); ++cit)
 	{
-		printf("\033[7;37;40m%s\033[0m\r\n", cit->first.c_str());
+		printf("\033[1;31;40m%s\033[0m\r\n", cit->first.c_str());
 		show_nodes_tree(*cit->second);
 	}
 
