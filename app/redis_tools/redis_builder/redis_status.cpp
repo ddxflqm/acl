@@ -79,9 +79,6 @@ void redis_status::show_nodes(acl::redis& redis, bool tree_mode /* = false */)
 		return;
 	}
 
-	show_nodes_tree(*masters);
-	return;
-
 	if (tree_mode)
 		show_nodes_tree(*masters);
 	else
@@ -102,6 +99,7 @@ void redis_status::show_nodes_tree(
 	{
 		printf("\033[1;31;40m%s\033[0m\r\n", cit->first.c_str());
 		show_nodes_tree(*cit->second);
+		printf("\r\n");
 	}
 
 	clear(sorted_nodes);
