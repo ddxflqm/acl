@@ -55,17 +55,32 @@ bool redis_util::get_node_id(acl::redis& redis, acl::string& node_id)
 	return false;
 }
 
-bool redis_util::get_ip(const char* addr, acl::string& buf)
+bool redis_util::get_ip(const char* addr, acl::string& ip)
 {
-	acl::string tmp(addr);
-	const std::vector<acl::string>& tokens = tmp.split2(":");
+	acl::string buf(addr);
+	const std::vector<acl::string>& tokens = buf.split2(":");
 	if (tokens.size() != 2)
 	{
 		printf("%s: invalid addr: %s\r\n", __FUNCTION__, addr);
 		return false;
 	}
 
-	buf = tokens[0].c_str();
+	ip = tokens[0].c_str();
+	return true;
+}
+
+bool redis_util::addr_split(const char* addr, acl::string& ip, int& port)
+{
+	acl::string buf(addr);
+	const std::vector<acl::string>& tokens = buf.split2(":");
+	if (tokens.size() != 2)
+	{
+		printf("%s: invalid addr: %s\r\n", __FUNCTION__, addr);
+		return false;
+	}
+
+	ip = tokens[0];
+	port = atoi(tokens[1].c_str());
 	return true;
 }
 

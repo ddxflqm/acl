@@ -13,7 +13,9 @@ public:
 	static bool get_node_id(acl::redis& redis, acl::string& node_id);
 
 	// get ip from the addr which format is ip:port
-	static bool get_ip(const char* addr, acl::string& buf);
+	static bool get_ip(const char* addr, acl::string& ip);
+
+	static bool addr_split(const char* addr, acl::string& ip, int& port);
 
 	// show the nodes's information, including master and slave
 	static void print_nodes(int nested,

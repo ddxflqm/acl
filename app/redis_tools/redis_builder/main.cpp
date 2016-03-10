@@ -50,10 +50,10 @@ int main(int argc, char* argv[])
 
 	int  ch;
 	size_t replicas = 0;
-	bool add_slave = false, just_display = false;
+	bool add_slave = false, just_display = false, show_tree = false;
 	acl::string addr, cmd, conf, new_addr, node_id, key;
 
-	while ((ch = getopt(argc, argv, "hs:a:f:N:SI:r:dk:")) > 0)
+	while ((ch = getopt(argc, argv, "hs:a:f:N:SI:r:dk:T")) > 0)
 	{
 		switch (ch)
 		{
@@ -87,6 +87,9 @@ int main(int argc, char* argv[])
 		case 'k':
 			key = optarg;
 			break;
+		case 'T':
+			show_tree = true;
+			break;
 		default:
 			break;
 		}
@@ -114,7 +117,7 @@ int main(int argc, char* argv[])
 			acl::redis_client client(addr, conn_timeout, rw_timeout);
 			acl::redis redis(&client);
 			redis_status status(addr, conn_timeout, rw_timeout);
-			status.show_nodes(redis);
+			status.show_nodes(redis, show_tree);
 		}
 	}
 	else if (cmd == "slots")
