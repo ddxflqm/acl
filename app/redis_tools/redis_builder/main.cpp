@@ -16,7 +16,7 @@ static void usage(const char* procname)
 		" -r replicas[default 0]\r\n"
 		" -d [if just display the result for create command]\r\n"
 		" -k key\r\n"
-		" -P [show nodes in no tree mode]\r\n"
+		" -V [show nodes in no tree mode]\r\n"
 		" -f configure_file\r\n",
 		procname);
 
@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
 	bool add_slave = false, just_display = false, show_tree = true;
 	acl::string addr, cmd, conf, new_addr, node_id, key;
 
-	while ((ch = getopt(argc, argv, "hs:a:f:N:SI:r:dk:P")) > 0)
+	while ((ch = getopt(argc, argv, "hs:a:f:N:SI:r:dk:V")) > 0)
 	{
 		switch (ch)
 		{
@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 		case 'k':
 			key = optarg;
 			break;
-		case 'P':
+		case 'V':
 			show_tree = false;
 			break;
 		default:

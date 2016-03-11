@@ -24,11 +24,6 @@ public:
 	static bool show_slots(acl::redis& redis);
 	static void show_slaves_slots(const acl::redis_slot* slot);
 
-	static void sort(const std::map<acl::string, acl::redis_node*>& in,
-		std::map<acl::string, std::vector<acl::redis_node*>* >& out);
-	static void clear(std::map<acl::string,
-		std::vector<acl::redis_node*>* >& nodes);
-
 private:
 	acl::string addr_;
 	int conn_timeout_;

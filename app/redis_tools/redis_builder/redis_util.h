@@ -23,4 +23,12 @@ public:
 
 	// free all nodes nestly
 	static void free_nodes(const std::vector<acl::redis_node*>& nodes);
+
+	// sorting the givent redis_nodes by which machine ip
+	static void sort(const std::map<acl::string, acl::redis_node*>& in,
+		std::map<acl::string, std::vector<acl::redis_node*>* >& out);
+
+	// free vector holding redis_nodes
+	static void clear_nodes_container(
+		std::map<acl::string, std::vector<acl::redis_node*>* >& nodes);
 };
