@@ -89,14 +89,16 @@ static void __mysql_dll_unload(void)
 		// 即使主线程没有调用 mysql_thread_init 过程，这样做也是
 		// 无害的，因为 libmysqlclient 内部会自动判断取得的线程
 		// 局部变量是否有效
-		//if (__mysql_thread_end != NULL)
-		//	__mysql_thread_end();
+#ifdef ACL_UNIX
+		if (__mysql_thread_end != NULL)
+			__mysql_thread_end();
 
 		if (__mysql_server_end != NULL)
 		{
 			__mysql_server_end();
 			__mysql_server_end = NULL;
 		}
+#endif
 
 		acl_dlclose(__mysql_dll);
 		__mysql_dll = NULL;
