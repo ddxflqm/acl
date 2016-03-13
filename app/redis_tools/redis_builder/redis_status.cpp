@@ -139,8 +139,13 @@ void redis_status::show_master_slots(const acl::redis_node* master)
 
 	std::vector<std::pair<size_t, size_t> >::const_iterator cit;
 	for (cit = slots.begin(); cit != slots.end(); ++cit)
+#ifdef ACL_UNIX
 		printf(" \033[1;33;40m[%d-%d]\033[0m",
 			(int) (*cit).first, (int) (*cit).second);
+#else
+		printf(" [%d-%d]",
+			(int) (*cit).first, (int) (*cit).second);
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////
