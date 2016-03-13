@@ -9,9 +9,12 @@ redis_util::~redis_util(void)
 {
 }
 
-bool redis_util::get_node_id(const char* addr, acl::string& node_id)
+bool redis_util::get_node_id(const char* addr, acl::string& node_id,
+	const char* passwd)
 {
 	acl::redis_client client(addr);
+	if (passwd && *passwd)
+		client.set_password(passwd);
 	acl::redis redis(&client);
 	return get_node_id(redis, node_id);
 }

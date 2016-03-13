@@ -2,11 +2,14 @@
 #include "redis_util.h"
 #include "redis_status.h"
 
-redis_status::redis_status(const char* addr, int conn_timeout, int rw_timeout)
+redis_status::redis_status(const char* addr, int conn_timeout, int rw_timeout,
+	const char* passwd)
 	: addr_(addr)
 	, conn_timeout_(conn_timeout)
 	, rw_timeout_(rw_timeout)
 {
+	if (passwd && *passwd)
+		passwd_ = passwd;
 }
 
 
@@ -16,15 +19,16 @@ redis_status::~redis_status(void)
 
 //////////////////////////////////////////////////////////////////////////
 
-void redis_status::show_nodes(bool tree_mode /* = false */)
+void redis_status::show_nodes(void)
 {
 	acl::redis_client client(addr_, conn_timeout_, rw_timeout_);
+	client.set_password(passwd_);
 	acl::redis redis(&client);
 
-	show_nodes(redis, tree_mode);
+	show_nodes(redis);
 }
 
-void redis_status::show_nodes(acl::redis& redis, bool tree_mode /* = false */)
+void redis_status::show_nodes(acl::redis& redis)
 {
 	const std::map<acl::string, acl::redis_node*>* masters;
 	if ((masters = redis.cluster_nodes())== NULL)
@@ -33,10 +37,11 @@ void redis_status::show_nodes(acl::redis& redis, bool tree_mode /* = false */)
 		return;
 	}
 
-	if (tree_mode)
-		show_nodes_tree(*masters);
-	else
-		show_nodes(masters);
+#ifdef ACL_UNIX
+	show_nodes_tree(*masters);
+#else
+	show_nodes(masters);
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -68,7 +73,7 @@ void redis_status::show_nodes_tree(const std::vector<acl::redis_node*>& nodes)
 		cit != nodes.end(); ++cit)
 	{
 		printf("\033[1;32;40m|--- master: %s\033[0m, "
-			"\033[0;34;40m%s\033[0m, "
+			"\033[0;34;40mid: %s\033[0m, "
 			"\033[1;33;40mslots\033[0m:",
 			(*cit)->get_addr(), (*cit)->get_id());
 		slaves = (*cit)->get_slaves();
@@ -84,7 +89,7 @@ void redis_status::show_slave_tree(const std::vector<acl::redis_node*>& slaves)
 		slaves.begin(); cit != slaves.end(); ++cit)
 	{
 		printf("\t\033[1;32;40m|--- slave: %s\033[0m, "
-			"\033[0;34;40m%s\033[0m\r\n",
+			"\033[0;34;40mid: %s\033[0m\r\n",
 			(*cit)->get_addr(), (*cit)->get_id());
 	}
 }
@@ -139,11 +144,11 @@ void redis_status::show_master_slots(const acl::redis_node* master)
 }
 
 //////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////
 
 void redis_status::show_slots()
 {
 	acl::redis_client client(addr_, conn_timeout_, rw_timeout_);
+	client.set_password(passwd_);
 	acl::redis redis(&client);
 
 	show_slots(redis);

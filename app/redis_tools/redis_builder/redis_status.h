@@ -3,11 +3,12 @@
 class redis_status
 {
 public:
-	redis_status(const char* addr, int conn_timeout, int rw_timeout);
+	redis_status(const char* addr, int conn_timeout, int rw_timeout,
+		const char* passwd);
 	~redis_status(void);
 
-	void show_nodes(bool tree_mode = false);
-	static void show_nodes(acl::redis& redis, bool tree_mode = false);
+	void show_nodes(void);
+	static void show_nodes(acl::redis& redis);
 
 	static void show_nodes_tree(
 		const std::map<acl::string, acl::redis_node*>&);
@@ -28,4 +29,5 @@ private:
 	acl::string addr_;
 	int conn_timeout_;
 	int rw_timeout_;
+	acl::string passwd_;
 };

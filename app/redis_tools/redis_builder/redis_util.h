@@ -7,7 +7,8 @@ public:
 	~redis_util(void);
 
 	// get the node's id of the given addr
-	static bool get_node_id(const char* addr, acl::string& node_id);
+	static bool get_node_id(const char* addr, acl::string& node_id,
+		const char* passwd);
 
 	// get the current node's ID
 	static bool get_node_id(acl::redis& redis, acl::string& node_id);
