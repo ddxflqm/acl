@@ -42,7 +42,7 @@ static void usage(const char* procname)
 		" %s -a hash_slot -k key\r\n"
 		" %s -s 127.0.0.1:6379 -a add_node -N 127.0.0.1:6380 -S\r\n",
 		procname, procname, procname, procname, procname, procname,
-		procname, procname, procname);
+		procname, procname, procname, procname, procname);
 }
 
 int main(int argc, char* argv[])
