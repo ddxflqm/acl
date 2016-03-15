@@ -632,9 +632,8 @@ static int mime_bound_body(MIME_STATE *state, const char * const boundary,
 		curr_off++;
 
 		if (bound_ptr == NULL) {
-			if (ch != *boundary) {
+			if (ch != *boundary)
 				continue;
-			}
 
 			bound_ptr = boundary;
 		}
