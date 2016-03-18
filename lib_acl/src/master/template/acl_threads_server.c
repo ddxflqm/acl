@@ -1013,7 +1013,9 @@ static void dispatch_open(ACL_EVENT *event, acl_pthread_pool_t *threads)
 	__dispatch_conn = acl_vstream_connect(acl_var_threads_dispatch_addr,
 			ACL_BLOCKING, 0, 0, 4096);
 
-	acl_non_blocking(ACL_VSTREAM_SOCK(__dispatch_conn), ACL_NON_BLOCKING);
+	if (__dispatch_conn)
+		acl_non_blocking(ACL_VSTREAM_SOCK(__dispatch_conn),
+			ACL_NON_BLOCKING);
 
 	if (__dispatch_conn == NULL) {
 		acl_msg_warn("connect master_dispatch(%s) failed",
