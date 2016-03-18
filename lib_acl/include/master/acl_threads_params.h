@@ -56,9 +56,9 @@ extern int   acl_var_threads_delay_usec;
 
 #define	ACL_VAR_THREADS_EVENT_MODE		"ioctl_event_mode"
 #ifdef ACL_UNIX
-#define	ACL_DEF_THREADS_EVENT_MODE		"select"
-#else
 #define	ACL_DEF_THREADS_EVENT_MODE		"kernel"
+#else
+#define	ACL_DEF_THREADS_EVENT_MODE		"select"
 #endif
 extern char *acl_var_threads_event_mode;
 
