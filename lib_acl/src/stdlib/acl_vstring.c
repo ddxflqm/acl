@@ -255,7 +255,6 @@ ACL_VSTRING *acl_vstring_dbuf_alloc(ACL_DBUF_POOL *dbuf, size_t len)
 		vp->vbuf.data = (unsigned char *) acl_mymalloc(len);
 	}
 
-	vp->fd = ACL_FILE_INVALID;
 #if defined(_WIN32) || defined(_WIN64)
 	vp->hmap = NULL;
 #endif
