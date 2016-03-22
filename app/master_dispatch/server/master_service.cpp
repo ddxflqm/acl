@@ -206,6 +206,8 @@ void master_service::proc_on_init()
 
 	var_cfg_local_addr << addr << ":" << var_cfg_service_name;
 
+	logger("-----local addr: %s------", var_cfg_local_addr.c_str());
+
 	if (var_cfg_manager_allow && *var_cfg_manager_allow)
 		allow_list::get_instance()
 			.set_allow_manager(var_cfg_manager_allow);
