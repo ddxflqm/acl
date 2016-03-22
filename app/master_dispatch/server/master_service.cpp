@@ -204,7 +204,7 @@ void master_service::proc_on_init()
 	acl::string name, addr;
 	find_addr_include(name, addr, var_cfg_nic_names, var_cfg_net_addrs);
 
-	var_cfg_local_addr << ":" << var_cfg_service_name;
+	var_cfg_local_addr << addr << ":" << var_cfg_service_name;
 
 	if (var_cfg_manager_allow && *var_cfg_manager_allow)
 		allow_list::get_instance()
