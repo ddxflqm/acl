@@ -355,12 +355,18 @@ const redis_result* redis_client::run(dbuf_pool* pool, const string& req,
 
 		close();
 
+		if (!retry_ || retried)
+		{
+			logger_error("result NULL, addr: %s, retry: %s, "
+				"retried: %s", addr_, retry_ ? "true" : "false",
+				retried ? "true" : "false");
+
+			break;
+		}
+
 		logger_error("result NULL, addr: %s, retry: %s, "
 			"retried: %s", addr_, retry_ ? "true" : "false",
 			retried ? "true" : "false");
-
-		if (!retry_ || retried)
-			break;
 
 		retried = true;
 	}

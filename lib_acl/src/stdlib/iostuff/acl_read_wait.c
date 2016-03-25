@@ -140,23 +140,29 @@ int acl_read_wait(ACL_SOCKET fd, int timeout)
 			ret = -1;
 			break;
 		} else if (ret == 0) {
-			acl_set_error(ACL_ETIMEDOUT);
 			acl_msg_warn("%s(%d), %s: poll timeout: %s, fd: %d, "
 				"delay: %d, spent: %ld", __FILE__, __LINE__,
 				myname, acl_last_serror(), fd, delay,
 				(long) (time(NULL) - begin));
+			acl_set_error(ACL_ETIMEDOUT);
 			ret = -1;
 			break;
-		} else {
-			if ((events[0].events & (EPOLLERR | EPOLLHUP)) != 0)
-				ret = -1;
-			else if ((events[0].events & EPOLLIN) == 0) {
-				acl_set_error(ACL_ETIMEDOUT);
-				ret = -1;
-			} else
-				ret = 0;
-			break;
-		}
+		} else if ((events[0].events & (EPOLLERR | EPOLLHUP)) != 0) {
+			acl_msg_warn("%s(%d), %s: poll error: %s, fd: %d, "
+				"delay: %d, spent: %ld", __FILE__, __LINE__,
+				myname, acl_last_serror(), fd, delay,
+				(long) (time(NULL) - begin));
+			ret = -1;
+		} else if ((events[0].events & EPOLLIN) == 0) {
+			acl_msg_warn("%s(%d), %s: poll error: %s, fd: %d, "
+				"delay: %d, spent: %ld", __FILE__, __LINE__,
+				myname, acl_last_serror(), fd, delay,
+				(long) (time(NULL) - begin));
+			acl_set_error(ACL_ETIMEDOUT);
+			ret = -1;
+		} else
+			ret = 0;
+		break;
 	}
 
 	ee.events = 0;
@@ -200,19 +206,30 @@ int acl_read_wait(ACL_SOCKET fd, int timeout)
 				acl_last_serror(), (int) fd);
 			return -1;
 		case 0:
-			acl_set_error(ACL_ETIMEDOUT);
 			acl_msg_warn("%s(%d), %s: poll timeout: %s, fd: %d, "
 				"delay: %d, spent: %ld", __FILE__, __LINE__,
 				myname, acl_last_serror(), fd, delay,
 				(long) (time(NULL) - begin));
+			acl_set_error(ACL_ETIMEDOUT);
 			return -1;
 		default:
-			if (fds.revents & (POLLHUP | POLLERR))
+			if (fds.revents & (POLLHUP | POLLERR)) {
+				acl_msg_warn("%s(%d), %s: poll error: %s, "
+					"fd: %d, delay: %d, spent: %ld",
+					__FILE__, __LINE__, myname,
+					acl_last_serror(), fd, delay,
+					(long) (time(NULL) - begin));
 				return -1;
-			else if ((fds.revents & POLLIN))
+			} else if ((fds.revents & POLLIN))
 				return 0;
-			else
+			else {
+				acl_msg_warn("%s(%d), %s: poll error: %s, "
+					"fd: %d, delay: %d, spent: %ld",
+					__FILE__, __LINE__, myname,
+					acl_last_serror(), fd, delay,
+					(long) (time(NULL) - begin));
 				return -1;
+			}
 		}
 	}
 }
@@ -294,6 +311,7 @@ int acl_read_wait(ACL_SOCKET fd, int timeout)
 	struct timeval tv;
 	struct timeval *tp;
 	int  errnum;
+	time_t begin;
 
 	/*
 	 * Sanity checks.
@@ -326,6 +344,8 @@ int acl_read_wait(ACL_SOCKET fd, int timeout)
 	acl_set_error(0);
 
 	for (;;) {
+		time(&begin);
+
 #ifdef ACL_WINDOWS
 		switch (select(1, &rfds, (fd_set *) 0, &xfds, tp)) {
 #else
@@ -349,6 +369,11 @@ int acl_read_wait(ACL_SOCKET fd, int timeout)
 				acl_last_serror(), (int) fd);
 			return -1;
 		case 0:
+			acl_msg_warn("%s(%d), %s: poll timeout: %s, fd: %d, "
+				"timeout: %d, spent: %ld", __FILE__, __LINE__,
+				myname, acl_last_serror(), fd, timeout,
+				(long) (time(NULL) - begin));
+
 			acl_set_error(ACL_ETIMEDOUT);
 			return -1;
 		default:
