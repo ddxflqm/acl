@@ -174,6 +174,7 @@ int acl_read_wait(ACL_SOCKET fd, int timeout)
 	const char *myname = "acl_read_wait";
 	struct pollfd fds;
 	int   delay = timeout * 1000;
+	time_t begin;
 
 	fds.events = POLLIN | POLLHUP | POLLERR;
 	fds.fd = fd;
@@ -181,6 +182,8 @@ int acl_read_wait(ACL_SOCKET fd, int timeout)
 	acl_set_error(0);
 
 	for (;;) {
+		time(&begin);
+
 		switch (poll(&fds, 1, delay)) {
 		case -1:
 			if (acl_last_error() == ACL_EINTR)
@@ -192,6 +195,10 @@ int acl_read_wait(ACL_SOCKET fd, int timeout)
 			return -1;
 		case 0:
 			acl_set_error(ACL_ETIMEDOUT);
+			acl_msg_warn("%s(%d), %s: poll timeout: %s, fd: %d, "
+				"delay: %d, spent: %ld", __FILE__, __LINE__,
+				myname, acl_last_serror(), fd, delay,
+				(long) (time(NULL) - begin));
 			return -1;
 		default:
 			if (fds.revents & (POLLHUP | POLLERR))

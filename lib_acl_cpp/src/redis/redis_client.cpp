@@ -269,10 +269,12 @@ redis_result* redis_client::get_redis_array(dbuf_pool* pool)
 redis_result* redis_client::get_redis_object(dbuf_pool* pool)
 {
 	char ch;
+	time_t begin = time(NULL);
 	if (conn_.read(ch) == false)
 	{
-		logger_warn("read first char error: %s, server: %s",
-			last_serror(), addr_);
+		logger_warn("read char error: %s, server: %s, spent: %ld, fd: %u",
+			last_serror(), addr_, time(NULL) - begin,
+			(unsigned) conn_.sock_handle());
 		return NULL;
 	}
 
