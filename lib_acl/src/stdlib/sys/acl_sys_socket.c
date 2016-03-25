@@ -211,8 +211,11 @@ int acl_socket_read(ACL_SOCKET fd, void *buf, size_t size,
 {
 	if (fp != NULL && fp->read_ready)
 		fp->read_ready = 0;
-	else if (timeout > 0 && acl_read_wait(fd, timeout) < 0)
+	else if (timeout > 0 && acl_read_wait(fd, timeout) < 0) {
+		acl_msg_error("%s(%d): read wait error: %s, fd: %d, timeout: %d",
+			__FUNCTION__, __LINE__, acl_last_serror(), fd, timeout);
 		return -1;
+	}
 
 	return read(fd, buf, size);
 }
