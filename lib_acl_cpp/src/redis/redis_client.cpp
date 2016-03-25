@@ -324,7 +324,11 @@ const redis_result* redis_client::run(dbuf_pool* pool, const string& req,
 	while (true)
 	{
 		if (open() == false)
+		{
+			logger_error("open error: %s, addr: %s",
+				last_serror(), addr_);
 			return NULL;
+		}
 
 		if (!req.empty() && conn_.write(req) == -1)
 		{
@@ -350,6 +354,10 @@ const redis_result* redis_client::run(dbuf_pool* pool, const string& req,
 			return result;
 
 		close();
+
+		logger_error("result NULL, addr: %s, retry: %s, "
+			"retried: %s", addr_, retry_ ? "true" : "false",
+			retried ? "true" : "false");
 
 		if (!retry_ || retried)
 			break;

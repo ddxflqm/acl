@@ -103,6 +103,7 @@ int acl_read_wait(ACL_SOCKET fd, int timeout)
 	int   delay = timeout * 1000, ret;
 	EPOLL_CTX *epoll_ctx;
 	struct epoll_event ee, events[1];
+	time_t begin;
 
 	acl_assert(acl_pthread_once(&epoll_once, thread_epoll_once) == 0);
 	epoll_ctx = (EPOLL_CTX*) acl_pthread_getspecific(epoll_key);
@@ -123,8 +124,9 @@ int acl_read_wait(ACL_SOCKET fd, int timeout)
 	}
 
 	for (;;) {
-		ret = epoll_wait(epoll_ctx->epfd, events, 1, delay);
+		time(&begin);
 
+		ret = epoll_wait(epoll_ctx->epfd, events, 1, delay);
 		if (ret == -1) {
 			if (acl_last_error() == ACL_EINTR) {
 				acl_msg_warn(">>>>catch EINTR, try again<<<");
@@ -139,6 +141,10 @@ int acl_read_wait(ACL_SOCKET fd, int timeout)
 			break;
 		} else if (ret == 0) {
 			acl_set_error(ACL_ETIMEDOUT);
+			acl_msg_warn("%s(%d), %s: poll timeout: %s, fd: %d, "
+				"delay: %d, spent: %ld", __FILE__, __LINE__,
+				myname, acl_last_serror(), fd, delay,
+				(long) (time(NULL) - begin));
 			ret = -1;
 			break;
 		} else {
