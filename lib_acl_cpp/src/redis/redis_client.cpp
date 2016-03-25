@@ -269,12 +269,10 @@ redis_result* redis_client::get_redis_array(dbuf_pool* pool)
 redis_result* redis_client::get_redis_object(dbuf_pool* pool)
 {
 	char ch;
-	time_t begin = time(NULL);
 	if (conn_.read(ch) == false)
 	{
-		logger_warn("read char error: %s, server: %s, spent: %ld, fd: %u",
-			last_serror(), addr_, time(NULL) - begin,
-			(unsigned) conn_.sock_handle());
+		logger_warn("read char error: %s, server: %s, fd: %u",
+			last_serror(), addr_, (unsigned) conn_.sock_handle());
 		return NULL;
 	}
 
@@ -325,8 +323,8 @@ const redis_result* redis_client::run(dbuf_pool* pool, const string& req,
 	{
 		if (open() == false)
 		{
-			logger_error("open error: %s, addr: %s",
-				last_serror(), addr_);
+			logger_error("open error: %s, addr: %s, req: %s",
+				last_serror(), addr_, req.c_str());
 			return NULL;
 		}
 
@@ -340,8 +338,8 @@ const redis_result* redis_client::run(dbuf_pool* pool, const string& req,
 				continue;
 			}
 
-			logger_error("write to redis(%s) error: %s",
-				addr_, last_serror());
+			logger_error("write to redis(%s) error: %s, req: %s",
+				addr_, last_serror(), req.c_str());
 			return NULL;
 		}
 
@@ -358,15 +356,17 @@ const redis_result* redis_client::run(dbuf_pool* pool, const string& req,
 		if (!retry_ || retried)
 		{
 			logger_error("result NULL, addr: %s, retry: %s, "
-				"retried: %s", addr_, retry_ ? "true" : "false",
-				retried ? "true" : "false");
+				"retried: %s, req: %s", addr_,
+				retry_ ? "true" : "false",
+				retried ? "true" : "false", req.c_str());
 
 			break;
 		}
 
 		logger_error("result NULL, addr: %s, retry: %s, "
-			"retried: %s", addr_, retry_ ? "true" : "false",
-			retried ? "true" : "false");
+			"retried: %s, req: %s", addr_,
+			retry_ ? "true" : "false",
+			retried ? "true" : "false", req.c_str());
 
 		retried = true;
 	}
