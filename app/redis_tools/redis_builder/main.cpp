@@ -199,7 +199,7 @@ int main(int argc, char* argv[])
 			printf("usage: %s -s ip:port -a console\r\n", argv[0]);
 		else
 		{
-			redis_commands cmds(addr);
+			redis_commands cmds(addr, passwd, conn_timeout, rw_timeout);
 			cmds.run();
 		}
 	}
