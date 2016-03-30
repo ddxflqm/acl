@@ -23,4 +23,5 @@ private:
 	void keys(const std::vector<acl::string>& tokens);
 	int keys(const char* addr, const char* pattern);
 	void hgetall(const std::vector<acl::string>& tokens);
+	void pattern_remove(const std::vector<acl::string>& tokens);
 };

@@ -25,7 +25,9 @@ redis_commands::~redis_commands(void)
 
 void redis_commands::help(void)
 {
-	printf("> keys parameter\r\n");
+	printf("> keys pattern\r\n");
+	printf("> hgetall parameter\r\n");
+	printf("> pattern_remove pattern\r\n");
 }
 
 const std::map<acl::string, acl::redis_node*>* redis_commands::get_masters(void)
@@ -69,6 +71,8 @@ void redis_commands::run(void)
 			keys(tokens);
 		else if (cmd == "hgetall")
 			hgetall(tokens);
+		else if (cmd == "pattern_remove")
+			pattern_remove(tokens);
 		else
 			help();
 	}
@@ -78,13 +82,16 @@ void redis_commands::keys(const std::vector<acl::string>& tokens)
 {
 	if (tokens.size() < 2)
 	{
-		printf("usage: keys parameter\r\n");
+		printf("> usage: keys parameter\r\n");
 		return;
 	}
 
 	const std::map<acl::string, acl::redis_node*>* masters = get_masters();
 	if (masters == NULL)
+	{
+		printf("no masters!\r\n");
 		return;
+	}
 
 	int  n = 0;
 	for (std::map<acl::string, acl::redis_node*>::const_iterator cit =
@@ -137,7 +144,7 @@ void redis_commands::hgetall(const std::vector<acl::string>& tokens)
 {
 	if (tokens.size() < 2)
 	{
-		printf("usage: hgetall key\r\n");
+		printf("> usage: hgetall key\r\n");
 		return;
 	}
 
@@ -160,4 +167,43 @@ void redis_commands::hgetall(const std::vector<acl::string>& tokens)
 	{
 		printf("%s: %s\r\n", cit->first.c_str(), cit->second.c_str());
 	}
+}
+
+void redis_commands::pattern_remove(const std::vector<acl::string>& tokens)
+{
+	if (tokens.size() < 2)
+	{
+		printf("> usage: pattern_remove pattern\r\n");
+		return;
+	}
+
+	const char* pattern = tokens[1].c_str();
+
+	const std::map<acl::string, acl::redis_node*>* masters = get_masters();
+	if (masters == NULL)
+	{
+		printf("no masters!\r\n");
+		return;
+	}
+
+	std::vector<acl::string> res;
+	for (std::map<acl::string, acl::redis_node*>::const_iterator cit =
+		masters->begin(); cit != masters->end(); ++cit)
+	{
+		const char* addr = cit->second->get_addr();
+		if (addr == NULL || *addr == 0)
+		{
+			printf("addr NULL, skip it\r\n");
+			continue;
+		}
+		acl::redis_client conn(addr, conn_timeout_, rw_timeout_);
+		if (!passwd_.empty())
+			conn.set_password(passwd_);
+		acl::redis_key cmd(&conn);
+		cmd.keys_pattern(pattern, &res);
+		printf("addr: %s, pattern: %s, total: %d\r\n",
+			addr, pattern, (int) res.size());
+	}
+
+	printf("pattern: %s, total: %d\r\n", pattern, (int) res.size());
 }
