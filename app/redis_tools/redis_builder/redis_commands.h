@@ -20,8 +20,12 @@ private:
 
 	void help(void);
 	const std::map<acl::string, acl::redis_node*>* get_masters(void);
-	void keys(const std::vector<acl::string>& tokens);
-	int keys(const char* addr, const char* pattern);
+
+	void get_keys(const std::vector<acl::string>& tokens);
+	int get_keys(const char* addr, const char* pattern);
+
 	void hgetall(const std::vector<acl::string>& tokens);
+
 	void pattern_remove(const std::vector<acl::string>& tokens);
+	int remove(const std::vector<acl::string>& keys);
 };
