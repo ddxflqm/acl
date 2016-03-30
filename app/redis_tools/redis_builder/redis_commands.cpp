@@ -64,6 +64,8 @@ void redis_commands::run(void)
 		cmd.lower();
 		if (cmd == "keys")
 			keys(tokens);
+		else if (cmd == "hgetall")
+			hgetall(tokens);
 		else
 			help();
 	}
@@ -126,4 +128,33 @@ int redis_commands::keys(const char* addr, const char* pattern)
 	}
 
 	return (int) res.size();
+}
+
+void redis_commands::hgetall(const std::vector<acl::string>& tokens)
+{
+	if (tokens.size() < 2)
+	{
+		printf("usage: hgetall key\r\n");
+		return;
+	}
+
+	const char* key = tokens[1].c_str();
+	acl::redis_client_cluster conns;
+	conns.set(addr_, conn_timeout_, rw_timeout_);
+	acl::redis cmd(&conns);
+	std::map<acl::string, acl::string> res;
+
+	if (cmd.hgetall(key, res) == false)
+	{
+		printf("hgetall error: %s, key: %s\r\n",
+			cmd.result_error(), key);
+		return;
+	}
+
+	printf("key: %s\r\n", key);
+	for (std::map<acl::string, acl::string>::const_iterator cit
+		= res.begin(); cit != res.end(); ++cit)
+	{
+		printf("%s: %s\r\n", cit->first.c_str(), cit->second.c_str());
+	}
 }
