@@ -10,12 +10,13 @@ redis_commands::redis_commands(const char* addr, const char* passwd,
 	, redis_(&conn_)
 {
 	conns_.set(addr_, conn_timeout_, rw_timeout_);
+	conns_.set_all_slot(addr, 0);
+
 	if (passwd && *passwd)
 	{
 		passwd_ = passwd;
 		conn_.set_password(passwd);
 		conns_.set_password("default", passwd);
-		conns_.set_all_slot(addr, 0);
 	}
 }
 
