@@ -27,7 +27,9 @@ void redis_commands::help(void)
 {
 	printf("> keys pattern\r\n");
 	printf("> hgetall parameter\r\n");
-	printf("> pattern_remove pattern\r\n");
+	printf("> remove pattern\r\n");
+	printf("> type parameter ...\r\n");
+	printf("> ttl parameter ...\r\n");
 }
 
 const std::map<acl::string, acl::redis_node*>* redis_commands::get_masters(void)
@@ -52,13 +54,14 @@ void redis_commands::run(void)
 
 		if (in.gets(buf) == false)
 			break;
-		if (buf.equal("quit", false) || buf.equal("exit", false))
+		if (buf.equal("quit", false) || buf.equal("exit", false)
+			|| buf.equal("q", false))
 		{
 			printf("Bye!\r\n");
 			break;
 		}
 
-		if (buf.equal("help", false))
+		if (buf.empty() || buf.equal("help", false))
 		{
 			help();
 			continue;
@@ -67,15 +70,29 @@ void redis_commands::run(void)
 		std::vector<acl::string>& tokens = buf.split2(" \t");
 		acl::string& cmd = tokens[0];
 		cmd.lower();
-		if (cmd == "keys")
+		if (cmd == "date")
+			show_date();
+		else if (cmd == "keys")
 			get_keys(tokens);
 		else if (cmd == "hgetall")
 			hgetall(tokens);
-		else if (cmd == "pattern_remove")
+		else if (cmd == "remove")
 			pattern_remove(tokens);
+		else if (cmd == "type")
+			check_type(tokens);
+		else if (cmd == "ttl")
+			check_ttl(tokens);
 		else
 			help();
 	}
+}
+
+void redis_commands::show_date(void)
+{
+	char buf[256];
+	acl::rfc822 rfc;
+	rfc.mkdate_cst(time(NULL), buf, sizeof(buf));
+	printf("Date: %s\r\n", buf);
 }
 
 void redis_commands::get_keys(const std::vector<acl::string>& tokens)
@@ -123,8 +140,10 @@ int redis_commands::get_keys(const char* addr, const char* pattern)
 
 	if (res.size() >= 40)
 	{
-		printf("Total: %d, do you want to show them all[y/n]?\r\n",
-			(int) res.size());
+		printf("Total: %d. Do you want to show them all in %s ? [y/n]: ",
+			(int) res.size(), addr);
+		fflush(stdout);
+
 		acl::stdin_stream in;
 		acl::string buf;
 		if (in.gets(buf) == false || !buf.equal("y", false))
@@ -136,6 +155,8 @@ int redis_commands::get_keys(const char* addr, const char* pattern)
 	{
 		printf("%s\r\n", (*cit).c_str());
 	}
+
+	printf("--- Total: %d, addr: %s ---\r\n", (int) res.size(), addr);
 
 	return (int) res.size();
 }
@@ -149,15 +170,13 @@ void redis_commands::hgetall(const std::vector<acl::string>& tokens)
 	}
 
 	const char* key = tokens[1].c_str();
-	redis_.clear(false);
-	redis_.set_cluster(&conns_, 0);
-
 	std::map<acl::string, acl::string> res;
+	acl::redis cmd(&conns_);
 
-	if (redis_.hgetall(key, res) == false)
+	if (cmd.hgetall(key, res) == false)
 	{
 		printf("hgetall error: %s, key: %s\r\n",
-			redis_.result_error(), key);
+			cmd.result_error(), key);
 		return;
 	}
 
@@ -206,14 +225,16 @@ void redis_commands::pattern_remove(const std::vector<acl::string>& tokens)
 		if (!passwd_.empty())
 			conn.set_password(passwd_);
 
-		redis_.clear(false);
-		redis_.set_client(&conn);
-		redis_.keys_pattern(pattern, &res);
+		acl::redis cmd(&conn);
+		cmd.keys_pattern(pattern, &res);
 
 		printf("addr: %s, pattern: %s, total: %d\r\n",
 			addr, pattern, (int) res.size());
 
-		printf("Do you want to delete them all in %s [y/n]?", addr);
+		if (res.empty())
+			continue;
+
+		printf("Do you want to delete them all in %s ? [y/n]: ", addr);
 		fflush(stdout);
 
 		if (in.gets(buf) && buf.equal("y", false))
@@ -229,19 +250,19 @@ void redis_commands::pattern_remove(const std::vector<acl::string>& tokens)
 
 int redis_commands::remove(const std::vector<acl::string>& keys)
 {
-	redis_.set_cluster(&conns_, 0);
+	acl::redis cmd(&conns_);
 
 	int  deleted = 0, error = 0, notfound = 0;
 
 	for (std::vector<acl::string>::const_iterator cit = keys.begin();
 		cit != keys.end(); ++cit)
 	{
-		redis_.clear(false);
-		int ret = redis_.del_one((*cit).c_str());
+		cmd.clear(false);
+		int ret = cmd.del_one((*cit).c_str());
 		if (ret < 0)
 		{
 			printf("del_one error: %s, key: %s\r\n",
-				redis_.result_error(), (*cit).c_str());
+				cmd.result_error(), (*cit).c_str());
 			error++;
 		}
 		else if (ret == 0)
@@ -259,4 +280,55 @@ int redis_commands::remove(const std::vector<acl::string>& keys)
 	printf("Remove over, deleted: %d, error: %d, not found: %d\r\n",
 		deleted, error, notfound);
 	return deleted;
+}
+
+void redis_commands::check_type(const std::vector<acl::string>& tokens)
+{
+	acl::redis cmd(&conns_);
+	std::vector<acl::string>::const_iterator cit = tokens.begin();
+	++cit;
+	for (; cit != tokens.end(); ++cit)
+	{
+		cmd.clear(false);
+		const char* key = (*cit).c_str();
+		acl::redis_key_t type = cmd.type(key);
+		switch (type)
+		{
+		case acl::REDIS_KEY_NONE:
+			printf("%s: NONE\r\n", key);
+			break;
+		case acl::REDIS_KEY_STRING:
+			printf("%s: STRING\r\n", key);
+			break;
+		case acl::REDIS_KEY_HASH:
+			printf("%s: HASH\r\n", key);
+			break;
+		case acl::REDIS_KEY_LIST:
+			printf("%s: LIST\r\n", key);
+			break;
+		case acl::REDIS_KEY_SET:
+			printf("%s: SET\r\n", key);
+			break;
+		case acl::REDIS_KEY_ZSET:
+			printf("%s: ZSET\r\n", key);
+			break;
+		default:
+			printf("%s: UNKNOWN\r\n", key);
+			break;
+		}
+	}
+}
+
+void redis_commands::check_ttl(const std::vector<acl::string>& tokens)
+{
+	acl::redis cmd(&conns_);
+	std::vector<acl::string>::const_iterator cit = tokens.begin();
+	++cit;
+	for (; cit != tokens.end(); ++cit)
+	{
+		cmd.clear(false);
+		const char* key = (*cit).c_str();
+		int ttl = cmd.ttl(key);
+		printf("%s: %d seconds\r\n", key, ttl);
+	}
 }

@@ -18,8 +18,9 @@ private:
 	acl::redis_client conn_;
 	acl::redis redis_;
 
-	void help(void);
 	const std::map<acl::string, acl::redis_node*>* get_masters(void);
+	void help(void);
+	void show_date(void);
 
 	void get_keys(const std::vector<acl::string>& tokens);
 	int get_keys(const char* addr, const char* pattern);
@@ -28,4 +29,7 @@ private:
 
 	void pattern_remove(const std::vector<acl::string>& tokens);
 	int remove(const std::vector<acl::string>& keys);
+
+	void check_type(const std::vector<acl::string>& tokens);
+	void check_ttl(const std::vector<acl::string>& tokens);
 };
