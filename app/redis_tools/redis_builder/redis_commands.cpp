@@ -15,6 +15,7 @@ redis_commands::redis_commands(const char* addr, const char* passwd,
 		passwd_ = passwd;
 		conn_.set_password(passwd);
 		conns_.set_password("default", passwd);
+		conns_.set_all_slot(addr, 0);
 	}
 }
 
