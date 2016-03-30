@@ -9,10 +9,12 @@ redis_commands::redis_commands(const char* addr, const char* passwd,
 	, conn_(addr, conn_timeout, rw_timeout)
 	, redis_(&conn_)
 {
+	conns_.set(addr_, conn_timeout_, rw_timeout_);
 	if (passwd && *passwd)
 	{
 		passwd_ = passwd;
 		conn_.set_password(passwd);
+		conns_.set_password("default", passwd);
 	}
 }
 
@@ -139,15 +141,15 @@ void redis_commands::hgetall(const std::vector<acl::string>& tokens)
 	}
 
 	const char* key = tokens[1].c_str();
-	acl::redis_client_cluster conns;
-	conns.set(addr_, conn_timeout_, rw_timeout_);
-	acl::redis cmd(&conns);
+	redis_.clear(false);
+	redis_.set_cluster(&conns_, 0);
+
 	std::map<acl::string, acl::string> res;
 
-	if (cmd.hgetall(key, res) == false)
+	if (redis_.hgetall(key, res) == false)
 	{
 		printf("hgetall error: %s, key: %s\r\n",
-			cmd.result_error(), key);
+			redis_.result_error(), key);
 		return;
 	}
 

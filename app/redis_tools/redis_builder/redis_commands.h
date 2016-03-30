@@ -14,6 +14,7 @@ private:
 	acl::string passwd_;
 	int conn_timeout_;
 	int rw_timeout_;
+	acl::redis_client_cluster conns_;
 	acl::redis_client conn_;
 	acl::redis redis_;
 
