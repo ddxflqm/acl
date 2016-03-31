@@ -165,28 +165,30 @@ int redis_commands::get_keys(const char* addr, const char* pattern)
 
 void redis_commands::hgetall(const std::vector<acl::string>& tokens)
 {
-	if (tokens.size() < 2)
+	std::vector<acl::string>::const_iterator cit = tokens.begin();
+	++cit;
+	
+	for (; cit != tokens.end(); ++cit)
 	{
-		printf("> usage: hgetall key\r\n");
-		return;
-	}
+		const char* key = (*cit).c_str();
+		std::map<acl::string, acl::string> res;
+		acl::redis cmd(&conns_);
 
-	const char* key = tokens[1].c_str();
-	std::map<acl::string, acl::string> res;
-	acl::redis cmd(&conns_);
+		if (cmd.hgetall(key, res) == false)
+		{
+			printf("hgetall error: %s, key: %s\r\n",
+				cmd.result_error(), key);
+			return;
+		}
 
-	if (cmd.hgetall(key, res) == false)
-	{
-		printf("hgetall error: %s, key: %s\r\n",
-			cmd.result_error(), key);
-		return;
-	}
-
-	printf("key: %s\r\n", key);
-	for (std::map<acl::string, acl::string>::const_iterator cit
-		= res.begin(); cit != res.end(); ++cit)
-	{
-		printf("%s: %s\r\n", cit->first.c_str(), cit->second.c_str());
+		printf("key: %s\r\n", key);
+		for (std::map<acl::string, acl::string>::const_iterator cit2
+			= res.begin(); cit2 != res.end(); ++cit2)
+		{
+			printf("%s: %s\r\n", cit2->first.c_str(),
+				cit2->second.c_str());
+		}
+		printf("-----------------------------------------------\r\n");
 	}
 }
 
