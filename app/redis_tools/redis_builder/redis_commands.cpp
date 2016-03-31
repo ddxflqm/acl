@@ -7,7 +7,6 @@ redis_commands::redis_commands(const char* addr, const char* passwd,
 	, conn_timeout_(conn_timeout)
 	, rw_timeout_(rw_timeout)
 	, conn_(addr, conn_timeout, rw_timeout)
-	, redis_(&conn_)
 {
 	conns_.set(addr_, conn_timeout_, rw_timeout_);
 	conns_.set_all_slot(addr, 0);
@@ -33,11 +32,11 @@ void redis_commands::help(void)
 	printf("> ttl parameter ...\r\n");
 }
 
-const std::map<acl::string, acl::redis_node*>* redis_commands::get_masters(void)
+const std::map<acl::string, acl::redis_node*>* redis_commands::get_masters(
+	acl::redis& redis)
 {
-	redis_.clear(false);
 	const std::map<acl::string, acl::redis_node*>* masters =
-		redis_.cluster_nodes();
+		redis.cluster_nodes();
 	if (masters == NULL)
 		printf("masters NULL\r\n");
 	return masters;
@@ -104,7 +103,9 @@ void redis_commands::get_keys(const std::vector<acl::string>& tokens)
 		return;
 	}
 
-	const std::map<acl::string, acl::redis_node*>* masters = get_masters();
+	acl::redis redis(&conns_);
+	const std::map<acl::string, acl::redis_node*>* masters =
+		get_masters(redis);
 	if (masters == NULL)
 	{
 		printf("no masters!\r\n");
@@ -135,10 +136,8 @@ int redis_commands::get_keys(const char* addr, const char* pattern)
 		conn.set_password(passwd_);
 
 	std::vector<acl::string> res;
-	//acl::redis_key redis(&conn);
-	redis_.clear(false);
-	redis_.set_client(&conn);
-	if (redis_.keys_pattern(pattern, &res) <= 0)
+	acl::redis_key redis(&conn);
+	if (redis.keys_pattern(pattern, &res) <= 0)
 		return 0;
 
 	if (res.size() >= 40)
@@ -201,7 +200,9 @@ void redis_commands::pattern_remove(const std::vector<acl::string>& tokens)
 
 	const char* pattern = tokens[1].c_str();
 
-	const std::map<acl::string, acl::redis_node*>* masters = get_masters();
+	acl::redis redis(&conns_);
+	const std::map<acl::string, acl::redis_node*>* masters =
+		get_masters(redis);
 	if (masters == NULL)
 	{
 		printf("no masters!\r\n");
@@ -228,8 +229,8 @@ void redis_commands::pattern_remove(const std::vector<acl::string>& tokens)
 		if (!passwd_.empty())
 			conn.set_password(passwd_);
 
-		acl::redis cmd(&conn);
-		cmd.keys_pattern(pattern, &res);
+		redis.clear(false);
+		redis.keys_pattern(pattern, &res);
 
 		printf("addr: %s, pattern: %s, total: %d\r\n",
 			addr, pattern, (int) res.size());

@@ -16,9 +16,8 @@ private:
 	int rw_timeout_;
 	acl::redis_client_cluster conns_;
 	acl::redis_client conn_;
-	acl::redis redis_;
 
-	const std::map<acl::string, acl::redis_node*>* get_masters(void);
+	const std::map<acl::string, acl::redis_node*>* get_masters(acl::redis&);
 	void help(void);
 	void show_date(void);
 
