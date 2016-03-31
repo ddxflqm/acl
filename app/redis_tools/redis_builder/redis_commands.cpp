@@ -77,7 +77,7 @@ void redis_commands::run(void)
 			get_keys(tokens);
 		else if (cmd == "hgetall")
 			hgetall(tokens);
-		else if (cmd == "remove")
+		else if (cmd == "remove" || cmd == "rm")
 			pattern_remove(tokens);
 		else if (cmd == "type")
 			check_type(tokens);
@@ -135,8 +135,10 @@ int redis_commands::get_keys(const char* addr, const char* pattern)
 		conn.set_password(passwd_);
 
 	std::vector<acl::string> res;
-	acl::redis_key cmd(&conn);
-	if (cmd.keys_pattern(pattern, &res) <= 0)
+	//acl::redis_key redis(&conn);
+	redis_.clear(false);
+	redis_.set_client(&conn);
+	if (redis_.keys_pattern(pattern, &res) <= 0)
 		return 0;
 
 	if (res.size() >= 40)
