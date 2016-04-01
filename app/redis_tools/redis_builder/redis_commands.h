@@ -14,11 +14,13 @@ private:
 	acl::string passwd_;
 	int conn_timeout_;
 	int rw_timeout_;
-	acl::redis_client_cluster conns_;
-	acl::redis_client conn_;
+	acl::redis_client_cluster* conns_;
 
+	void create_cluster();
 	const std::map<acl::string, acl::redis_node*>* get_masters(acl::redis&);
 	void help(void);
+	void set_server(const std::vector<acl::string>& tokens);
+	void show_nodes(void);
 	void show_date(void);
 
 	void get_keys(const std::vector<acl::string>& tokens);
@@ -44,4 +46,6 @@ private:
 	void check_type(const std::vector<acl::string>& tokens);
 	void check_ttl(const std::vector<acl::string>& tokens);
 	void get_dbsize(const std::vector<acl::string>& tokens);
+	void request(const std::vector<acl::string>& tokens);
+	void show_result(const acl::redis_result& result);
 };
