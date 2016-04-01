@@ -22,13 +22,26 @@ private:
 	void show_date(void);
 
 	void get_keys(const std::vector<acl::string>& tokens);
-	int get_keys(const char* addr, const char* pattern);
+	int get_keys(const char* addr, const char* pattern, int max);
 
-	void hgetall(const std::vector<acl::string>& tokens);
+	void getn(const std::vector<acl::string>& tokens);
+	void get(const std::vector<acl::string>& tokens);
+	void get(const char* key, int max);
+	void hash_get(const std::vector<acl::string>& tokens);
+	void hash_get(const char* key, size_t max);
+	void string_get(const std::vector<acl::string>& tokens);
+	void string_get(const char* key);
+	void list_get(const std::vector<acl::string>& tokens);
+	void list_get(const char* key, size_t max);
+	void set_get(const std::vector<acl::string>& tokens);
+	void set_get(const char* key, size_t max);
+	void zset_get(const std::vector<acl::string>& tokens);
+	void zset_get(const char* key, size_t max);
 
 	void pattern_remove(const std::vector<acl::string>& tokens);
 	int remove(const std::vector<acl::string>& keys);
 
 	void check_type(const std::vector<acl::string>& tokens);
 	void check_ttl(const std::vector<acl::string>& tokens);
+	void get_dbsize(const std::vector<acl::string>& tokens);
 };
