@@ -77,7 +77,7 @@ int redis_monitor::check(const std::map<acl::string, acl::string>& info,
 	}
 }
 
-int redis_monitor::check(const std::map<acl::string, acl::string>& info,
+long long redis_monitor::check(const std::map<acl::string, acl::string>& info,
 	const char* name, std::vector<long long>& res)
 {
 	std::map<acl::string, acl::string>::const_iterator cit
@@ -248,6 +248,6 @@ void redis_monitor::show_status(std::vector<acl::redis_client*>& conns)
 #else
 	printf("total masters: %d, total tps: %d, total clients: %d,"
 		" total keys: %d, total memory: %.2f %s\r\n",
-		(int) all_tps.size(), n, all_client, total_keys, msize, units);
+		(int) size, all_tps, all_client, all_keys, msize, units);
 #endif
 }

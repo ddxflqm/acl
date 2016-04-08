@@ -18,7 +18,7 @@ private:
 	void show_status(std::vector<acl::redis_client*>& conns);
 	int check(const std::map<acl::string, acl::string>& info,
 		const char* name, std::vector<int>& res);
-	int check(const std::map<acl::string, acl::string>& info,
+	long long check(const std::map<acl::string, acl::string>& info,
 		const char* name, std::vector<long long>& res);
 	int check_keys(const char* name, const char* value);
 	int check_keys(const std::map<acl::string, acl::string>& info,
