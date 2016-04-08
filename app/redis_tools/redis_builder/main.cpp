@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "redis_status.h"
+#include "redis_monitor.h"
 #include "redis_util.h"
 #include "redis_builder.h"
 #include "redis_reshard.h"
@@ -213,6 +214,16 @@ int main(int argc, char* argv[])
 		{
 			redis_reshard reshard(addr, passwd);
 			reshard.run();
+		}
+	}
+	else if (cmd == "status")
+	{
+		if (addr.empty())
+			printf("usage: %s -s ip:port -a status\r\n", argv[0]);
+		else
+		{
+			redis_monitor monitor(addr, conn_timeout, rw_timeout, passwd);
+			monitor.status();
 		}
 	}
 	else if (cmd == "run" || cmd.empty())

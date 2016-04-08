@@ -160,3 +160,68 @@ void redis_util::sort(const std::map<acl::string, acl::redis_node*>& in,
 			cit_node->second->push_back(cit->second);
 	}
 }
+
+const std::map<acl::string, acl::redis_node*>* redis_util::get_masters(
+	acl::redis& redis)
+{
+	const std::map<acl::string, acl::redis_node*>* masters =
+		get_masters2(redis);
+	if (masters != NULL)
+		return masters;
+
+	acl::redis_client* conn = redis.get_client();
+	if (conn == NULL)
+		return NULL;
+
+	const char* addr = conn->get_addr();
+	if (addr == NULL || *addr == 0)
+	{
+		printf("get_addr NULL\r\n");
+		return NULL;
+	}
+
+	static std::map<acl::string, acl::redis_node*> single_master_;
+
+	for (std::map<acl::string, acl::redis_node*>::iterator it
+		= single_master_.begin(); it != single_master_.end(); ++it)
+	{
+		delete it->second;
+	}
+	single_master_.clear();
+
+	acl::redis_node* node = new acl::redis_node;
+	node->set_addr(addr);
+	single_master_[addr] = node;
+	return &single_master_;
+}
+
+const std::map<acl::string, acl::redis_node*>* redis_util::get_masters2(
+	acl::redis& redis)
+{
+	std::map<acl::string, acl::string> res;
+	if (redis.info(res) <= 0)
+	{
+		printf("redis.info error: %s\r\n", redis.result_error());
+		return NULL;
+	}
+
+	const char* name = "cluster_enabled";
+	std::map<acl::string, acl::string>::const_iterator cit = res.find(name);
+	if (cit == res.end())
+	{
+		printf("no cluster_enabled\r\n");
+		return NULL;
+	}
+	if (!cit->second.equal("1"))
+	{
+		printf("cluster_enabled: %s\r\n", cit->second.c_str());
+		return NULL;
+	}
+
+	const std::map<acl::string, acl::redis_node*>* masters =
+		redis.cluster_nodes();
+	if (masters == NULL)
+		printf("masters NULL\r\n");
+
+	return masters;
+}

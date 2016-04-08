@@ -1,4 +1,5 @@
 #pragma once
+#include <map>
 
 class redis_util
 {
@@ -32,4 +33,12 @@ public:
 	// free vector holding redis_nodes
 	static void clear_nodes_container(
 		std::map<acl::string, std::vector<acl::redis_node*>* >& nodes);
+
+	// get all the masters of cluster
+	static const std::map<acl::string, acl::redis_node*>*
+		get_masters(acl::redis&);
+
+private:
+	static const std::map<acl::string, acl::redis_node*>*
+		get_masters2(acl::redis&);
 };

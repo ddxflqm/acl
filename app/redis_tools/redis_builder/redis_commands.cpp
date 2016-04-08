@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "redis_util.h"
 #include "redis_status.h"
 #include "redis_commands.h"
 
@@ -81,36 +82,34 @@ void redis_commands::create_cluster(void)
 
 void redis_commands::help(void)
 {
+#ifdef ACL_UNIX
+	printf("> \033[1;33;40mkeys\033[0m"
+		" \033[1;36;40mpattern limit\033[0m\r\n");
+	printf("> \033[1;33;40mget\033[0m"
+		" \033[1;36;40m[:limit] parameter ...\033[0m\r\n");
+	printf("> \033[1;33;40mgetn\033[0m"
+		" \033[1;36;40mparameter limit\033[0m\r\n");
+	printf("> \033[1;33;40mremove\033[0m"
+		" \033[1;36;40mpattern\033[0m\r\n");
+	printf("> \033[1;33;40mtype\033[0m"
+		" \033[1;36;40mparameter ...\033[0m\r\n");
+	printf("> \033[1;33;40mttl\033[0m"
+		" \033[1;36;40mparameter ...\033[0m\r\n");
+	printf("> \033[1;33;40mserver\033[0m"
+		" \033[1;36;40mredis_addr\033[0m\r\n");
+	printf("> \033[1;33;40mdbsize\033[0m\r\n");
+	printf("> \033[1;33;40mnodes\033[0m\r\n");
+#else
 	printf("> keys pattern limit\r\n");
 	printf("> get [:limit] parameter ...\r\n");
 	printf("> getn parameter limit\r\n");
 	printf("> remove pattern\r\n");
 	printf("> type parameter ...\r\n");
 	printf("> ttl parameter ...\r\n");
-	printf("> dbsize\r\n");
 	printf("> server redis_addr\r\n");
+	printf("> dbsize\r\n");
 	printf("> nodes\r\n");
-}
-
-const std::map<acl::string, acl::redis_node*>* redis_commands::get_masters(
-	acl::redis& redis)
-{
-	std::map<acl::string, acl::string> res;
-	if (redis.info(res) <= 0)
-		return NULL;
-
-	const char* name = "cluster_enabled";
-	std::map<acl::string, acl::string>::const_iterator cit = res.find(name);
-	if (cit == res.end())
-		return NULL;
-	if (!cit->second.equal("1"))
-		return NULL;
-
-	const std::map<acl::string, acl::redis_node*>* masters =
-		redis.cluster_nodes();
-	if (masters == NULL)
-		printf("masters NULL\r\n");
-	return masters;
+#endif
 }
 
 void redis_commands::run(void)
@@ -159,6 +158,13 @@ void redis_commands::run(void)
 			check_ttl(tokens);
 		else if (cmd == "dbsize")
 			get_dbsize(tokens);
+#ifdef HAS_READLINE
+		else if (cmd == "clear" || cmd == "cl")
+		{
+			rl_clear_screen(0, 0);
+			printf("\r\n");
+		}
+#endif
 		else
 			request(tokens);
 	}
@@ -231,7 +237,7 @@ void redis_commands::get_keys(const std::vector<acl::string>& tokens)
 
 	acl::redis redis(conns_);
 	const std::map<acl::string, acl::redis_node*>* masters =
-		get_masters(redis);
+		redis_util::get_masters(redis);
 
 	int  n = 0;
 	if (masters != NULL)
@@ -626,7 +632,7 @@ void redis_commands::pattern_remove(const std::vector<acl::string>& tokens)
 
 	acl::redis redis(conns_);
 	const std::map<acl::string, acl::redis_node*>* masters =
-		get_masters(redis);
+		redis_util::get_masters(redis);
 
 	int deleted = 0;
 
@@ -772,7 +778,7 @@ void redis_commands::get_dbsize(const std::vector<acl::string>&)
 {
 	acl::redis redis(conns_);
 	const std::map<acl::string, acl::redis_node*>* masters =
-		get_masters(redis);
+		redis_util::get_masters(redis);
 
 	int total = 0;
 
