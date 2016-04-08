@@ -196,11 +196,11 @@ void redis_monitor::show_status(std::vector<acl::redis_client*>& conns)
 		printf("\033[1;32;40mredis:\033[0m"
 			" \033[1;36;40m%s\033[0m,"
 			" \033[1;33;40mtps:\033[0m"
-			" \033[1;36;40m%d\033[0m"
+			" \033[1;36;40m%d\033[0m,"
 			" \033[1;33;40mclients:\033[0m"
-			" \033[1;36;40m%d\033[0m"
+			" \033[1;36;40m%d\033[0m,"
 			" \033[1;33;40mkeys:\033[0m"
-			" \033[1;36;40m%d\033[0m"
+			" \033[1;36;40m%d\033[0m,"
 			" \033[1;33;40mmemory:\033[0m"
 			" \033[1;36;40m%.2f %s\033[0m\r\n",
 			addrs[i].c_str(), tpses[i], clients[i], keys[i],
@@ -237,11 +237,11 @@ void redis_monitor::show_status(std::vector<acl::redis_client*>& conns)
 	printf("\033[1;34;40mtotal masters:\033[0m"
 		" \033[1;36;40m%d\033[0m,"
 		" \033[1;34;40mtotal tps:\033[0m"
-		" \033[1;36;40m%d\033[0m"
+		" \033[1;36;40m%d\033[0m,"
 		" \033[1;34;40mtotal client:\033[0m"
-		" \033[1;36;40m%d\033[0m"
+		" \033[1;36;40m%d\033[0m,"
 		" \033[1;34;40mtotal keys:\033[0m"
-		" \033[1;36;40m%d\033[0m"
+		" \033[1;36;40m%d\033[0m,"
 		" \033[1;34;40mtotal memory:\033[0m"
 		" \033[1;36;40m%.2f %s\033[0m\r\n",
 		(int) size, all_tps, all_client, all_keys, msize, units);
