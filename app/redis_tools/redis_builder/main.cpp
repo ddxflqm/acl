@@ -5,6 +5,7 @@
 #include "redis_builder.h"
 #include "redis_reshard.h"
 #include "redis_commands.h"
+#include "redis_cmdump.h"
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -34,13 +35,14 @@ static void usage(const char* procname)
 {
 	printf("usage: %s -h[help]\r\n"
 		" -s redis_addr[ip:port]\r\n"
-		" -a cmd[nodes|slots|create|add_node|del_node|node_id|reshard|hash_slot|run]\r\n"
+		" -a cmd[nodes|slots|create|add_node|del_node|node_id|reshard|hash_slot|status|dump|run]\r\n"
 		" -p passwd\r\n"
 		" -N new_node[ip:port]\r\n"
 		" -S [add node as slave]\r\n"
 		" -r replicas[default 0]\r\n"
 		" -d [if just display the result for create command]\r\n"
 		" -k key\r\n"
+		" -T dump_to_file\r\n"
 		" -f configure_file\r\n",
 		procname);
 
@@ -79,8 +81,9 @@ int main(int argc, char* argv[])
 	size_t replicas = 0;
 	bool add_slave = false, just_display = false;
 	acl::string addr, cmd, conf, new_addr, node_id, key, passwd;
+	acl::string filepath("dump.txt");
 
-	while ((ch = getopt(argc, argv, "hs:a:f:N:SI:r:dk:p:")) > 0)
+	while ((ch = getopt(argc, argv, "hs:a:f:N:SI:r:dk:p:T:")) > 0)
 	{
 		switch (ch)
 		{
@@ -116,6 +119,9 @@ int main(int argc, char* argv[])
 			break;
 		case 'p':
 			passwd = optarg;
+			break;
+		case 'T':
+			filepath = optarg;
 			break;
 		default:
 			break;
@@ -224,6 +230,16 @@ int main(int argc, char* argv[])
 		{
 			redis_monitor monitor(addr, conn_timeout, rw_timeout, passwd);
 			monitor.status();
+		}
+	}
+	else if (cmd == "dump")
+	{
+		if (addr.empty())
+			printf("usage: %s -s ip:port -a monitor -f dump.txt\r\n", argv[0]);
+		else
+		{
+			redis_cmdump dump(addr, conn_timeout, rw_timeout, passwd);
+			dump.saveto(filepath);
 		}
 	}
 	else if (cmd == "run" || cmd.empty())
