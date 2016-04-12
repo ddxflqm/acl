@@ -9,7 +9,12 @@ class qitem : public acl::thread_qitem
 public:
 	qitem(const acl::string& addr, const acl::string& msg)
 	{
-		msg_.format("%s--->%s\r\n", addr.c_str(), msg.c_str());
+		time_t now = time(NULL);
+		char buf[128];
+		acl::rfc822 rfc;
+		rfc.mkdate_cst(now, buf, sizeof(buf));
+
+		msg_.format("%s: %s--%s\r\n", buf, addr.c_str(), msg.c_str());
 	}
 
 	~qitem(void)
@@ -90,10 +95,11 @@ private:
 //////////////////////////////////////////////////////////////////////////////
 
 redis_cmdump::redis_cmdump(const char* addr, int conn_timeout, int rw_timeout,
-	const char* passwd)
+	const char* passwd, bool use_slave)
 	: addr_(addr)
 	, conn_timeout_(conn_timeout)
 	, rw_timeout_(rw_timeout)
+	, use_slave_(use_slave)
 {
 	if (passwd && *passwd)
 		passwd_ = passwd;
@@ -115,10 +121,23 @@ void redis_cmdump::get_masters(std::vector<acl::string>& addrs)
 		return;
 	}
 
+	const std::vector<acl::redis_node*>* slaves;
+	const char* addr;
+
 	for (std::map<acl::string, acl::redis_node*>::const_iterator cit
 		= masters->begin(); cit != masters->end(); ++cit)
 	{
-		const char* addr = cit->second->get_addr();
+		// 优先使用从节点
+		if (use_slave_ && (slaves = cit->second->get_slaves()) != NULL
+			&& !slaves->empty())
+		{
+			addr = (*slaves)[0]->get_addr();
+			if (addr == NULL || *addr == 0)
+				addr = cit->second->get_addr();
+		}
+		else
+			addr = cit->second->get_addr();
+
 		if (addr == NULL || *addr == 0)
 		{
 			printf("addr null\r\n");
@@ -129,7 +148,7 @@ void redis_cmdump::get_masters(std::vector<acl::string>& addrs)
 	}
 }
 
-void redis_cmdump::saveto(const char* filepath)
+void redis_cmdump::saveto(const char* filepath, bool dump_all)
 {
 	if (filepath == NULL || *filepath == 0)
 	{
@@ -138,12 +157,17 @@ void redis_cmdump::saveto(const char* filepath)
 	}
 
 	std::vector<acl::string> addrs;
-	get_masters(addrs);
-	if (addrs.empty())
+	if (dump_all)
 	{
-		printf("no master available!\r\n");
-		return;
+		get_masters(addrs);
+		if (addrs.empty())
+		{
+			printf("no master available!\r\n");
+			return;
+		}
 	}
+	else
+		addrs.push_back(addr_);
 
 	acl::ofstream out;
 	if (out.open_append(filepath) == false)

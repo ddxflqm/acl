@@ -43,6 +43,8 @@ static void usage(const char* procname)
 		" -d [if just display the result for create command]\r\n"
 		" -k key\r\n"
 		" -T dump_to_file\r\n"
+		" -A [dump_all_masters_cmds, default: no]\r\n"
+		" -M [use masters when dump cmds]\r\n"
 		" -f configure_file\r\n",
 		procname);
 
@@ -66,9 +68,12 @@ static void usage(const char* procname)
 		" %s -s 127.0.0.1:6379 -a node_id\r\n"
 		" %s -s 127.0.0.1:6379 -a reshard\r\n"
 		" %s -a hash_slot -k key\r\n"
+		" %s -s 127.0.0.1:6379 -a status\r\n"
+		" %s -s 127.0.0.1:6379 -a dump -f dump.txt -A all -M\r\n"
 		" %s -s 127.0.0.1:6379 -a add_node -N 127.0.0.1:6380 -S\r\n",
 		procname, procname, procname, procname, procname, procname,
-		procname, procname, procname, procname, procname);
+		procname, procname, procname, procname, procname, procname,
+		procname);
 }
 
 int main(int argc, char* argv[])
@@ -81,9 +86,10 @@ int main(int argc, char* argv[])
 	size_t replicas = 0;
 	bool add_slave = false, just_display = false;
 	acl::string addr, cmd, conf, new_addr, node_id, key, passwd;
+	bool dump_all = false, use_master = false;
 	acl::string filepath("dump.txt");
 
-	while ((ch = getopt(argc, argv, "hs:a:f:N:SI:r:dk:p:T:")) > 0)
+	while ((ch = getopt(argc, argv, "hs:a:f:N:SI:r:dk:p:T:AM")) > 0)
 	{
 		switch (ch)
 		{
@@ -122,6 +128,12 @@ int main(int argc, char* argv[])
 			break;
 		case 'T':
 			filepath = optarg;
+			break;
+		case 'A':
+			dump_all = true;
+			break;
+		case 'M':
+			use_master = true;
 			break;
 		default:
 			break;
@@ -238,8 +250,9 @@ int main(int argc, char* argv[])
 			printf("usage: %s -s ip:port -a monitor -f dump.txt\r\n", argv[0]);
 		else
 		{
-			redis_cmdump dump(addr, conn_timeout, rw_timeout, passwd);
-			dump.saveto(filepath);
+			redis_cmdump dump(addr, conn_timeout, rw_timeout,
+				passwd, !use_master);
+			dump.saveto(filepath, dump_all);
 		}
 	}
 	else if (cmd == "run" || cmd.empty())
