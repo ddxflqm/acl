@@ -44,7 +44,7 @@ static void usage(const char* procname)
 		" -k key\r\n"
 		" -T dump_to_file\r\n"
 		" -A [dump_all_masters_cmds, default: no]\r\n"
-		" -M [use masters when dump cmds]\r\n"
+		" -M [prefer using masters]\r\n"
 		" -f configure_file\r\n",
 		procname);
 
@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
 	size_t replicas = 0;
 	bool add_slave = false, just_display = false;
 	acl::string addr, cmd, conf, new_addr, node_id, key, passwd;
-	bool dump_all = false, use_master = false;
+	bool dump_all = false, prefer_master = false;
 	acl::string filepath("dump.txt");
 
 	while ((ch = getopt(argc, argv, "hs:a:f:N:SI:r:dk:p:T:AM")) > 0)
@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
 			dump_all = true;
 			break;
 		case 'M':
-			use_master = true;
+			prefer_master = true;
 			break;
 		default:
 			break;
@@ -240,7 +240,8 @@ int main(int argc, char* argv[])
 			printf("usage: %s -s ip:port -a status\r\n", argv[0]);
 		else
 		{
-			redis_monitor monitor(addr, conn_timeout, rw_timeout, passwd);
+			redis_monitor monitor(addr, conn_timeout, rw_timeout,
+				passwd, prefer_master);
 			monitor.status();
 		}
 	}
@@ -251,13 +252,14 @@ int main(int argc, char* argv[])
 		else
 		{
 			redis_cmdump dump(addr, conn_timeout, rw_timeout,
-				passwd, !use_master);
+				passwd, prefer_master);
 			dump.saveto(filepath, dump_all);
 		}
 	}
 	else if (cmd == "run" || cmd.empty())
 	{
-		redis_commands cmds(addr, passwd, conn_timeout, rw_timeout);
+		redis_commands cmds(addr, passwd, conn_timeout,
+			rw_timeout, prefer_master);
 		cmds.run();
 	}
 #ifdef	HAS_READLINE

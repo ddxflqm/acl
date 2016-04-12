@@ -3,13 +3,14 @@
 #include "redis_monitor.h"
 
 redis_monitor::redis_monitor(const char* addr, int conn_timeout,
-	int rw_timeout, const char* passwd)
+	int rw_timeout, const char* passwd, bool prefer_master)
 {
 	addr_ = addr;
 	conn_timeout_ = conn_timeout;
 	rw_timeout_ = rw_timeout;
 	if (passwd && *passwd)
 		passwd_ = passwd;
+	prefer_master_ = prefer_master;
 }
 
 redis_monitor::~redis_monitor(void)
@@ -20,23 +21,24 @@ void redis_monitor::status(void)
 {
 	acl::redis_client client(addr_, conn_timeout_, rw_timeout_);
 	acl::redis redis(&client);
-	const std::map<acl::string, acl::redis_node*>* masters =
-		redis_util::get_masters(redis);
 
-	if (masters == NULL)
+	std::vector<acl::redis_node*> nodes;
+	redis_util::get_nodes(redis, prefer_master_, nodes);
+
+	if (nodes.empty())
 	{
-		printf("masters NULL\r\n");
+		logger_error("no redis nodes available");
 		return;
 	}
 
 	std::vector<acl::redis_client*> conns;
-	for (std::map<acl::string, acl::redis_node*>::const_iterator
-		cit = masters->begin(); cit != masters->end(); ++cit)
+	for (std::vector<acl::redis_node*>::const_iterator
+		cit = nodes.begin(); cit != nodes.end(); ++cit)
 	{
-		const char* addr = cit->second->get_addr();
+		const char* addr = (*cit)->get_addr();
 		if (addr == NULL || *addr == 0)
 		{
-			printf("addr NULL, skip it\r\n");
+			logger_warn("addr NULL, skip it");
 			continue;
 		}
 
@@ -65,7 +67,7 @@ int redis_monitor::check(const std::map<acl::string, acl::string>& info,
 		= info.find(name);
 	if (cit == info.end())
 	{
-		printf("no %s\r\n", name);
+		logger_error("no %s", name);
 		res.push_back(0);
 		return 0;
 	}
@@ -84,7 +86,7 @@ long long redis_monitor::check(const std::map<acl::string, acl::string>& info,
 		= info.find(name);
 	if (cit == info.end())
 	{
-		printf("no %s\r\n", name);
+		logger_error("no %s", name);
 		res.push_back(0);
 		return 0;
 	}
@@ -155,7 +157,7 @@ void redis_monitor::show_status(std::vector<acl::redis_client*>& conns)
 		std::map<acl::string, acl::string> info;
 		if (cmd.info(info) < 0)
 		{
-			printf("cmd info error: %s, addr: %s\r\n",
+			logger_error("cmd info error: %s, addr: %s",
 				cmd.result_error(), (*it)->get_addr());
 			continue;
 		}

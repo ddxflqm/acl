@@ -4,7 +4,7 @@ class redis_monitor
 {
 public:
 	redis_monitor(const char* addr, int conn_timeout, int rw_timeout,
-		const char* passwd);
+		const char* passwd, bool prefer_master);
 	~redis_monitor(void);
 
 	void status(void);
@@ -14,6 +14,7 @@ private:
 	int conn_timeout_;
 	int rw_timeout_;
 	acl::string passwd_;
+	bool prefer_master_;
 
 	void show_status(std::vector<acl::redis_client*>& conns);
 	int check(const std::map<acl::string, acl::string>& info,

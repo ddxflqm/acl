@@ -54,7 +54,7 @@ public:
 		acl::redis redis(&client);
 		if (redis.monitor() == false)
 		{
-			printf("redis monitor error: %s, addr: %s\r\n",
+			logger_error("redis monitor error: %s, addr: %s",
 				redis.result_error(), addr_.c_str());
 			return NULL;
 		}
@@ -64,7 +64,7 @@ public:
 		{
 			if (redis.get_command(buf) == false)
 			{
-				printf("redis get_command error: %s\r\n",
+				logger_error("redis get_command error: %s",
 					redis.result_error());
 				break;
 			}
@@ -81,7 +81,7 @@ public:
 	void stop(void)
 	{
 		stopped_ = true;
-		printf("Thread(%lu) stopping now\r\n", thread_id());
+		logger_error("Thread(%lu) stopping now", thread_id());
 	}
 
 private:
@@ -95,11 +95,11 @@ private:
 //////////////////////////////////////////////////////////////////////////////
 
 redis_cmdump::redis_cmdump(const char* addr, int conn_timeout, int rw_timeout,
-	const char* passwd, bool use_slave)
+	const char* passwd, bool prefer_master)
 	: addr_(addr)
 	, conn_timeout_(conn_timeout)
 	, rw_timeout_(rw_timeout)
-	, use_slave_(use_slave)
+	, prefer_master_(prefer_master)
 {
 	if (passwd && *passwd)
 		passwd_ = passwd;
@@ -109,38 +109,27 @@ redis_cmdump::~redis_cmdump(void)
 {
 }
 
-void redis_cmdump::get_masters(std::vector<acl::string>& addrs)
+void redis_cmdump::get_nodes(std::vector<acl::string>& addrs)
 {
 	acl::redis_client client(addr_, conn_timeout_, rw_timeout_);
 	acl::redis redis(&client);
-	const std::map<acl::string, acl::redis_node*>* masters =
-		redis_util::get_masters(redis);
-	if (masters == NULL)
+
+	std::vector<acl::redis_node*> nodes;
+
+	redis_util::get_nodes(redis, prefer_master_, nodes);
+	if (nodes.empty())
 	{
-		printf("masters NULL!\r\n");
+		logger_error("nodes NULL!");
 		return;
 	}
 
-	const std::vector<acl::redis_node*>* slaves;
-	const char* addr;
-
-	for (std::map<acl::string, acl::redis_node*>::const_iterator cit
-		= masters->begin(); cit != masters->end(); ++cit)
+	for (std::vector<acl::redis_node*>::const_iterator cit
+		= nodes.begin(); cit != nodes.end(); ++cit)
 	{
-		// 优先使用从节点
-		if (use_slave_ && (slaves = cit->second->get_slaves()) != NULL
-			&& !slaves->empty())
-		{
-			addr = (*slaves)[0]->get_addr();
-			if (addr == NULL || *addr == 0)
-				addr = cit->second->get_addr();
-		}
-		else
-			addr = cit->second->get_addr();
-
+		const char* addr = (*cit)->get_addr();
 		if (addr == NULL || *addr == 0)
 		{
-			printf("addr null\r\n");
+			logger_error("addr null");
 			continue;
 		}
 
@@ -152,17 +141,17 @@ void redis_cmdump::saveto(const char* filepath, bool dump_all)
 {
 	if (filepath == NULL || *filepath == 0)
 	{
-		printf("filepath null\r\n");
+		logger_error("filepath null");
 		return;
 	}
 
 	std::vector<acl::string> addrs;
 	if (dump_all)
 	{
-		get_masters(addrs);
+		get_nodes(addrs);
 		if (addrs.empty())
 		{
-			printf("no master available!\r\n");
+			logger_error("no master available!");
 			return;
 		}
 	}
@@ -172,7 +161,7 @@ void redis_cmdump::saveto(const char* filepath, bool dump_all)
 	acl::ofstream out;
 	if (out.open_append(filepath) == false)
 	{
-		printf("open %s error: %s\r\n", filepath, acl::last_serror());
+		logger_error("open %s error: %s", filepath, acl::last_serror());
 		return;
 	}
 
@@ -193,7 +182,7 @@ void redis_cmdump::saveto(const char* filepath, bool dump_all)
 		qitem* item = (qitem*) queue.pop();
 		if (item == NULL)
 		{
-			printf("queue pop error\r\n");
+			logger_error("queue pop error");
 			break;
 		}
 
@@ -206,7 +195,7 @@ void redis_cmdump::saveto(const char* filepath, bool dump_all)
 
 		if (out.write(msg) == -1)
 		{
-			printf("write to %s error %s\r\n", filepath,
+			logger_error("write to %s error %s", filepath,
 				acl::last_serror());
 			delete item;
 			break;

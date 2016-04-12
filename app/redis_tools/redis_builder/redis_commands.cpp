@@ -11,9 +11,10 @@
 #define LIMIT	40
 
 redis_commands::redis_commands(const char* addr, const char* passwd,
-	int conn_timeout, int rw_timeout)
+	int conn_timeout, int rw_timeout, bool prefer_master)
 	: conn_timeout_(conn_timeout)
 	, rw_timeout_(rw_timeout)
+	, prefer_master_(prefer_master)
 {
 	if (passwd && *passwd)
 		passwd_ = passwd;
@@ -236,16 +237,16 @@ void redis_commands::get_keys(const std::vector<acl::string>& tokens)
 		max = 10;
 
 	acl::redis redis(conns_);
-	const std::map<acl::string, acl::redis_node*>* masters =
-		redis_util::get_masters(redis);
+	std::vector<acl::redis_node*> nodes;
+	redis_util::get_nodes(redis, prefer_master_, nodes);
 
 	int  n = 0;
-	if (masters != NULL)
+	if (!nodes.empty())
 	{
-		for (std::map<acl::string, acl::redis_node*>::const_iterator
-			cit = masters->begin(); cit != masters->end(); ++cit)
+		for (std::vector<acl::redis_node*>::const_iterator
+			cit = nodes.begin(); cit != nodes.end(); ++cit)
 		{
-			n += get_keys(cit->second->get_addr(), pattern, max);
+			n += get_keys((*cit)->get_addr(), pattern, max);
 		}
 	}
 	else
@@ -777,17 +778,17 @@ void redis_commands::check_ttl(const std::vector<acl::string>& tokens)
 void redis_commands::get_dbsize(const std::vector<acl::string>&)
 {
 	acl::redis redis(conns_);
-	const std::map<acl::string, acl::redis_node*>* masters =
-		redis_util::get_masters(redis);
+	std::vector<acl::redis_node*> nodes;
+	redis_util::get_nodes(redis, prefer_master_, nodes);
 
 	int total = 0;
 
-	if (masters != NULL)
+	if (!nodes.empty())
 	{
-		for (std::map<acl::string, acl::redis_node*>::const_iterator
-			cit = masters->begin(); cit != masters->end(); ++cit)
+		for (std::vector<acl::redis_node*>::const_iterator
+			cit = nodes.begin(); cit != nodes.end(); ++cit)
 		{
-			const char* addr = cit->second->get_addr();
+			const char* addr = (*cit)->get_addr();
 			if (addr == NULL || *addr == 0)
 			{
 				printf("addr NULL\r\n");

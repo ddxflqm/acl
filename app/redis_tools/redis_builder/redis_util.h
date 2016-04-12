@@ -38,6 +38,10 @@ public:
 	static const std::map<acl::string, acl::redis_node*>*
 		get_masters(acl::redis&);
 
+	// get nodes formed bye one node maybe master or slave of the cluster
+	static void get_nodes(acl::redis& redis, bool prefer_master,
+		std::vector<acl::redis_node*>& nodes);
+
 private:
 	static const std::map<acl::string, acl::redis_node*>*
 		get_masters2(acl::redis&);
