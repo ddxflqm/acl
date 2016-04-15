@@ -10,7 +10,7 @@
 
 #define LIMIT	40
 
-static const REDIS_CMD  __broadcast_cmds[] =
+static const REDIS_CMD  __redis_cmds[] =
 {
 	{ "BGREWRITEAOF", true, false },
 	{ "BGSAVE", true, false },
@@ -74,9 +74,9 @@ void redis_commands::init(const char* cmds_file)
 
 void redis_commands::set_commands(void)
 {
-	for (size_t i = 0; !__broadcast_cmds[i].cmd.empty(); i++)
+	for (size_t i = 0; !__redis_cmds[i].cmd.empty(); i++)
 	{
-		acl::string cmd(__broadcast_cmds[i].cmd);
+		acl::string cmd(__redis_cmds[i].cmd);
 		cmd.upper();
 
 		std::map<acl::string, REDIS_CMD>::const_iterator cit =
@@ -84,7 +84,7 @@ void redis_commands::set_commands(void)
 		if (cit != redis_cmds_.end())
 			continue;
 
-		redis_cmds_[cmd] = __broadcast_cmds[i];
+		redis_cmds_[cmd] = __redis_cmds[i];
 	}
 }
 
