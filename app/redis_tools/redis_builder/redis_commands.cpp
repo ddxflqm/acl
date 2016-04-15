@@ -307,7 +307,6 @@ void redis_commands::run(void)
 		}
 
 		std::vector<acl::string>& tokens = buf.split2(" \t", true);
-
 		acl::string& cmd = tokens[0];
 		cmd.upper();
 
@@ -567,7 +566,7 @@ void redis_commands::hash_get(const char* key, size_t max)
 
 	if (cmd.hgetall(key, res) == false)
 	{
-		printf("hgetall error: %s, key: %s\r\n",
+		printf("hgetall error: %s, key: [%s]\r\n",
 			cmd.result_error(), key);
 		return;
 	}
@@ -579,7 +578,7 @@ void redis_commands::hash_get(const char* key, size_t max)
 	for (std::map<acl::string, acl::string>::const_iterator cit2
 		= res.begin(); cit2 != res.end(); ++cit2)
 	{
-		printf("%s: %s\r\n", cit2->first.c_str(),
+		printf("[%s]: [%s]\r\n", cit2->first.c_str(),
 			cit2->second.c_str());
 		n++;
 		if (max > 0 && n >= max)
@@ -609,11 +608,11 @@ void redis_commands::string_get(const char* key)
 
 	if (cmd.get(key, buf) == false)
 	{
-		printf("get error: %s, key: %s\r\n", cmd.result_error(), key);
+		printf("get error: %s, key: [%s]\r\n", cmd.result_error(), key);
 		return;
 	}
 
-	printf("STRING KEY: %s, VALUE: %s\r\n", key, buf.c_str());
+	printf("STRING KEY: [%s], VALUE: [%s]\r\n", key, buf.c_str());
 }
 
 void redis_commands::list_get(const std::vector<acl::string>& tokens)
@@ -637,7 +636,8 @@ void redis_commands::list_get(const char* key, size_t max)
 	int len = cmd.llen(key), count = len;
 	if (len < 0)
 	{
-		printf("llen error: %s, key: %s\r\n", cmd.result_error(), key);
+		printf("llen error: %s, key: [%s]\r\n",
+			cmd.result_error(), key);
 		return;
 	}
 	if (len > LIMIT)
@@ -654,7 +654,7 @@ void redis_commands::list_get(const char* key, size_t max)
 	if (max > 0 && (size_t) len > max)
 		len = (int) max;
 
-	printf("LIST KEY: %s, COUNT: %d, MAX: %d, SHOW: %d\r\n",
+	printf("LIST KEY: [%s], COUNT: %d, MAX: %d, SHOW: %d\r\n",
 		key, count, (int) max, len);
 
 	for (int i = 0; i < len; i++)
@@ -667,10 +667,10 @@ void redis_commands::list_get(const char* key, size_t max)
 				cmd.result_error(), key, i);
 			return;
 		}
-		printf("%s\r\n", buf.c_str());
+		printf("[%s]\r\n", buf.c_str());
 	}
 
-	printf("LIST KEY: %s, COUNT: %d, MAX: %d, SHOW: %d\r\n",
+	printf("LIST KEY: [%s], COUNT: %d, MAX: %d, SHOW: %d\r\n",
 		key, count, (int) max, len);
 }
 
@@ -711,7 +711,7 @@ void redis_commands::set_get(const char* key, size_t max)
 	if (max > 0 && max > (size_t) len)
 		len = (int) max;
 
-	printf("SET KEY: %s, COUNT: %d\r\n", key, len);
+	printf("SET KEY: [%s], COUNT: %d\r\n", key, len);
 
 	for (int i = 0; i < len; i++)
 	{
@@ -719,14 +719,14 @@ void redis_commands::set_get(const char* key, size_t max)
 		cmd.clear(false);
 		if (cmd.spop(key, buf) == false)
 		{
-			printf("spop error: %s, key: %s, idx: %d\r\n",
+			printf("spop error: %s, key: [%s], idx: %d\r\n",
 				cmd.result_error(), key, i);
 			return;
 		}
-		printf("%s\r\n", buf.c_str());
+		printf("[%s]\r\n", buf.c_str());
 	}
 
-	printf("SET KEY: %s, COUNT: %d, MAX: %d, SHOW: %d\r\n",
+	printf("SET KEY: [%s], COUNT: %d, MAX: %d, SHOW: %d\r\n",
 		key, count, (int) max, len);
 }
 
@@ -750,7 +750,7 @@ void redis_commands::zset_get(const char* key, size_t max)
 	int len = cmd.zcard(key), count = len;
 	if (len < 0)
 	{
-		printf("zcard error: %s, key: %s\r\n", cmd.result_error(), key);
+		printf("zcard error: %s, key: [%s]\r\n", cmd.result_error(), key);
 		return;
 	}
 	if (len > LIMIT)
@@ -768,7 +768,7 @@ void redis_commands::zset_get(const char* key, size_t max)
 		len = (int) max;
 
 	std::vector<acl::string> res;
-	printf("ZSET KEY: %s, COUNT: %d, MAX: %d, SHOW: %d\r\n",
+	printf("ZSET KEY: [%s], COUNT: %d, MAX: %d, SHOW: %d\r\n",
 		key, count, (int) max, len);
 
 	for (int i = 0; i < len; i++)
@@ -779,7 +779,7 @@ void redis_commands::zset_get(const char* key, size_t max)
 		int ret = cmd.zrange(key, i, i + 1, &res);
 		if (ret < 0)
 		{
-			printf("zrange error: %s, key: %s, idx: %d\r\n",
+			printf("zrange error: %s, key: [%s], idx: %d\r\n",
 				cmd.result_error(), key, i);
 			return;
 		}
@@ -790,11 +790,11 @@ void redis_commands::zset_get(const char* key, size_t max)
 		for (std::vector<acl::string>::const_iterator cit
 			= res.begin(); cit != res.end(); ++cit)
 		{
-			printf("%s\r\n", (*cit).c_str());
+			printf("[%s]\r\n", (*cit).c_str());
 		}
 	}
 
-	printf("ZSET KEY: %s, COUNT: %d, MAX: %d, SHOW: %d\r\n",
+	printf("ZSET KEY: [%s], COUNT: %d, MAX: %d, SHOW: %d\r\n",
 		key, count, (int) max, len);
 }
 
@@ -832,7 +832,7 @@ void redis_commands::pattern_remove(const std::vector<acl::string>& tokens)
 	else
 		deleted += pattern_remove(addr_, pattern);
 
-	printf("removed pattern: %s, total: %d\r\n", pattern, deleted);
+	printf("removed pattern: [%s], total: %d\r\n", pattern, deleted);
 }
 
 int redis_commands::pattern_remove(const char* addr, const char* pattern)
@@ -847,7 +847,7 @@ int redis_commands::pattern_remove(const char* addr, const char* pattern)
 	acl::redis redis(conns_);
 	redis.keys_pattern(pattern, &res);
 
-	printf("addr: %s, pattern: %s, total: %d\r\n",
+	printf("addr: %s, pattern: [%s], total: %d\r\n",
 		addr, pattern, (int) res.size());
 
 	if (res.empty())
@@ -880,18 +880,18 @@ int redis_commands::remove(const std::vector<acl::string>& keys)
 		int ret = cmd.del_one((*cit).c_str());
 		if (ret < 0)
 		{
-			printf("del_one error: %s, key: %s\r\n",
+			printf("del_one error: %s, key: [%s]\r\n",
 				cmd.result_error(), (*cit).c_str());
 			error++;
 		}
 		else if (ret == 0)
 		{
-			printf("not exist, key: %s\r\n", (*cit).c_str());
+			printf("not exist, key: [%s]\r\n", (*cit).c_str());
 			notfound++;
 		}
 		else
 		{
-			printf("Delete ok, key: %s\r\n", (*cit).c_str());
+			printf("Delete ok, key: [%s]\r\n", (*cit).c_str());
 			deleted++;
 		}
 	}
@@ -914,25 +914,25 @@ void redis_commands::check_type(const std::vector<acl::string>& tokens)
 		switch (type)
 		{
 		case acl::REDIS_KEY_NONE:
-			printf("%s: NONE\r\n", key);
+			printf("[%s]: NONE\r\n", key);
 			break;
 		case acl::REDIS_KEY_STRING:
-			printf("%s: STRING\r\n", key);
+			printf("[%s]: STRING\r\n", key);
 			break;
 		case acl::REDIS_KEY_HASH:
-			printf("%s: HASH\r\n", key);
+			printf("[%s]: HASH\r\n", key);
 			break;
 		case acl::REDIS_KEY_LIST:
-			printf("%s: LIST\r\n", key);
+			printf("[%s]: LIST\r\n", key);
 			break;
 		case acl::REDIS_KEY_SET:
-			printf("%s: SET\r\n", key);
+			printf("[%s]: SET\r\n", key);
 			break;
 		case acl::REDIS_KEY_ZSET:
-			printf("%s: ZSET\r\n", key);
+			printf("[%s]: ZSET\r\n", key);
 			break;
 		default:
-			printf("%s: UNKNOWN\r\n", key);
+			printf("[%s]: UNKNOWN\r\n", key);
 			break;
 		}
 	}
@@ -948,7 +948,7 @@ void redis_commands::check_ttl(const std::vector<acl::string>& tokens)
 		cmd.clear(false);
 		const char* key = (*cit).c_str();
 		int ttl = cmd.ttl(key);
-		printf("%s: %d seconds\r\n", key, ttl);
+		printf("[%s]: %d seconds\r\n", key, ttl);
 	}
 }
 
