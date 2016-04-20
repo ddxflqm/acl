@@ -320,10 +320,6 @@ static void server_exit(void)
 	if (__server_onexit)
 		__server_onexit(__service_ctx);
 
-#ifdef ACL_UNIX
-	acl_master_vars_end();
-#endif
-
 	if (acl_var_threads_procname)
 		acl_myfree(acl_var_threads_procname);
 	if (acl_var_threads_log_file)
@@ -338,6 +334,9 @@ static void server_exit(void)
 			acl_event_free(__event);
 		if (__threads)
 			acl_pthread_pool_destroy(__threads);
+#ifdef ACL_UNIX
+		acl_master_vars_end();
+#endif
 	}
 
 	acl_free_app_conf_str_table(__conf_str_tab);
