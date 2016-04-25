@@ -45,8 +45,7 @@ private:
 	int get_keys(const char* addr, const char* pattern, int max);
 
 	void scan_keys(const std::vector<acl::string>& tokens);
-	int scan(const char* addr, const char* pattern,
-		size_t count, size_t display_count);
+	int scan(const char* addr, const char* pattern, size_t display_count);
 
 	void getn(const std::vector<acl::string>& tokens);
 	void get(const std::vector<acl::string>& tokens);
