@@ -28,6 +28,7 @@ static const REDIS_CMD  __redis_cmds[] =
 	{ "SYNC",		true,	"yes" },
 	{ "TIME",		true,	"yes" },
 	{ "KEYS",		true,	"yes" },
+	{ "SCAN",		true,	"yes" },
 	{ "",			false,	"no" },
 };
 
