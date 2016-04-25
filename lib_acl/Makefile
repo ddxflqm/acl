@@ -262,7 +262,7 @@ OBJS_DEF     = $(INIT_DEF) $(PRIV_DEF) $(STDLIB_DEF) \
 		$(AIO_DEF) $(MSG_DEF) $(THREAD_DEF) \
 		$(SVR_DEF) $(DB_DEF) $(CODE_DEF) \
 		$(MASTER_DEF) $(PROCTL_DEF) $(XML_DEF) \
-		$(JSON_DEF) $(UTEST_DEF) $(FIBER_DST)
+		$(JSON_DEF) $(UTEST_DEF) $(FIBER_DEF)
 
 ###########################################################
 .PHONY = all static shared acl_master clean clean_lib clean_master rebuild
