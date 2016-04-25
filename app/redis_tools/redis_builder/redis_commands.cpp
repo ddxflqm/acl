@@ -518,16 +518,23 @@ void redis_commands::scan_keys(const std::vector<acl::string>& tokens)
 
 	int total = 0;
 	for (std::vector<acl::redis_node*>::const_iterator cit
-		= nodes.begin(); cit != nodes.end(); ++cit)
+		= nodes.begin(); cit != nodes.end();)
 	{
 		int n = scan((*cit)->get_addr(), pattern, display_count);
 		if (n > 0)
 			total += n;
 
+		printf("There are %d keys in %s.", n, (*cit)->get_addr());
+
+		if (++cit == nodes.end())
+		{
+			printf("\r\n");
+			break;
+		}
+
 		acl::string prompt;
-		prompt.format("There are %d keys in %s."
-			" Do you want to continue? [y/n] ",
-			n, (*cit)->get_addr());
+		prompt.format(" Do you want to scan next %s? [y/n] ",
+			(*cit)->get_addr());
 
 		acl::string buf;
 		getline(buf, prompt);
@@ -547,11 +554,11 @@ int redis_commands::scan(const char* addr, const char* pattern,
 		conn.set_password(passwd_);
 	acl::redis redis(&conn);
 
-	size_t count = 100;
+	size_t count = 10000;
 	std::vector<acl::string> res;
 	res.reserve(count);
 
-	int cursor = 0, n = 0;
+	int cursor = 0, n = 0, i = 0;
 	size_t n1 = 0;
 
 	while (true)
@@ -563,6 +570,7 @@ int redis_commands::scan(const char* addr, const char* pattern,
 			break;
 		}
 
+		i++;
 		n += res.size();
 
 		if (display_count > 0 && n1++ < display_count)
@@ -583,7 +591,7 @@ int redis_commands::scan(const char* addr, const char* pattern,
 		redis.clear();
 		res.clear();
 
-		if (n > 0 && n % 100000 == 0)
+		if (i > 0 && i % 10 == 0)
 			acl_doze(100);
 	}
 
