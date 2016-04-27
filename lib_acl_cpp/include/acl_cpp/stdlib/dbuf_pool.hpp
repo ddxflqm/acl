@@ -216,7 +216,7 @@ public:
 	 *  接管，如果为空，则本构造函数内部将会自动创建一个 dbuf_pool 对象
 	 * @param capacity {size_t} 内部创建的 objs_ 数组的初始长度
 	 */
-	dbuf_guard(dbuf_pool* dbuf, size_t capacity = 100);
+	dbuf_guard(dbuf_pool* dbuf, size_t capacity = 500);
 
 	/**
 	 * 构造函数
@@ -224,7 +224,7 @@ public:
 	 *  指定了内存块(4096)的倍数
 	 * @param capacity {size_t} 内部创建的 objs_ 数组的初始长度
 	 */
-	dbuf_guard(size_t nblock = 2, size_t capacity = 100);
+	dbuf_guard(size_t nblock = 2, size_t capacity = 500);
 
 	/**
 	 * 析构函数，在析构函数内部将会自动销毁由构造函数传入的 dbuf_pool 对象

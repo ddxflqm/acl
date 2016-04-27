@@ -25,15 +25,34 @@ static void test(int nblock, int capacity, int incr, int max, int pos)
 {
 	acl::dbuf_guard dbuf((size_t) nblock, (size_t) capacity);
 	dbuf.set_increment((size_t) incr);
+	myobj* o;
 
 	for (int i = 0; i < max; i++)
 	{
-		myobj* o = dbuf.create<myobj>(i);
+		o = dbuf.create<myobj>(i);
 		if (i < 10)
 			o->run();
 	}
 
-	myobj* o = (myobj*) dbuf.get((size_t) pos);
+	o = (myobj*) dbuf.get((size_t) pos);
+	if (o == NULL)
+		printf("get: %d NULL\r\n", pos);
+	else if (o->get() != pos)
+		printf("get: %d != %d\r\n", o->get(), pos);
+	else
+		printf("ok, max: %d, pos: %d\r\n", max, pos);
+
+	printf("----------------Again---------------\r\n");
+	dbuf.dbuf_reset();
+
+	for (int i = 0; i < max; i++)
+	{
+		o = dbuf.create<myobj>(i);
+		if (i < 10)
+			o->run();
+	}
+
+	o = (myobj*) dbuf.get((size_t) pos);
 	if (o == NULL)
 		printf("get: %d NULL\r\n", pos);
 	else if (o->get() != pos)

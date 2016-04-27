@@ -102,7 +102,7 @@ dbuf_obj::dbuf_obj(dbuf_guard* guard /* = NULL */)
 void dbuf_guard::init(size_t capacity)
 {
 	if (capacity == 0)
-		capacity = 100;
+		capacity = 500;
 	head_.capacity = capacity;
 	head_.size = 0;
 	head_.next = NULL;
@@ -112,9 +112,9 @@ void dbuf_guard::init(size_t capacity)
 	curr_ = &head_;
 }
 
-dbuf_guard::dbuf_guard(acl::dbuf_pool* dbuf, size_t capacity /* = 100 */)
+dbuf_guard::dbuf_guard(acl::dbuf_pool* dbuf, size_t capacity /* = 500 */)
 	: nblock_(2)
-	, incr_(100)
+	, incr_(500)
 	, size_(0)
 {
 	if (dbuf == NULL)
@@ -125,9 +125,9 @@ dbuf_guard::dbuf_guard(acl::dbuf_pool* dbuf, size_t capacity /* = 100 */)
 	init(capacity);
 }
 
-dbuf_guard::dbuf_guard(size_t nblock /* = 2 */, size_t capacity /* = 100 */)
+dbuf_guard::dbuf_guard(size_t nblock /* = 2 */, size_t capacity /* = 500 */)
 	: nblock_(nblock == 0 ? 2 : nblock)
-	, incr_(100)
+	, incr_(500)
 	, size_(0)
 {
 	dbuf_ = new (nblock_) acl::dbuf_pool;
@@ -224,6 +224,9 @@ dbuf_obj* dbuf_guard::operator[](size_t pos) const
 
 dbuf_obj* dbuf_guard::get(size_t pos) const
 {
+	if (pos >= size_)
+		return NULL;
+
 	size_t n = 0;
 	const dbuf_objs_link* link = &head_;
 
