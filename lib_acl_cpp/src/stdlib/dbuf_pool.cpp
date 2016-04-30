@@ -34,9 +34,13 @@ void *dbuf_pool::operator new(size_t size, size_t nblock /* = 2 */)
 
 #if defined(_WIN32) || defined(_WIN64)
 void dbuf_pool::operator delete(void* ptr, size_t)
-#else
-void dbuf_pool::operator delete(void* ptr)
+{
+	dbuf_pool* dbuf = (dbuf_pool*) ptr;
+	acl_dbuf_pool_destroy(dbuf->pool_);
+}
 #endif
+
+void dbuf_pool::operator delete(void* ptr)
 {
 	dbuf_pool* dbuf = (dbuf_pool*) ptr;
 	acl_dbuf_pool_destroy(dbuf->pool_);
