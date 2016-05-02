@@ -32,8 +32,7 @@ http_request::http_request(socket_stream* client,
 	int conn_timeout /* = 60 */, bool unzip /* = true */)
 {
 	// 设置解压参数
-	client_ = NEW http_client(client, client->get_vstream()->rw_timeout,
-		true, unzip);
+	client_ = NEW http_client(client, true, unzip);
 	unzip_ = unzip;
 	ssl_conf_ = NULL;
 	local_charset_[0] = 0;
