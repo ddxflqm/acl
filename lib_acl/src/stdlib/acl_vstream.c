@@ -307,10 +307,17 @@ AGAIN:
 		if (nagain++ < 5)
 			goto AGAIN;
 
+#ifdef ACL_WINDOWS
+		acl_msg_error("%s(%d), %s: nagain: %d too much, fd: %lld",
+			__FILE__, __LINE__, myname, nagain,
+			in->type == ACL_VSTREAM_TYPE_FILE ?
+			(long long) ACL_VSTREAM_FILE(in) : ACL_VSTREAM_SOCK(in));
+#else
 		acl_msg_error("%s(%d), %s: nagain: %d too much, fd: %d",
 			__FILE__, __LINE__, myname, nagain,
 			in->type == ACL_VSTREAM_TYPE_FILE ?
 			(int) ACL_VSTREAM_FILE(in) : ACL_VSTREAM_SOCK(in));
+#endif
 	} else if (in->errnum == ACL_ETIMEDOUT) {
 		in->flag |= ACL_VSTREAM_FLAG_TIMEOUT;
 		SAFE_COPY(in->errbuf, "read timeout");
