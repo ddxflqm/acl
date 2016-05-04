@@ -236,9 +236,9 @@ void redis_monitor::show_status(std::vector<acl::redis_client*>& conns)
 			" \033[1;33;40mtps:\033[0m"
 			" \033[1;36;40m%8d\033[0m,"
 			" \033[1;33;40mclients:\033[0m"
-			" \033[1;36;40m%8d\033[0m,"
+			" \033[1;36;40m%6d\033[0m,"
 			" \033[1;33;40mkeys:\033[0m"
-			" \033[1;36;40m%8d\033[0m,"
+			" \033[1;36;40m%10d\033[0m,"
 			" \033[1;33;40mmem:\033[0m"
 			" \033[1;36;40m%8.2f %s\033[0m,"
 			" \033[1;33;40mmem rss:\033[0m"
@@ -248,7 +248,7 @@ void redis_monitor::show_status(std::vector<acl::redis_client*>& conns)
 			" \033[1;33;40mfrag ratio:\033[0m"
 			" \033[1;36;40m%4.2f\033[0m\r\n",
 #else
-		printf("redis: %15s, tps: %8d, clients: %8d, keys: %8d,"
+		printf("redis: %15s, tps: %8d, clients: %6d, keys: %10d,"
 			" mem: %8.2f %s, mem rss: %8.2f %s,"
 			" mem peak: %8.2f %s, frag ratio: %4.2f\r\n",
 #endif
@@ -280,9 +280,9 @@ void redis_monitor::show_status(std::vector<acl::redis_client*>& conns)
 		" \033[1;34;40mtps:\033[0m"
 		" \033[1;36;40m%8d\033[0m,"
 		" \033[1;34;40mclients:\033[0m"
-		" \033[1;36;40m%8d\033[0m,"
+		" \033[1;36;40m%6d\033[0m,"
 		" \033[1;34;40mkeys:\033[0m"
-		" \033[1;36;40m%8d\033[0m,"
+		" \033[1;36;40m%10d\033[0m,"
 		" \033[1;34;40mmem:\033[0m"
 		" \033[1;36;40m%8.2f %s\033[0m,"
 		" \033[1;34;40mmem rss:\033[0m"
@@ -290,8 +290,8 @@ void redis_monitor::show_status(std::vector<acl::redis_client*>& conns)
 		" \033[1;34;40mmem peak:\033[0m"
 		" \033[1;36;40m%8.2f %s\033[0m\r\n",
 #else
-	printf("total masters: %12d, tps: %8d, clients: %8d,"
-		" keys: %8d, mem: %8.2f %s, mem rss: %8.2f %s,"
+	printf("total masters: %12d, tps: %8d, clients: %6d,"
+		" keys: %10d, mem: %8.2f %s, mem rss: %8.2f %s,"
 		" mem peak: %8.2f %s\r\n",
 #endif
 		(int) size, all_tps, all_client, all_keys,
