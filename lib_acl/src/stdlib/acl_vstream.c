@@ -1749,12 +1749,16 @@ int acl_vstream_puts(const char *s)
 
 static int loop_writen(ACL_VSTREAM *fp, const void *vptr, size_t size)
 {
+#if 0
 	const char *myname = "loop_writen";
+#endif
 	const unsigned char *ptr = (const unsigned char *) vptr;
 	int   once_dlen = 64 * 1024 * 1024;  /* xxx: 以 64KB 为单位写 */
 	int   nleft = (int) size, n, len;
+#if 0
 	time_t begin, end;
 	ACL_SOCKET fd = ACL_VSTREAM_SOCK(fp);
+#endif
 
 	while (nleft > 0) {
 		len = nleft > once_dlen ? once_dlen : nleft;
@@ -1765,11 +1769,12 @@ static int loop_writen(ACL_VSTREAM *fp, const void *vptr, size_t size)
 		nleft -= n;
 		ptr   += n;
 
+#if 0
 		if (n == len || fp->writev_fn == NULL || fp->rw_timeout <= 0)
 			continue;
 
-		/* 对于套接口写操作，如果一次性写没有写完，可能是系统写缓冲区满，
-		 * 需要检测超时写
+		/* 对于套接口写操作，如果一次性写没有写完，可能是系统
+		 * 写缓冲区满，需要检测超时写
 		 */
 		begin = time(NULL);
 
@@ -1783,6 +1788,7 @@ static int loop_writen(ACL_VSTREAM *fp, const void *vptr, size_t size)
 			myname, (int) size, nleft, ACL_VSTREAM_PEER(fp), fd,
 			fp->rw_timeout, end - begin);
 		return ACL_VSTREAM_EOF;
+#endif
 	}
 
 	return (int) (ptr - (const unsigned char *) vptr);

@@ -1,4 +1,5 @@
 #include "StdAfx.h"
+
 #ifndef ACL_PREPARE_COMPILE
 
 #include "stdlib/acl_define.h"
@@ -221,19 +222,41 @@ int acl_socket_write(ACL_SOCKET fd, const void *buf, size_t size,
 	int timeout, ACL_VSTREAM *fp acl_unused, void *arg acl_unused)
 {
 #ifdef ACL_WRITEABLE_CHECK
-	if (timeout > 0 && acl_write_wait(fd, timeout) < 0) {
+	int flags;
+#endif
+	int ret;
+
+	if (timeout <= 0)
+		return write(fd, buf, size);
+
+#ifdef ACL_WRITEABLE_CHECK
+	flags = acl_non_blocking(fd, ACL_NON_BLOCKING);
+#endif
+
+	ret = write(fd, buf, size);
+
+	if (ret > 0) {
+#ifdef ACL_WRITEABLE_CHECK
+		if (flags > 0 && fcntl(fd, F_SETFL, flags) < 0)
+			acl_msg_error("%s(%d): fcntl fd: %d error: %s",
+				__FUNCTION__, __LINE__, fd, acl_last_serror());
+#endif
+		return ret;
+	}
+
+#ifdef ACL_WRITEABLE_CHECK
+	if (acl_write_wait(fd, timeout) < 0) {
 		errno = acl_last_error();
 		return -1;
 	}
-#else
-	if (timeout > 0 && setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO,
-		(char*) &timeout, sizeof(int)) == -1)
-	{
-		acl_msg_warn("setsockopt error: %s, fd: %d, timeout: %d",
-			acl_last_serror(), fd, timeout);
-	}
+
+	ret = write(fd, buf, size);
+
+	if (flags > 0 && fcntl(fd, F_SETFL, flags) < 0)
+		acl_msg_error("%s(%d): fcntl fd: %d error: %s",
+			__FUNCTION__, __LINE__, fd, acl_last_serror());
 #endif
-	int ret = write(fd, buf, size);
+
 	return ret;
 }
 
@@ -241,14 +264,42 @@ int acl_socket_writev(ACL_SOCKET fd, const struct iovec *vec, int count,
 	int timeout, ACL_VSTREAM *fp acl_unused, void *arg acl_unused)
 {
 #ifdef ACL_WRITEABLE_CHECK
-	if (timeout > 0 && acl_write_wait(fd, timeout) < 0) {
+	int flags;
+#endif
+	int ret;
+
+	if (timeout <= 0)
+		return writev(fd, vec, count);
+
+#ifdef ACL_WRITEABLE_CHECK
+	flags = acl_non_blocking(fd, ACL_NON_BLOCKING);
+#endif
+
+	ret = writev(fd, vec, count);
+
+	if (ret > 0) {
+#ifdef ACL_WRITEABLE_CHECK
+		if (flags > 0 && fcntl(fd, F_SETFL, flags) < 0)
+			acl_msg_error("%s(%d): fcntl fd: %d error: %s",
+				__FUNCTION__, __LINE__, fd, acl_last_serror());
+#endif
+		return ret;
+	}
+
+#ifdef ACL_WRITEABLE_CHECK
+	if (acl_write_wait(fd, timeout) < 0) {
 		errno = acl_last_error();
 		return -1;
 	}
-#else
-	(void) timeout;
+
+	ret = writev(fd, vec, count);
+
+	if (flags > 0 && fcntl(fd, F_SETFL, flags) < 0)
+		acl_msg_error("%s(%d): fcntl fd: %d error: %s",
+			__FUNCTION__, __LINE__, fd, acl_last_serror());
 #endif
-	return writev(fd, vec, count);
+
+	return ret;
 }
 
 #else
