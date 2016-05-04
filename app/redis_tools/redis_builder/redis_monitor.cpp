@@ -168,8 +168,11 @@ static double to_human(long long n, acl::string& units)
 #define KB	1024
 #define MB	(1024 * 1024)
 #define	GB	(1024 * 1024 * 1024)
+	long long TB = (long long) GB * 1024;
 
-	if ((msize = ((double) n) / GB) >= 1)
+	if ((msize = (double) (n / TB)) >= 1)
+		units = "T";
+	else if ((msize = ((double) n) / GB) >= 1)
 		units = "G";
 	else if ((msize = ((double) n) / MB) >= 1)
 		units = "M";
