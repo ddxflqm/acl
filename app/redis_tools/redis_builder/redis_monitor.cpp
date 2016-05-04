@@ -111,7 +111,7 @@ double redis_monitor::check(const std::map<acl::string, acl::string>& info,
 	}
 	else
 	{
-		double n = atol(cit->second.c_str());
+		double n = atof(cit->second.c_str());
 		res.push_back(n);
 		return n;
 	}
