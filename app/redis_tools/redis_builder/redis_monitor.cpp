@@ -235,7 +235,7 @@ void redis_monitor::show_status(std::vector<acl::redis_client*>& conns)
 		mpeak = to_human(memory_peak[i], peak_units);
 #ifdef ACL_UNIX
 		printf("\033[1;32;40mredis:\033[0m"
-			" \033[1;36;40m%16s\033[0m,"
+			" \033[1;36;40m%20s\033[0m,"
 			" \033[1;33;40mtps:\033[0m"
 			" \033[1;36;40m%8d\033[0m,"
 			" \033[1;33;40mclients:\033[0m"
