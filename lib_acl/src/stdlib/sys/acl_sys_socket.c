@@ -226,9 +226,15 @@ int acl_socket_write(ACL_SOCKET fd, const void *buf, size_t size,
 		return -1;
 	}
 #else
-	(void) timeout;
+	if (timeout > 0 && setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO,
+		(char*) &timeout, sizeof(int)) == -1)
+	{
+		acl_msg_warn("setsockopt error: %s, fd: %d, timeout: %d",
+			acl_last_serror(), fd, timeout);
+	}
 #endif
-	return write(fd, buf, size);
+	int ret = write(fd, buf, size);
+	return ret;
 }
 
 int acl_socket_writev(ACL_SOCKET fd, const struct iovec *vec, int count,
