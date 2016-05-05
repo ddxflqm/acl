@@ -207,6 +207,8 @@ int acl_socket_close(ACL_SOCKET fd)
 	return close(fd);
 }
 
+#if 0
+
 int acl_socket_read(ACL_SOCKET fd, void *buf, size_t size,
 	int timeout, ACL_VSTREAM *fp, void *arg acl_unused)
 {
@@ -217,11 +219,11 @@ int acl_socket_read(ACL_SOCKET fd, void *buf, size_t size,
 		return read(fd, buf, size);
 	}
 
-	if (timeout <= 0)
-		return read(fd, buf, size);
-
 	ret = read(fd, buf, size);
 	if (ret > 0)
+		return ret;
+
+	if (timeout <= 0)
 		return ret;
 
 	error = acl_last_error();
@@ -239,17 +241,31 @@ int acl_socket_read(ACL_SOCKET fd, void *buf, size_t size,
 	return read(fd, buf, size);
 }
 
-#undef ACL_WRITEABLE_CHECK
+#else
+
+int acl_socket_read(ACL_SOCKET fd, void *buf, size_t size,
+	int timeout, ACL_VSTREAM *fp, void *arg acl_unused)
+{
+	if (fp != NULL && fp->read_ready)
+		fp->read_ready = 0;
+	else if (timeout > 0 && acl_read_wait(fd, timeout) < 0)
+		return -1;
+
+	return read(fd, buf, size);
+}
+
+#endif
+
 int acl_socket_write(ACL_SOCKET fd, const void *buf, size_t size,
 	int timeout, ACL_VSTREAM *fp acl_unused, void *arg acl_unused)
 {
 	int ret, error;
 
-	if (timeout <= 0)
-		return write(fd, buf, size);
-
 	ret = write(fd, buf, size);
 	if (ret > 0)
+		return ret;
+
+	if (timeout <= 0)
 		return ret;
 
 	error = acl_last_error();
@@ -276,11 +292,11 @@ int acl_socket_writev(ACL_SOCKET fd, const struct iovec *vec, int count,
 {
 	int ret, error;
 
-	if (timeout <= 0)
-		return writev(fd, vec, count);
-
 	ret = writev(fd, vec, count);
 	if (ret > 0)
+		return ret;
+
+	if (timeout <= 0)
 		return ret;
 
 	error = acl_last_error();
