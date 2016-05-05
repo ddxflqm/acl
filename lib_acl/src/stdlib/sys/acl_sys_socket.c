@@ -210,9 +210,30 @@ int acl_socket_close(ACL_SOCKET fd)
 int acl_socket_read(ACL_SOCKET fd, void *buf, size_t size,
 	int timeout, ACL_VSTREAM *fp, void *arg acl_unused)
 {
-	if (fp != NULL && fp->read_ready)
+	int ret, error;
+
+	if (fp != NULL && fp->read_ready) {
 		fp->read_ready = 0;
-	else if (timeout > 0 && acl_read_wait(fd, timeout) < 0)
+		return read(fd, buf, size);
+	}
+
+	if (timeout <= 0)
+		return read(fd, buf, size);
+
+	ret = read(fd, buf, size);
+	if (ret > 0)
+		return ret;
+
+	error = acl_last_error();
+
+#if ACL_EWOULDBLOCK == ACL_EAGAIN
+	if (error != ACL_EWOULDBLOCK)
+#else
+	if (error != ACL_EWOULDBLOCK && error != ACL_EAGAIN)
+#endif
+		return ret;
+
+	if (acl_read_wait(fd, timeout) < 0)
 		return -1;
 
 	return read(fd, buf, size);
