@@ -3,6 +3,8 @@
 ------------------------------------------------------------------------
 546) 2016.5.5
 546.1) safety: acl_xml_parse.c/acl_xml2_parse.c 当输入为 NULL 时返回 ""
+546.2) feature: 在 acl_vstream.c 的 acl_vstream_fdopen 时针对带有读写超时
+的 socket 的设置为非阻塞模式，这样代码逻辑更为清晰
 
 545) 2016.5.4
 545.1) bugfix: acl_sys_socket.c 中函数 acl_socket_write 修改了写超时的问题

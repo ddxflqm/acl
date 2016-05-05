@@ -2069,7 +2069,7 @@ ACL_VSTREAM *acl_vstream_fhopen(ACL_FILE_HANDLE fh, unsigned int oflags)
 #define ACL_VSTREAM_DEF_MAXLEN  8192
 
 ACL_VSTREAM *acl_vstream_fdopen(ACL_SOCKET fd, unsigned int oflags,
-	size_t buflen, int rw_timeo, int fdtype)
+	size_t buflen, int rw_timeout, int fdtype)
 {
 	const char *myname = "acl_vstream_fdopen";
 	ACL_VSTREAM *fp;
@@ -2128,8 +2128,8 @@ ACL_VSTREAM *acl_vstream_fdopen(ACL_SOCKET fd, unsigned int oflags,
 	fp->oflags           = oflags;
 	ACL_SAFE_STRNCPY(fp->errbuf, "OK", sizeof(fp->errbuf));
 
-	if (rw_timeo > 0)
-		fp->rw_timeout = rw_timeo;
+	if (rw_timeout > 0)
+		fp->rw_timeout = rw_timeout;
 
 	fp->sys_getc = read_char;
 	if (fdtype == ACL_VSTREAM_TYPE_FILE) {
@@ -2142,6 +2142,12 @@ ACL_VSTREAM *acl_vstream_fdopen(ACL_SOCKET fd, unsigned int oflags,
 		fp->write_fn = acl_socket_write;
 		fp->writev_fn = acl_socket_writev;
 		fp->close_fn = acl_socket_close;
+
+		/* xxx: 对于带有读写超时的流，需要先将 socket 设为非阻塞模式，
+		 * 否则在写大数据包时会造成阻塞，超时作用失效
+		 */
+		if (rw_timeout > 0)
+			acl_non_blocking(fd, ACL_NON_BLOCKING);
 	}
 
 	fp->addr_local = __empty_string;
