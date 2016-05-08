@@ -2133,15 +2133,15 @@ ACL_VSTREAM *acl_vstream_fdopen(ACL_SOCKET fd, unsigned int oflags,
 
 	fp->sys_getc = read_char;
 	if (fdtype == ACL_VSTREAM_TYPE_FILE) {
-		fp->fread_fn  = acl_file_read;
-		fp->fwrite_fn = acl_file_write;
+		fp->fread_fn   = acl_file_read;
+		fp->fwrite_fn  = acl_file_write;
 		fp->fwritev_fn = acl_file_writev;
-		fp->fclose_fn = acl_file_close;
+		fp->fclose_fn  = acl_file_close;
 	} else {
-		fp->read_fn  = acl_socket_read;
-		fp->write_fn = acl_socket_write;
-		fp->writev_fn = acl_socket_writev;
-		fp->close_fn = acl_socket_close;
+		fp->read_fn    = acl_socket_read_fn;
+		fp->write_fn   = acl_socket_write_fn;
+		fp->writev_fn  = acl_socket_writev_fn;
+		fp->close_fn   = acl_socket_close_fn;
 
 		/* xxx: 对于带有读写超时的流，需要先将 socket 设为非阻塞模式，
 		 * 否则在写大数据包时会造成阻塞，超时作用失效

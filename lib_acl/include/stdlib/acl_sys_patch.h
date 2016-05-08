@@ -103,6 +103,16 @@ ACL_API int acl_socket_write(ACL_SOCKET fd, const void *buf,
 ACL_API int acl_socket_writev(ACL_SOCKET fd, const struct iovec *vec,
 	int count, int timeout, ACL_VSTREAM *fp, void *arg);
 
+extern ACL_API ACL_VSTREAM_RD_FN acl_socket_read_fn;
+extern ACL_API ACL_VSTREAM_WR_FN acl_socket_write_fn;
+extern ACL_API ACL_VSTREAM_WV_FN acl_socket_writev_fn;
+extern ACL_API int (*acl_socket_close_fn)(ACL_SOCKET);
+
+ACL_API void acl_socket_read_hook(ACL_VSTREAM_RD_FN read_fn);
+ACL_API void acl_socket_write_hook(ACL_VSTREAM_WR_FN write_fn);
+ACL_API void acl_socket_writev_hook(ACL_VSTREAM_WV_FN writev_fn);
+ACL_API void acl_socket_close_hook(int (*close_fn)(ACL_SOCKET));
+
 /**
  * 打开文件句柄
  * @param filepath {cosnt char*} 文件路径

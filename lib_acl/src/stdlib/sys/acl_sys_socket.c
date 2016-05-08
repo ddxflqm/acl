@@ -321,3 +321,32 @@ int acl_socket_writev(ACL_SOCKET fd, const struct iovec *vec, int count,
 #else
 # error "unknown OS type"
 #endif
+
+ACL_VSTREAM_RD_FN acl_socket_read_fn = acl_socket_read;
+ACL_VSTREAM_WR_FN acl_socket_write_fn = acl_socket_write;
+ACL_VSTREAM_WV_FN acl_socket_writev_fn = acl_socket_writev;
+int (*acl_socket_close_fn)(ACL_SOCKET) = acl_socket_close;
+
+void acl_socket_read_hook(ACL_VSTREAM_RD_FN read_fn)
+{
+	if (read_fn)
+		acl_socket_read_fn = read_fn;
+}
+
+void acl_socket_write_hook(ACL_VSTREAM_WR_FN write_fn)
+{
+	if (write_fn)
+		acl_socket_write_fn = write_fn;
+}
+
+void acl_socket_writev_hook(ACL_VSTREAM_WV_FN writev_fn)
+{
+	if (writev_fn)
+		acl_socket_writev_fn = writev_fn;
+}
+
+void acl_socket_close_hook(int (*close_fn)(ACL_SOCKET))
+{
+	if (close_fn)
+		acl_socket_close_fn = close_fn;
+}
