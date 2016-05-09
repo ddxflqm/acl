@@ -2064,6 +2064,36 @@ ACL_VSTREAM *acl_vstream_fhopen(ACL_FILE_HANDLE fh, unsigned int oflags)
 	return fp;
 }
 
+
+static ACL_VSTREAM_RD_FN acl_socket_read_fn   = acl_socket_read;
+static ACL_VSTREAM_WR_FN acl_socket_write_fn  = acl_socket_write;
+static ACL_VSTREAM_WV_FN acl_socket_writev_fn = acl_socket_writev;
+static int (*acl_socket_close_fn)(ACL_SOCKET) = acl_socket_close;
+
+void acl_socket_read_hook(ACL_VSTREAM_RD_FN read_fn)
+{
+	if (read_fn)
+		acl_socket_read_fn = read_fn;
+}
+
+void acl_socket_write_hook(ACL_VSTREAM_WR_FN write_fn)
+{
+	if (write_fn)
+		acl_socket_write_fn = write_fn;
+}
+
+void acl_socket_writev_hook(ACL_VSTREAM_WV_FN writev_fn)
+{
+	if (writev_fn)
+		acl_socket_writev_fn = writev_fn;
+}
+
+void acl_socket_close_hook(int (*close_fn)(ACL_SOCKET))
+{
+	if (close_fn)
+		acl_socket_close_fn = close_fn;
+}
+
 /* 定义流的缓冲区的默认大小 */
 
 #define ACL_VSTREAM_DEF_MAXLEN  8192
