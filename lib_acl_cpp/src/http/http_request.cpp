@@ -631,11 +631,14 @@ bool http_request::get_body(string& out, const char* to_charset /* = NULL */)
 		return false;
 
 	http_pipe* hp = get_pipe(to_charset);
+	pipe_string* ps;
 	if (hp)
 	{
-		pipe_string ps(out);
+		ps = NEW pipe_string(out);
 		hp->append(&ps);
 	}
+	else
+		ps = NULL;
 
 	string  buf(4096);
 	int   ret;
@@ -655,6 +658,8 @@ bool http_request::get_body(string& out, const char* to_charset /* = NULL */)
 		else
 			out.append(buf);
 	}
+
+	delete ps;
 
 	if (hp)
 	{
