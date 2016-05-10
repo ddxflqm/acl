@@ -635,7 +635,7 @@ bool http_request::get_body(string& out, const char* to_charset /* = NULL */)
 	if (hp)
 	{
 		ps = NEW pipe_string(out);
-		hp->append(&ps);
+		hp->append(ps);
 	}
 	else
 		ps = NULL;
