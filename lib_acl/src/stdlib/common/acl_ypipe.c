@@ -23,11 +23,12 @@ struct ACL_YPIPE {
 ACL_YPIPE *acl_ypipe_new(void)
 {
 	ACL_YPIPE *self = (ACL_YPIPE *) acl_mymalloc(sizeof(ACL_YPIPE));
+	void **item;
 
 	memset(self, 0, sizeof(ACL_YPIPE));
 	self->queue = acl_yqueue_new();
 	acl_yqueue_push(self->queue);
-	void **item = acl_yqueue_back(self->queue);;
+	item = acl_yqueue_back(self->queue);;
 	self->w = item;
 	self->f = item;
 	self->r = item;
