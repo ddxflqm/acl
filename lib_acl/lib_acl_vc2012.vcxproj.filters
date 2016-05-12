@@ -1545,6 +1545,15 @@
     <ClInclude Include="include\code\acl_xmlcode.h">
       <Filter>Header Files\code</Filter>
     </ClInclude>
+    <ClInclude Include="include\stdlib\acl_atomic.h">
+      <Filter>Header Files\stdlib</Filter>
+    </ClInclude>
+    <ClInclude Include="include\stdlib\acl_ypipe.h">
+      <Filter>Header Files\stdlib</Filter>
+    </ClInclude>
+    <ClInclude Include="include\stdlib\acl_yqueue.h">
+      <Filter>Header Files\stdlib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include=".\changes.txt">
