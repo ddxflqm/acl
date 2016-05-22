@@ -73,7 +73,7 @@ int acl_ypipe_flush(ACL_YPIPE *self)
 	if (acl_atomic_cas(self->c, self->w, self->f) != self->w) {
 		acl_atomic_set(self->c, self->f);
 		self->w = self->f;
-		return -1;
+		return 1;
 	}
 
 	self->w = self->f;

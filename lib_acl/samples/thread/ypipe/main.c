@@ -1,16 +1,18 @@
 #include "lib_acl.h"
 #include <time.h>
 
-static int  __max = 10000000;
+static int  __max = 100000000;
+static int  __base = 10;
 static char __dummy[256];
 
 static void *thread_producer(void *arg)
 {
 	ACL_YPIPE *ypipe = (ACL_YPIPE*) arg;
-	int   i;
+	int   i, j, n = __max / __base;
 
-	for (i = 0; i < __max; i++) {
-		acl_ypipe_write(ypipe, __dummy);
+	for (i = 0; i < n; i++) {
+		for (j = 0; j < __base; j++)
+			acl_ypipe_write(ypipe, __dummy);
 		acl_ypipe_flush(ypipe);
 	}
 
@@ -33,11 +35,33 @@ static void *thread_consumer(void *arg)
 	return NULL;
 }
 
-int main(int argc acl_unused, char *argv[] acl_unused)
+static void usage(const char *procname)
+{
+	printf("usage: %s -h [help] -n max -b base\r\n", procname);
+}
+
+int main(int argc, char *argv[])
 {
 	acl_pthread_attr_t attr;
 	acl_pthread_t t1, t2;
 	ACL_YPIPE *ypipe = acl_ypipe_new();
+	int   ch;
+
+	while ((ch = getopt(argc, argv, "hn:b:")) > 0) {
+		switch (ch) {
+		case 'h':
+			usage(argv[0]);
+			return 0;
+		case 'n':
+			__max = atoi(optarg);
+			break;
+		case 'b':
+			__base = atoi(optarg);
+			break;
+		default:
+			break;
+		}
+	}
 
 	memset(__dummy, 'x', sizeof(__dummy));
 	__dummy[sizeof(__dummy) - 1] = 0;
