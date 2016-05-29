@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "fiber_io.h"
 #include "fiber_schedule.h"
 
 static ACL_RING __fibers_queue;
@@ -77,7 +78,7 @@ static FIBER *fiber_alloc(void (*fun)(void *), void *arg, size_t size)
 	return fiber;
 }
 
-FIBER *fiber_create(void (*fun)(void *), void *arg, size_t size)
+int fiber_create(void (*fun)(void *), void *arg, size_t size)
 {
 	FIBER *fiber = fiber_alloc(fun, arg, size);
 
@@ -90,7 +91,7 @@ FIBER *fiber_create(void (*fun)(void *), void *arg, size_t size)
 	__fibers[__fibers_size++] = fiber;
 	fiber_ready(fiber);
 
-	return fiber;
+	return fiber->id;
 }
 
 void fiber_free(FIBER *fiber)
@@ -98,13 +99,13 @@ void fiber_free(FIBER *fiber)
 	acl_myfree(fiber);
 }
 
-#ifdef ACL_UNIX
 void fiber_init(void) __attribute__ ((constructor));
-#endif
 
 void fiber_init(void)
 {
+	printf("hook ok\n");
 	acl_ring_init(&__fibers_queue);
+	fiber_io_hook();
 }
 
 void fiber_schedule(void)

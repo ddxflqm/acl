@@ -25,7 +25,7 @@ struct FIBER {
 	char  buf[1];
 };
 
-FIBER *fiber_create(void (*fun)(void *), void *arg, size_t size);
+int  fiber_create(void (*fun)(void *), void *arg, size_t size);
 void fiber_free(FIBER *fiber);
 void fiber_ready(FIBER *fiber);
 void fiber_exit(int exit_code);
@@ -33,7 +33,7 @@ FIBER *fiber_running(void);
 int  fiber_yield(void);
 void fiber_system(void);
 void fiber_switch(void);
-void fiber_init(void);
 void fiber_schedule(void);
+void fiber_init(void);
 
 #endif

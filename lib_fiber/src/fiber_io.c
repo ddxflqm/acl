@@ -20,10 +20,6 @@ static size_t    __io_count   = 0;
 
 static void fiber_io_loop(void *ctx);
 
-#ifdef ACL_UNIX
-void fiber_io_hook(void) __attribute__ ((constructor));
-#endif
-
 #define MAXFD	1024
 
 void fiber_io_hook(void)
@@ -74,6 +70,7 @@ static void fiber_wait_accept(int fd)
 
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {
+	printf("accept fd: %d\r\n", sockfd);
 	while (1) {
 		int clifd = __sys_accept(sockfd, addr, addrlen);
 		if (clifd >= 0) {
