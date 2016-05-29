@@ -28,13 +28,31 @@ static void echo_client(ACL_VSTREAM *cstream)
 	acl_vstream_close(cstream);
 }
 
+static void fiber_accept(void *ctx)
+{
+	ACL_VSTREAM *sstream = (ACL_VSTREAM *) ctx;
+
+	for (;;) {
+		ACL_VSTREAM *cstream = acl_vstream_accept(sstream, NULL, 0);
+		if (cstream == NULL) {
+			printf("acl_vstream_accept error %s\r\n",
+				acl_last_serror());
+			break;
+		}
+
+		printf("accept one\r\n");
+		echo_client(cstream);
+	}
+
+	acl_vstream_close(sstream);
+}
+
 int main(void)
 {
 	const char *addr = "0.0.0.0:8089";
 	ACL_VSTREAM *sstream = acl_vstream_listen(addr, 128);
-	ACL_VSTREAM *cstream;
 
-	//fiber_init();
+	fiber_init();
 	if (sstream == NULL) {
 		printf("acl_vstream_listen error %s\r\n", acl_last_serror());
 		return 1;
@@ -42,17 +60,8 @@ int main(void)
 
 	acl_non_blocking(ACL_VSTREAM_SOCK(sstream), ACL_NON_BLOCKING);
 
-	for (;;) {
-		cstream = acl_vstream_accept(sstream, NULL, 0);
-		if (cstream == NULL) {
-			printf("acl_vstream_accept error %s\r\n",
-				acl_last_serror());
-			return 1;
-		}
-
-		echo_client(cstream);
-	}
-
+	printf("%s: call fiber_creater\r\n", __FUNCTION__);
+	fiber_create(fiber_accept, sstream, 32768);
 	printf("call fiber_schedule\r\n");
 	fiber_schedule();
 

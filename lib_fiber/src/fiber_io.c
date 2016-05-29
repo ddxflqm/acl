@@ -31,6 +31,7 @@ void fiber_io_hook(void)
 	__event = event_create(MAXFD);
 	__io_fibers = (FIBER **) acl_mycalloc(1, sizeof(FIBER *));
 
+	printf("%s: call fiber_create\r\n", __FUNCTION__);
 	(void) fiber_create(fiber_io_loop, __event, 32768);
 }
 
@@ -41,6 +42,7 @@ static void fiber_io_loop(void *ctx)
 	fiber_system();
 
 	for (;;) {
+		printf(">>>%s\r\n", __FUNCTION__);
 		while (fiber_yield() > 0) {
 			// do nothing;
 		}
@@ -51,20 +53,25 @@ static void fiber_io_loop(void *ctx)
 
 static void accept_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)
 {
+	printf("accept_callback be called\r\n");
 	event_del(ev, fd, mask);
 
+	printf("call fiber_ready\r\n");
 	fiber_ready(__io_fibers[fd]);
 	__io_count--;
+	printf("__io_count: %d\r\n", (int) __io_count);
 	__io_fibers[fd] = __io_fibers[__io_count];
 }
 
 
 static void fiber_wait_accept(int fd)
 {
+	printf("call event_add\r\n");
 	event_add(__event, fd, EVENT_READABLE, accept_callback, NULL);
 
 	__io_fibers[fd] = fiber_running();
 	__io_count++;
+	printf("fiber_switch\r\n");
 	fiber_switch();
 }
 

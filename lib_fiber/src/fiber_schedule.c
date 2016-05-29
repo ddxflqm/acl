@@ -99,7 +99,7 @@ void fiber_free(FIBER *fiber)
 	acl_myfree(fiber);
 }
 
-void fiber_init(void) __attribute__ ((constructor));
+//void fiber_init(void) __attribute__ ((constructor));
 
 void fiber_init(void)
 {
@@ -114,12 +114,14 @@ void fiber_schedule(void)
 	ACL_RING *head;
 
 	for (;;) {
+		printf("fibers's size: %d\r\n", (int) acl_ring_size(&__fibers_queue));
 		head = acl_ring_pop_head(&__fibers_queue);
 		if (head == NULL) {
 			printf("no fiber now\r\n");
 			break;
 		}
 
+		printf(">>>one fiber ok\r\n");
 		fiber = ACL_RING_TO_APPL(head, FIBER, me);
 		fiber->status = FIBER_STATUS_READY;
 
