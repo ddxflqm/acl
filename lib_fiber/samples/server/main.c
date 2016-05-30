@@ -5,8 +5,9 @@
 #include <unistd.h>
 #include "lib_fiber.h"
 
-static void echo_client(ACL_VSTREAM *cstream)
+static void echo_client(void *ctx)
 {
+	ACL_VSTREAM *cstream = (ACL_VSTREAM *) ctx;
 	char  buf[8192];
 	int   ret;
 
@@ -41,7 +42,8 @@ static void fiber_accept(void *ctx)
 		}
 
 		printf("accept one\r\n");
-		echo_client(cstream);
+		fiber_create(echo_client, cstream, 32768);
+		printf("accept one over\r\n");
 	}
 
 	acl_vstream_close(sstream);
@@ -50,9 +52,11 @@ static void fiber_accept(void *ctx)
 int main(void)
 {
 	const char *addr = "0.0.0.0:8089";
-	ACL_VSTREAM *sstream = acl_vstream_listen(addr, 128);
+	ACL_VSTREAM *sstream;
 
 	fiber_init();
+
+	sstream = acl_vstream_listen(addr, 128);
 	if (sstream == NULL) {
 		printf("acl_vstream_listen error %s\r\n", acl_last_serror());
 		return 1;
@@ -62,6 +66,7 @@ int main(void)
 
 	printf("%s: call fiber_creater\r\n", __FUNCTION__);
 	fiber_create(fiber_accept, sstream, 32768);
+
 	printf("call fiber_schedule\r\n");
 	fiber_schedule();
 

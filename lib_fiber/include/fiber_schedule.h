@@ -3,6 +3,10 @@
 
 #include <ucontext.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
 	FIBER_STATUS_READY,
 	FIBER_STATUS_RUNNING,
@@ -25,7 +29,7 @@ struct FIBER {
 	char  buf[1];
 };
 
-int  fiber_create(void (*fun)(void *), void *arg, size_t size);
+FIBER *fiber_create(void (*fun)(void *), void *arg, size_t size);
 void fiber_free(FIBER *fiber);
 void fiber_ready(FIBER *fiber);
 void fiber_exit(int exit_code);
@@ -35,5 +39,9 @@ void fiber_system(void);
 void fiber_switch(void);
 void fiber_schedule(void);
 void fiber_init(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -17,6 +17,7 @@ static accept_fn __sys_accept = NULL;
 static EVENT    *__event      = NULL;
 static FIBER   **__io_fibers  = NULL;
 static size_t    __io_count   = 0;
+static FIBER    *__ev_fiber   = NULL;
 
 static void fiber_io_loop(void *ctx);
 
@@ -29,72 +30,62 @@ void fiber_io_hook(void)
 	__sys_accept = (accept_fn) dlsym(RTLD_NEXT, "accept");
 
 	__event = event_create(MAXFD);
-	__io_fibers = (FIBER **) acl_mycalloc(1, sizeof(FIBER *));
-
-	printf("%s: call fiber_create\r\n", __FUNCTION__);
-	(void) fiber_create(fiber_io_loop, __event, 32768);
+	__io_fibers = (FIBER **) acl_mycalloc(MAXFD, sizeof(FIBER *));
 }
 
 static void fiber_io_loop(void *ctx)
 {
 	EVENT *ev = (EVENT *) ctx;
+	int  n;
 
 	fiber_system();
 
 	for (;;) {
-		printf(">>>%s\r\n", __FUNCTION__);
-		while (fiber_yield() > 0) {
+		while ((n = fiber_yield()) > 0) {
 			// do nothing;
 		}
 
-		event_loop(ev);
+		event_process(ev);
 	}
 }
 
 static void accept_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)
 {
-	printf("accept_callback be called\r\n");
 	event_del(ev, fd, mask);
 
-	printf("call fiber_ready\r\n");
 	fiber_ready(__io_fibers[fd]);
 	__io_count--;
-	printf("__io_count: %d\r\n", (int) __io_count);
 	__io_fibers[fd] = __io_fibers[__io_count];
 }
 
 
 static void fiber_wait_accept(int fd)
 {
-	printf("call event_add\r\n");
+	if (__ev_fiber == NULL)
+		__ev_fiber = fiber_create(fiber_io_loop, __event, 32768);
+
 	event_add(__event, fd, EVENT_READABLE, accept_callback, NULL);
 
 	__io_fibers[fd] = fiber_running();
 	__io_count++;
-	printf("fiber_switch\r\n");
 	fiber_switch();
 }
 
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {
-	printf("accept fd: %d\r\n", sockfd);
-	while (1) {
-		int clifd = __sys_accept(sockfd, addr, addrlen);
-		if (clifd >= 0) {
-			acl_non_blocking(clifd, ACL_NON_BLOCKING);
-			acl_tcp_nodelay(clifd, 1);
-			return clifd;
-		}
+	int   clifd;
 
-#if EAGAIN == EWOULDBLOCK
-		if (errno != EAGAIN)
-#else
-		if (errno != EAGAIN && errno != EWOULDBLOCK)
-#endif
-			return -1;
+	fiber_wait_accept(sockfd);
 
-		fiber_wait_accept(sockfd);
+	clifd = __sys_accept(sockfd, addr, addrlen);
+
+	if (clifd >= 0) {
+		acl_non_blocking(clifd, ACL_NON_BLOCKING);
+		acl_tcp_nodelay(clifd, 1);
+		return clifd;
 	}
+
+	return -1;
 }
 
 static void read_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)

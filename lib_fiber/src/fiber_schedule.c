@@ -78,7 +78,7 @@ static FIBER *fiber_alloc(void (*fun)(void *), void *arg, size_t size)
 	return fiber;
 }
 
-int fiber_create(void (*fun)(void *), void *arg, size_t size)
+FIBER *fiber_create(void (*fun)(void *), void *arg, size_t size)
 {
 	FIBER *fiber = fiber_alloc(fun, arg, size);
 
@@ -91,7 +91,7 @@ int fiber_create(void (*fun)(void *), void *arg, size_t size)
 	__fibers[__fibers_size++] = fiber;
 	fiber_ready(fiber);
 
-	return fiber->id;
+	return fiber;
 }
 
 void fiber_free(FIBER *fiber)
@@ -103,7 +103,6 @@ void fiber_free(FIBER *fiber)
 
 void fiber_init(void)
 {
-	printf("hook ok\n");
 	acl_ring_init(&__fibers_queue);
 	fiber_io_hook();
 }
@@ -114,14 +113,13 @@ void fiber_schedule(void)
 	ACL_RING *head;
 
 	for (;;) {
-		printf("fibers's size: %d\r\n", (int) acl_ring_size(&__fibers_queue));
 		head = acl_ring_pop_head(&__fibers_queue);
 		if (head == NULL) {
 			printf("no fiber now\r\n");
 			break;
 		}
 
-		printf(">>>one fiber ok\r\n");
+
 		fiber = ACL_RING_TO_APPL(head, FIBER, me);
 		fiber->status = FIBER_STATUS_READY;
 
@@ -139,6 +137,7 @@ void fiber_schedule(void)
 
 			__fibers[slot] = __fibers[--__fibers_size];
 			__fibers[slot]->slot = slot;
+			printf(">>%s: fiber_free: %p\r\n", __FUNCTION__, fiber);
 			fiber_free(fiber);
 		}
 	}
