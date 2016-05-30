@@ -1112,7 +1112,7 @@ string& string::copy(const void* ptr, size_t len)
 
 string& string::memmove(const char* ptr)
 {
-	if (ptr == NULL || *ptr == 0)
+	if (ptr == NULL)
 		return *this;
 
 	return memmove(ptr, strlen(ptr));
@@ -1120,7 +1120,7 @@ string& string::memmove(const char* ptr)
 
 string& string::memmove(const char* ptr, size_t len)
 {
-	if (ptr == NULL || *ptr == 0 || len == 0)
+	if (ptr == NULL || len == 0)
 		return *this;
 
 	acl_vstring_memmove(vbf_, ptr, len);
