@@ -7,6 +7,8 @@ static void http_server(void *ctx)
 {
 	acl::socket_stream *conn = (acl::socket_stream *) ctx;
 
+	printf("start one http_server\r\n");
+
 	acl::memcache_session session("127.0.0.1:11211");
 	http_servlet servlet(conn, &session);
 	servlet.setLocalCharset("gb2312");
@@ -33,6 +35,8 @@ static void fiber_accept(void *)
 	else
 		printf("open %s ok\r\n", addr.c_str());
 
+	acl_non_blocking(server.sock_handle(), ACL_NON_BLOCKING);
+
 	while (true)
 	{
 		acl::socket_stream* client = server.accept();
@@ -42,6 +46,7 @@ static void fiber_accept(void *)
 			break;
 		}
 
+		printf("accept one: %d\r\n", client->sock_handle());
 		fiber_create(http_server, client, 326780);
 	}
 

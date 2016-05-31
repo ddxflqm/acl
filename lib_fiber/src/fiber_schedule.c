@@ -3,7 +3,6 @@
 #include "fiber_schedule.h"
 
 static ACL_RING __fibers_queue;
-static ACL_RING __fibers_queue_high;
 static FIBER  **__fibers = NULL;
 static size_t   __fibers_size = 0;
 static int      __fiber_exitcode = 0;
@@ -105,7 +104,6 @@ void fiber_free(FIBER *fiber)
 void fiber_init(void)
 {
 	acl_ring_init(&__fibers_queue);
-	acl_ring_init(&__fibers_queue_high);
 	fiber_io_hook();
 }
 
@@ -115,8 +113,7 @@ void fiber_schedule(void)
 	ACL_RING *head;
 
 	for (;;) {
-		if ((head = acl_ring_pop_head(&__fibers_queue_high)) == NULL)
-			head = acl_ring_pop_head(&__fibers_queue);
+		head = acl_ring_pop_head(&__fibers_queue);
 		if (head == NULL) {
 			printf("no fiber now\r\n");
 			break;
@@ -149,12 +146,6 @@ void fiber_ready(FIBER *fiber)
 {
 	fiber->status = FIBER_STATUS_READY;
 	acl_ring_prepend(&__fibers_queue, &fiber->me);
-}
-
-void fiber_ready_high(FIBER *fiber)
-{
-	fiber->status = FIBER_STATUS_READY;
-	acl_ring_prepend(&__fibers_queue_high, &fiber->me);
 }
 
 int fiber_yield(void)

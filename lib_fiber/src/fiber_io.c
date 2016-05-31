@@ -53,7 +53,7 @@ static void accept_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)
 {
 	event_del(ev, fd, mask);
 
-	fiber_ready_high(__io_fibers[fd]);
+	fiber_ready(__io_fibers[fd]);
 	__io_count--;
 	__io_fibers[fd] = __io_fibers[__io_count];
 }
@@ -75,17 +75,26 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {
 	int   clifd;
 
-	fiber_wait_accept(sockfd);
+	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
 
-	clifd = __sys_accept(sockfd, addr, addrlen);
+	while (1) {
+		clifd = __sys_accept(sockfd, addr, addrlen);
 
-	if (clifd >= 0) {
-		acl_non_blocking(clifd, ACL_NON_BLOCKING);
-		acl_tcp_nodelay(clifd, 1);
-		return clifd;
+		if (clifd >= 0) {
+			acl_non_blocking(clifd, ACL_NON_BLOCKING);
+			acl_tcp_nodelay(clifd, 1);
+			return clifd;
+		}
+
+#if EAGAIN == EWOULDBLOCK
+		if (errno != EAGAIN)
+#else
+		if (errno != EAGAIN && errno != EWOULDBLOCK)
+#endif
+			return -1;
+
+		fiber_wait_accept(sockfd);
 	}
-
-	return -1;
 }
 
 static void read_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)
@@ -99,6 +108,9 @@ static void read_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)
 
 static void fiber_wait_read(int fd)
 {
+	if (__ev_fiber == NULL)
+		__ev_fiber = fiber_create(fiber_io_loop, __event, 32768);
+
 	event_add(__event, fd, EVENT_READABLE, read_callback, NULL);
 
 	__io_fibers[fd] = fiber_running();
@@ -136,6 +148,9 @@ static void write_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)
 
 static void fiber_wait_write(int fd)
 {
+	if (__ev_fiber == NULL)
+		__ev_fiber = fiber_create(fiber_io_loop, __event, 32768);
+
 	event_add(__event, fd, EVENT_WRITABLE, write_callback, NULL);
 
 	__io_fibers[fd] = fiber_running();

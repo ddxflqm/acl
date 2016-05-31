@@ -32,7 +32,6 @@ struct FIBER {
 FIBER *fiber_create(void (*fun)(void *), void *arg, size_t size);
 void fiber_free(FIBER *fiber);
 void fiber_ready(FIBER *fiber);
-void fiber_ready_high(FIBER *fiber);
 void fiber_exit(int exit_code);
 FIBER *fiber_running(void);
 int  fiber_yield(void);
