@@ -75,7 +75,7 @@ static void fiber_sleep2(void *ctx acl_unused)
 
 int main(void)
 {
-	const char *addr = "0.0.0.0:8089";
+	const char *addr = "0.0.0.0:9002";
 	ACL_VSTREAM *sstream;
 
 	fiber_init();
