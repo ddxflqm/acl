@@ -53,7 +53,7 @@ static void accept_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)
 {
 	event_del(ev, fd, mask);
 
-	fiber_ready(__io_fibers[fd]);
+	fiber_ready_high(__io_fibers[fd]);
 	__io_count--;
 	__io_fibers[fd] = __io_fibers[__io_count];
 }
