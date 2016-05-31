@@ -19,6 +19,7 @@ struct FIBER {
 	ACL_RING me;
 	size_t id;
 	size_t slot;
+	acl_int64 when;
 	int sys;
 	fiber_status_t status;
 	ucontext_t uctx;
@@ -39,6 +40,8 @@ void fiber_system(void);
 void fiber_switch(void);
 void fiber_schedule(void);
 void fiber_init(void);
+void fiber_count_inc(void);
+void fiber_count_dec(void);
 
 #ifdef __cplusplus
 }

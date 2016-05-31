@@ -53,6 +53,6 @@ void event_free(EVENT *ev);
 int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx);
 void event_del(EVENT *ev, int fd, int mask);
 int event_mask(EVENT *ev, int fd);
-int event_process(EVENT *ev);
+int event_process(EVENT *ev, acl_int64 left);
 
 #endif

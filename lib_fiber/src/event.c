@@ -123,15 +123,21 @@ int event_mask(EVENT *ev, int fd)
 	return ev->events[fd].mask;
 }
 
-int event_process(EVENT *ev)
+int event_process(EVENT *ev, acl_int64 left)
 {
 	int processed = 0, numevents, j;
 	struct timeval tv, *tvp;
 	FILE_EVENT *fe;
 	int mask, fd, rfired;
 
-	tv.tv_sec = 1;
-	tv.tv_usec = 0;
+	if (left < 0) {
+		tv.tv_sec = 1;
+		tv.tv_usec = 0;
+	} else {
+		tv.tv_sec  = left / 1000000;
+		tv.tv_usec = left % 1000000;
+	}
+
 	tvp = &tv;
 
 	for (j = 0; j < ev->ndefer; j++)

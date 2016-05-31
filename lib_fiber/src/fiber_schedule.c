@@ -166,6 +166,16 @@ void fiber_system(void)
 	}
 }
 
+void fiber_count_inc(void)
+{
+	__fiber_count++;
+}
+
+void fiber_count_dec(void)
+{
+	__fiber_count--;
+}
+
 void fiber_switch(void)
 {
 	fiber_swap(__fiber_running, &__fiber_schedule);

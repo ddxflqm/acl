@@ -80,6 +80,7 @@ static int __event_loop(EVENT *ev, struct timeval *tv)
 
 	retval = epoll_wait(ep->epfd, ep->epoll_events, ev->setsize,
 			tv ? (tv->tv_sec * 1000 + tv->tv_usec / 1000) : -1);
+
 	if (retval > 0) {
 		int j, mask;
 		struct epoll_event *e;

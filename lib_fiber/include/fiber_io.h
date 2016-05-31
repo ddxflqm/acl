@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 void fiber_io_hook(void);
+acl_int64 fiber_delay(acl_int64 n);
 
 #ifdef __cplusplus
 }

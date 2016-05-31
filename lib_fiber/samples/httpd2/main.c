@@ -5,9 +5,8 @@
 #include <unistd.h>
 #include "lib_fiber.h"
 
-static void echo_client(void *ctx)
+static int http_client(ACL_VSTREAM *cstream, const char* res, size_t len)
 {
-	ACL_VSTREAM *cstream = (ACL_VSTREAM *) ctx;
 	char  buf[8192];
 	int   ret;
 
@@ -15,15 +14,39 @@ static void echo_client(void *ctx)
 		ret = acl_vstream_gets(cstream, buf, sizeof(buf) - 1);
 		if (ret == ACL_VSTREAM_EOF) {
 			printf("gets error\r\n");
-			break;
+			return -1;
 		}
-		buf[ret] = 0;
-		//printf("gets line: %s", buf);
 
-		if (acl_vstream_writen(cstream, buf, ret) == ACL_VSTREAM_EOF) {
-			printf("write error\r\n");
+		buf[ret] = 0;
+
+		if (strcmp(buf, "\r\n") == 0 || strcmp(buf, "\n") == 0)
 			break;
-		}
+	}
+
+	if (acl_vstream_writen(cstream, res, len) == ACL_VSTREAM_EOF) {
+		printf("write error\r\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+static void echo_client(void *ctx)
+{
+	ACL_VSTREAM *cstream = (ACL_VSTREAM *) ctx;
+	const char* res = "HTTP/1.1 200 OK\r\n"
+		"Date: Tue, 31 May 2016 14:20:28 GMT\r\n"
+		"Server: acl\r\n"
+		"Content-Type: text/html\r\n"
+		"Content-Length: 12\r\n"
+		"Connection: Keep-Alive\r\n"
+		"\r\n"
+		"hello world!";
+	size_t len = strlen(res);
+
+	while (1) {
+		if (http_client(cstream, res, len) < 0)
+			break;
 	}
 
 	acl_vstream_close(cstream);
@@ -49,30 +72,6 @@ static void fiber_accept(void *ctx)
 	acl_vstream_close(sstream);
 }
 
-static void fiber_sleep(void *ctx acl_unused)
-{
-	time_t last, now;
-
-	while (1) {
-		time(&last);
-		sleep(1);
-		time(&now);
-		printf("wakeup, cost %ld seconds\r\n", (long) now - last);
-	}
-}
-
-static void fiber_sleep2(void *ctx acl_unused)
-{
-	time_t last, now;
-
-	while (1) {
-		time(&last);
-		sleep(3);
-		time(&now);
-		printf(">>>wakeup, cost %ld seconds<<<\r\n", (long) now - last);
-	}
-}
-
 int main(void)
 {
 	const char *addr = "0.0.0.0:8089";
@@ -88,14 +87,8 @@ int main(void)
 
 	printf("listen %s ok\r\n", addr);
 
-	acl_non_blocking(ACL_VSTREAM_SOCK(sstream), ACL_NON_BLOCKING);
-
 	printf("%s: call fiber_creater\r\n", __FUNCTION__);
 	fiber_create(fiber_accept, sstream, 32768);
-
-	fiber_create(fiber_sleep, NULL, 32768);
-
-	fiber_create(fiber_sleep2, NULL, 32768);
 
 	printf("call fiber_schedule\r\n");
 	fiber_schedule();
