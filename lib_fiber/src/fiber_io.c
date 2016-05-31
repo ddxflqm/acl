@@ -75,7 +75,8 @@ static void fiber_io_loop(void *ctx)
 		}
 
 		/* add 1000 just for the deviation of epoll_wait */
-		event_process(ev, timer_left + 1000);
+		event_process(ev, timer_left > 0 ?
+			timer_left + 1000 : timer_left);
 
 		if (fiber == NULL)
 			continue;
