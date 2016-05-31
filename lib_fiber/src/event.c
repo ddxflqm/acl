@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <sys/types.h>
-#include <poll.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -16,11 +14,12 @@ EVENT *event_create(int size)
 	int i;
 	EVENT *ev = event_epoll_create(size);
 
-	ev->events = (FILE_EVENT *) acl_mymalloc(sizeof(FILE_EVENT) * size);
-	ev->fired = (FIRED_EVENT *) acl_mymalloc(sizeof(FIRED_EVENT) * size);
+	ev->events  = (FILE_EVENT *) acl_mycalloc(size, sizeof(FILE_EVENT));
+	ev->defers  = (DEFER_DELETE *) acl_mycalloc(size, sizeof(FILE_EVENT));
+	ev->fired   = (FIRED_EVENT *) acl_mycalloc(size, sizeof(FIRED_EVENT));
 	ev->setsize = size;
-	ev->stop = 0;
-	ev->maxfd = -1;
+	ev->maxfd   = -1;
+	ev->ndefer  = 0;
 
 	/* Events with mask == AE_NONE are not set. So let's initialize the
 	 * vector with it.
@@ -39,12 +38,11 @@ int event_size(EVENT *ev)
 
 void event_free(EVENT *ev)
 {
-	ev->free(ev);
-}
+	acl_myfree(ev->events);
+	acl_myfree(ev->defers);
+	acl_myfree(ev->fired);
 
-void event_stop(EVENT *ev)
-{
-	ev->stop = 1;
+	ev->free(ev);
 }
 
 int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
@@ -53,13 +51,20 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 
 	if (fd >= ev->setsize) {
 		errno = ERANGE;
+		acl_msg_error("fd: %d >= setsize: %d", fd, ev->setsize);
 		return -1;
 	}
 
 	fe = &ev->events[fd];
 
-	if (ev->add(ev, fd, mask) == -1)
+	if (fe->defer != NULL) {
+		ev->ndefer--;
+		ev->defers[fe->defer->pos] = ev->defers[ev->ndefer];
+		fe->defer = NULL;
+	} else if (ev->add(ev, fd, mask) == -1) {
+		acl_msg_error("add fd(%d) error", fd);
 		return -1;
+	}
 
 	fe->mask |= mask;
 	if (mask & EVENT_READABLE)
@@ -74,7 +79,7 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 	return 0;
 }
 
-void event_del(EVENT *ev, int fd, int mask)
+static void __event_del(EVENT *ev, int fd, int mask)
 {
 	FILE_EVENT *fe;
 
@@ -82,6 +87,8 @@ void event_del(EVENT *ev, int fd, int mask)
 		return;
 
 	fe = &ev->events[fd];
+	fe->defer = NULL;
+
 	if (fe->mask == EVENT_NONE)
 		return;
 
@@ -98,6 +105,16 @@ void event_del(EVENT *ev, int fd, int mask)
 	}
 }
 
+void event_del(EVENT *ev, int fd, int mask)
+{
+	ev->defers[ev->ndefer].fd   = fd;
+	ev->defers[ev->ndefer].mask = mask;
+	ev->defers[ev->ndefer].pos  = ev->ndefer;
+	ev->events[fd].defer        = &ev->defers[ev->ndefer];
+
+	ev->ndefer++;
+}
+
 int event_mask(EVENT *ev, int fd)
 {
 	if (fd >= ev->setsize)
@@ -110,18 +127,24 @@ int event_process(EVENT *ev)
 {
 	int processed = 0, numevents, j;
 	struct timeval tv, *tvp;
+	FILE_EVENT *fe;
+	int mask, fd, rfired;
 
 	tv.tv_sec = 1;
 	tv.tv_usec = 0;
 	tvp = &tv;
 
+	for (j = 0; j < ev->ndefer; j++)
+		__event_del(ev, ev->defers[j].fd, ev->defers[j].mask);
+
+	ev->ndefer = 0;
+
 	numevents = ev->loop(ev, tvp);
 
 	for (j = 0; j < numevents; j++) {
-		FILE_EVENT *fe = &ev->events[ev->fired[j].fd];
-		int mask = ev->fired[j].mask;
-		int fd = ev->fired[j].fd;
-		int rfired = 0;
+		fe   = &ev->events[ev->fired[j].fd];
+		mask = ev->fired[j].mask;
+		fd   = ev->fired[j].fd;
 
 		/* note the fe->mask & mask & ... code: maybe an already
 		 * processed event removed an element that fired and we
@@ -131,7 +154,8 @@ int event_process(EVENT *ev)
 		if (fe->mask & mask & EVENT_READABLE) {
 			rfired = 1;
 			fe->r_proc(ev, fd, fe->ctx, mask);
-		}
+		} else
+			rfired = 0;
 
 		if (fe->mask & mask & EVENT_WRITABLE) {
 			if (!rfired || fe->w_proc != fe->r_proc)
@@ -143,41 +167,4 @@ int event_process(EVENT *ev)
 
 	/* return the number of processed file/time events */
 	return processed;
-}
-
-void event_loop(EVENT *ev)
-{
-	ev->stop = 0;
-
-	while (!ev->stop)
-		event_process(ev);
-}
-
-/* Wait for milliseconds until the given file descriptor becomes
- * writable/readable/exception */
-int event_wait(int fd, int mask, long long milliseconds)
-{
-	struct pollfd pfd;
-	int retmask = 0, retval;
-
-	memset(&pfd, 0, sizeof(pfd));
-	pfd.fd = fd;
-	if (mask & EVENT_READABLE)
-		pfd.events |= POLLIN;
-	if (mask & EVENT_WRITABLE)
-		pfd.events |= POLLOUT;
-
-	if ((retval = poll(&pfd, 1, milliseconds))== 1) {
-		if (pfd.revents & POLLIN)
-			retmask |= EVENT_READABLE;
-		if (pfd.revents & POLLOUT)
-			retmask |= EVENT_WRITABLE;
-		if (pfd.revents & POLLERR)
-			retmask |= EVENT_WRITABLE;
-		if (pfd.revents & POLLHUP)
-			retmask |= EVENT_WRITABLE;
-
-		return retmask;
-	} else
-		return retval;
 }

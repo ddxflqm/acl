@@ -78,14 +78,6 @@ static int __event_loop(EVENT *ev, struct timeval *tv)
 	EVENT_EPOLL *ep = (EVENT_EPOLL *) ev;
 	int retval, numevents = 0;
 
-#if 0
-	if (tv)
-		printf("%s: tv_sec: %d, tv_usec: %d\r\n", __FUNCTION__,
-			(int) tv->tv_sec, (int) tv->tv_usec);
-	else
-		printf("%s: tv NULL\r\n", __FUNCTION__);
-#endif
-
 	retval = epoll_wait(ep->epfd, ep->epoll_events, ev->setsize,
 			tv ? (tv->tv_sec * 1000 + tv->tv_usec / 1000) : -1);
 	if (retval > 0) {

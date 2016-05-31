@@ -8,6 +8,7 @@
 
 typedef struct FILE_EVENT  FILE_EVENT;
 typedef struct FIRED_EVENT FIRED_EVENT;
+typedef struct DEFER_DELETE DEFER_DELETE;
 typedef struct EVENT EVENT;
 
 typedef void event_proc(EVENT *ev, int fd, void *ctx, int mask);
@@ -17,6 +18,7 @@ struct FILE_EVENT {
 	event_proc *r_proc;
 	event_proc *w_proc;
 	void *ctx;
+	DEFER_DELETE *defer;
 };
 
 struct FIRED_EVENT {
@@ -24,12 +26,19 @@ struct FIRED_EVENT {
 	int mask;
 };
 
+struct DEFER_DELETE {
+	int fd;
+	int mask;
+	int pos;
+};
+
 struct EVENT {
 	int   setsize;
-	int   stop;
 	int   maxfd;
-	FILE_EVENT  *events;
-	FIRED_EVENT *fired;
+	FILE_EVENT   *events;
+	FIRED_EVENT  *fired;
+	DEFER_DELETE *defers;
+	int   ndefer;
 
 	const char *(*name)(void);
 	int  (*loop)(EVENT *, struct timeval *);
@@ -41,12 +50,9 @@ struct EVENT {
 EVENT *event_create(int size);
 int event_size(EVENT *ev);
 void event_free(EVENT *ev);
-void event_stop(EVENT *ev);
 int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx);
 void event_del(EVENT *ev, int fd, int mask);
 int event_mask(EVENT *ev, int fd);
 int event_process(EVENT *ev);
-int event_wait(int fd, int mask, long long milliseconds);
-void event_loop(EVENT *ev);
 
 #endif
