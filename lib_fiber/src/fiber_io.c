@@ -7,19 +7,42 @@
 #include "fiber_schedule.h"
 #include "fiber_io.h"
 
-typedef ssize_t (*read_fn)(int, void *, size_t);
-typedef ssize_t (*write_fn)(int, const void *, size_t);
 typedef int (*accept_fn)(int, struct sockaddr *, socklen_t *);
+typedef int (*connect_fn)(int, const struct sockaddr *, socklen_t);
+typedef ssize_t (*read_fn)(int, void *, size_t);
+typedef ssize_t (*readv_fn)(int, const struct iovec *, int);
+typedef ssize_t (*recv_fn)(int, void *, size_t, int);
+typedef ssize_t (*recvfrom_fn)(int, void *, size_t, int,
+	struct sockaddr *, socklen_t *);
+typedef ssize_t (*recvmsg_fn)(int, struct msghdr *, int);
+typedef ssize_t (*write_fn)(int, const void *, size_t);
+typedef ssize_t (*writev_fn)(int, const struct iovec *, int);
+typedef ssize_t (*send_fn)(int, const void *, size_t, int);
+typedef ssize_t (*sendto_fn)(int, const void *, size_t, int,
+	const struct sockaddr *, socklen_t);
+typedef ssize_t (*sendmsg_fn)(int, const struct msghdr *, int);
 
-static read_fn    __sys_read   = NULL;
-static write_fn   __sys_write  = NULL;
-static accept_fn  __sys_accept = NULL;
-static EVENT     *__event      = NULL;
-static FIBER    **__io_fibers  = NULL;
-static size_t     __io_count   = 0;
-static FIBER     *__ev_fiber   = NULL;
-static ACL_RING   __ev_timer;
-static int        __sleeping_count;
+static accept_fn   __sys_accept   = NULL;
+static connect_fn  __sys_connect  = NULL;
+
+static read_fn     __sys_read     = NULL;
+static readv_fn    __sys_readv    = NULL;
+static recv_fn     __sys_recv     = NULL;
+static recvfrom_fn __sys_recvfrom = NULL;
+static recvmsg_fn  __sys_recvmsg  = NULL;
+
+static write_fn    __sys_write    = NULL;
+static writev_fn   __sys_writev   = NULL;
+static send_fn     __sys_send     = NULL;
+static sendto_fn   __sys_sendto   = NULL;
+static sendmsg_fn  __sys_sendmsg  = NULL;
+
+static EVENT      *__event        = NULL;
+static FIBER     **__io_fibers    = NULL;
+static size_t      __io_count     = 0;
+static FIBER      *__ev_fiber     = NULL;
+static ACL_RING    __ev_timer;
+static int         __sleeping_count;
 
 static void fiber_io_loop(void *ctx);
 
@@ -28,12 +51,24 @@ static void fiber_io_loop(void *ctx);
 
 void fiber_io_hook(void)
 {
-	__sys_read   = (read_fn) dlsym(RTLD_NEXT, "read");
-	__sys_write  = (write_fn) dlsym(RTLD_NEXT, "write");
-	__sys_accept = (accept_fn) dlsym(RTLD_NEXT, "accept");
+	__sys_accept   = (accept_fn) dlsym(RTLD_NEXT, "accept");
+	__sys_connect  = (connect_fn) dlsym(RTLD_NEXT, "connect");
 
-	__event      = event_create(MAXFD);
-	__io_fibers  = (FIBER **) acl_mycalloc(MAXFD, sizeof(FIBER *));
+	__sys_read     = (read_fn) dlsym(RTLD_NEXT, "read");
+	__sys_readv    = (readv_fn) dlsym(RTLD_NEXT, "readv");
+	__sys_recv     = (recv_fn) dlsym(RTLD_NEXT, "recv");
+	__sys_recvfrom = (recvfrom_fn) dlsym(RTLD_NEXT, "recvfrom");
+	__sys_recvmsg  = (recvmsg_fn) dlsym(RTLD_NEXT, "recvmsg");
+
+	__sys_write    = (write_fn) dlsym(RTLD_NEXT, "write");
+	__sys_writev   = (writev_fn) dlsym(RTLD_NEXT, "writev");
+	__sys_send     = (send_fn) dlsym(RTLD_NEXT, "send");
+	__sys_sendto   = (sendto_fn) dlsym(RTLD_NEXT, "sendto");
+	__sys_sendmsg  = (sendmsg_fn) dlsym(RTLD_NEXT, "sendmsg");
+
+	__event        = event_create(MAXFD);
+	__io_fibers    = (FIBER **) acl_mycalloc(MAXFD, sizeof(FIBER *));
+
 	acl_ring_init(&__ev_timer);
 }
 
@@ -145,7 +180,7 @@ unsigned int sleep(unsigned int seconds)
 	return fiber_delay(seconds * 1000000);
 }
 
-static void accept_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)
+static void read_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)
 {
 	event_del(ev, fd, mask);
 	fiber_ready(__io_fibers[fd]);
@@ -154,12 +189,34 @@ static void accept_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)
 	__io_fibers[fd] = __io_fibers[__io_count];
 }
 
-static void fiber_wait_accept(int fd)
+static void fiber_wait_read(int fd)
 {
 	if (__ev_fiber == NULL)
 		__ev_fiber = fiber_create(fiber_io_loop, __event, STACK_SIZE);
 
-	event_add(__event, fd, EVENT_READABLE, accept_callback, NULL);
+	event_add(__event, fd, EVENT_READABLE, read_callback, NULL);
+
+	__io_fibers[fd] = fiber_running();
+	__io_count++;
+
+	fiber_switch();
+}
+
+static void write_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)
+{
+	event_del(ev, fd, mask);
+	fiber_ready(__io_fibers[fd]);
+
+	__io_count--;
+	__io_fibers[fd] = __io_fibers[__io_count];
+}
+
+static void fiber_wait_write(int fd)
+{
+	if (__ev_fiber == NULL)
+		__ev_fiber = fiber_create(fiber_io_loop, __event, STACK_SIZE);
+
+	event_add(__event, fd, EVENT_WRITABLE, write_callback, NULL);
 
 	__io_fibers[fd] = fiber_running();
 	__io_count++;
@@ -189,34 +246,38 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 #endif
 			return -1;
 
-		fiber_wait_accept(sockfd);
+		fiber_wait_read(sockfd);
 	}
 }
 
-static void read_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)
+int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 {
-	event_del(ev, fd, mask);
-	fiber_ready(__io_fibers[fd]);
+	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
 
-	__io_count--;
-	__io_fibers[fd] = __io_fibers[__io_count];
-}
+	while (1) {
+		int ret = __sys_connect(sockfd, addr, addrlen);
+		if (ret >= 0) {
+			acl_tcp_nodelay(sockfd, 1);
+			return ret;
+		}
 
-static void fiber_wait_read(int fd)
-{
-	if (__ev_fiber == NULL)
-		__ev_fiber = fiber_create(fiber_io_loop, __event, STACK_SIZE);
+#if EAGAIN == EWOULDBLOCK
+		if (errno != EAGAIN)
+#else
+		if (errno != EAGAIN && errno != EWOULDBLOCK)
+#endif
+			return -1;
 
-	event_add(__event, fd, EVENT_READABLE, read_callback, NULL);
-
-	__io_fibers[fd] = fiber_running();
-	__io_count++;
-
-	fiber_switch();
+		fiber_wait_write(sockfd);
+	}
 }
 
 ssize_t read(int fd, void *buf, size_t count)
 {
+#ifdef SET_NONBLOCK
+	acl_non_blocking(fd, ACL_NON_BLOCKING);
+#endif
+
 	while (1) {
 		ssize_t n = __sys_read(fd, buf, count);
 
@@ -234,30 +295,106 @@ ssize_t read(int fd, void *buf, size_t count)
 	}
 }
 
-static void write_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)
+ssize_t readv(int fd, const struct iovec *iov, int iovcnt)
 {
-	event_del(ev, fd, mask);
-	fiber_ready(__io_fibers[fd]);
+#ifdef SET_NONBLOCK
+	acl_non_blocking(fd, ACL_NON_BLOCKING);
+#endif
 
-	__io_count--;
-	__io_fibers[fd] = __io_fibers[__io_count];
+	while (1) {
+		ssize_t n = __sys_readv(fd, iov, iovcnt);
+
+		if (n >= 0)
+			return n;
+
+#if EAGAIN == EWOULDBLOCK
+		if (errno != EAGAIN)
+#else
+		if (errno != EAGAIN && errno != EWOULDBLOCK)
+#endif
+			return -1;
+
+		fiber_wait_read(fd);
+	}
 }
 
-static void fiber_wait_write(int fd)
+ssize_t recv(int sockfd, void *buf, size_t len, int flags)
 {
-	if (__ev_fiber == NULL)
-		__ev_fiber = fiber_create(fiber_io_loop, __event, STACK_SIZE);
+#ifdef SET_NONBLOCK
+	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
+#endif
 
-	event_add(__event, fd, EVENT_WRITABLE, write_callback, NULL);
+	while (1) {
+		ssize_t n = __sys_recv(sockfd, buf, len, flags);
 
-	__io_fibers[fd] = fiber_running();
-	__io_count++;
+		if (n >= 0)
+			return n;
 
-	fiber_switch();
+#if EAGAIN == EWOULDBLOCK
+		if (errno != EAGAIN)
+#else
+		if (errno != EAGAIN && errno != EWOULDBLOCK)
+#endif
+			return -1;
+
+		fiber_wait_read(sockfd);
+	}
+}
+
+ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
+	struct sockaddr *src_addr, socklen_t *addrlen)
+{
+#ifdef SET_NONBLOCK
+	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
+#endif
+
+	while (1) {
+		ssize_t n = __sys_recvfrom(sockfd, buf, len, flags,
+				src_addr, addrlen);
+
+		if (n >= 0)
+			return n;
+
+#if EAGAIN == EWOULDBLOCK
+		if (errno != EAGAIN)
+#else
+		if (errno != EAGAIN && errno != EWOULDBLOCK)
+#endif
+			return -1;
+
+		fiber_wait_read(sockfd);
+	}
+}
+
+ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
+{
+#ifdef SET_NONBLOCK
+	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
+#endif
+
+	while (1) {
+		ssize_t n = __sys_recvmsg(sockfd, msg, flags);
+
+		if (n >= 0)
+			return n;
+
+#if EAGAIN == EWOULDBLOCK
+		if (errno != EAGAIN)
+#else
+		if (errno != EAGAIN && errno != EWOULDBLOCK)
+#endif
+			return -1;
+
+		fiber_wait_read(sockfd);
+	}
 }
 
 ssize_t write(int fd, const void *buf, size_t count)
 {
+#ifdef SET_NONBLOCK
+	acl_non_blocking(fd, ACL_NON_BLOCKING);
+#endif
+
 	while (1) {
 		ssize_t n = __sys_write(fd, buf, count);
 
@@ -272,5 +409,99 @@ ssize_t write(int fd, const void *buf, size_t count)
 			return -1;
 
 		fiber_wait_write(fd);
+	}
+}
+
+ssize_t writev(int fd, const struct iovec *iov, int iovcnt)
+{
+#ifdef SET_NONBLOCK
+	acl_non_blocking(fd, ACL_NON_BLOCKING);
+#endif
+
+	while (1) {
+		ssize_t n = __sys_writev(fd, iov, iovcnt);
+
+		if (n >= 0)
+			return n;
+
+#if EAGAIN == EWOULDBLOCK
+		if (errno != EAGAIN)
+#else
+		if (errno != EAGAIN && errno != EWOULDBLOCK)
+#endif
+			return -1;
+
+		fiber_wait_write(fd);
+	}
+}
+
+ssize_t send(int sockfd, const void *buf, size_t len, int flags)
+{
+#ifdef SET_NONBLOCK
+	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
+#endif
+
+	while (1) {
+		ssize_t n = __sys_send(sockfd, buf, len, flags);
+
+		if (n >= 0)
+			return n;
+
+#if EAGAIN == EWOULDBLOCK
+		if (errno != EAGAIN)
+#else
+		if (errno != EAGAIN && errno != EWOULDBLOCK)
+#endif
+			return -1;
+
+		fiber_wait_write(sockfd);
+	}
+}
+
+ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
+	const struct sockaddr *dest_addr, socklen_t addrlen)
+{
+#ifdef SET_NONBLOCK
+	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
+#endif
+
+	while (1) {
+		ssize_t n = __sys_sendto(sockfd, buf, len, flags,
+				dest_addr, addrlen);
+
+		if (n >= 0)
+			return n;
+
+#if EAGAIN == EWOULDBLOCK
+		if (errno != EAGAIN)
+#else
+		if (errno != EAGAIN && errno != EWOULDBLOCK)
+#endif
+			return -1;
+
+		fiber_wait_write(sockfd);
+	}
+}
+
+ssize_t sendmsg(int sockfd, const struct msghdr *msg, int flags)
+{
+#ifdef SET_NONBLOCK
+	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
+#endif
+
+	while (1) {
+		ssize_t n = __sys_sendmsg(sockfd, msg, flags);
+
+		if (n >= 0)
+			return n;
+
+#if EAGAIN == EWOULDBLOCK
+		if (errno != EAGAIN)
+#else
+		if (errno != EAGAIN && errno != EWOULDBLOCK)
+#endif
+			return -1;
+
+		fiber_wait_write(sockfd);
 	}
 }
