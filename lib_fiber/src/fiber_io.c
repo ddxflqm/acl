@@ -53,7 +53,7 @@ static void fiber_io_loop(void *ctx)
 	EVENT *ev = (EVENT *) ctx;
 	acl_int64 timer_left;
 	FIBER *fiber;
-	acl_int64 now, last;
+	acl_int64 now, last = 0;
 	struct timeval tv;
 
 	fiber_system();
