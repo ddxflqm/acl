@@ -74,7 +74,7 @@ static void fiber_accept(void *ctx)
 
 int main(void)
 {
-	const char *addr = "0.0.0.0:8089";
+	const char *addr = "0.0.0.0:9001";
 	ACL_VSTREAM *sstream;
 
 	fiber_init();
