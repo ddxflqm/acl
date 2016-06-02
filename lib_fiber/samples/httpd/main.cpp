@@ -35,8 +35,6 @@ static void fiber_accept(void *)
 	else
 		printf("open %s ok\r\n", addr.c_str());
 
-	acl_non_blocking(server.sock_handle(), ACL_NON_BLOCKING);
-
 	while (true)
 	{
 		acl::socket_stream* client = server.accept();
