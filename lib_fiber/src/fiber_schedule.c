@@ -115,7 +115,7 @@ void fiber_schedule(void)
 	for (;;) {
 		head = acl_ring_pop_head(&__fibers_queue);
 		if (head == NULL) {
-			printf("no fiber now\r\n");
+			printf("------- NO FIBER NOW --------\r\n");
 			break;
 		}
 

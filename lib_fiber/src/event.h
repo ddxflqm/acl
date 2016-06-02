@@ -6,19 +6,34 @@
 #define	EVENT_WRITABLE	2
 
 
-typedef struct FILE_EVENT  FILE_EVENT;
-typedef struct FIRED_EVENT FIRED_EVENT;
+typedef struct FIBER FIBER;
+typedef struct FILE_EVENT   FILE_EVENT;
+typedef struct POLL_EVENTS   POLL_EVENTS;
+typedef struct FIRED_EVENT  FIRED_EVENT;
 typedef struct DEFER_DELETE DEFER_DELETE;
 typedef struct EVENT EVENT;
 
 typedef void event_proc(EVENT *ev, int fd, void *ctx, int mask);
+typedef void events_proc(EVENT *ev, POLL_EVENTS *pe);
 
 struct FILE_EVENT {
 	int mask;
-	event_proc *r_proc;
-	event_proc *w_proc;
+	event_proc  *r_proc;
+	event_proc  *w_proc;
+	POLL_EVENTS *pevents;
+	struct pollfd *pfd;
 	void *ctx;
 	DEFER_DELETE *defer;
+};
+
+struct POLL_EVENTS {
+	ACL_RING me;
+	struct pollfd *fds;
+	int    nfds;
+	int    nready;
+	int    nrefer;
+	FIBER *curr;
+	events_proc *proc;
 };
 
 struct FIRED_EVENT {
@@ -39,6 +54,7 @@ struct EVENT {
 	FIRED_EVENT  *fired;
 	DEFER_DELETE *defers;
 	int   ndefer;
+	int   timeout;
 
 	const char *(*name)(void);
 	int  (*loop)(EVENT *, struct timeval *);
@@ -51,6 +67,7 @@ EVENT *event_create(int size);
 int event_size(EVENT *ev);
 void event_free(EVENT *ev);
 int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx);
+void event_poll(EVENT *ev, POLL_EVENTS *pe, int timeout);
 void event_del(EVENT *ev, int fd, int mask);
 int event_mask(EVENT *ev, int fd);
 int event_process(EVENT *ev, acl_int64 left);

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include <fcntl.h>
+#include <poll.h>
 #define __USE_GNU
 #include <dlfcn.h>
 #include <sys/stat.h>
@@ -43,6 +44,7 @@ static size_t      __io_count     = 0;
 static FIBER      *__ev_fiber     = NULL;
 static ACL_RING    __ev_timer;
 static int         __sleeping_count;
+static int         __io_stop      = 0;
 
 static void fiber_io_loop(void *ctx);
 
@@ -70,6 +72,11 @@ void fiber_io_hook(void)
 	__io_fibers    = (FIBER **) acl_mycalloc(MAXFD, sizeof(FIBER *));
 
 	acl_ring_init(&__ev_timer);
+}
+
+void fiber_io_stop(void)
+{
+	__io_stop = 1;
 }
 
 #define RING_TO_FIBER(r) \
@@ -113,6 +120,9 @@ static void fiber_io_loop(void *ctx)
 		event_process(ev, timer_left > 0 ?
 			timer_left + 1000 : timer_left);
 
+		if (__io_count == 0 && __io_stop)
+			break;
+
 		if (fiber == NULL)
 			continue;
 
@@ -128,7 +138,6 @@ static void fiber_io_loop(void *ctx)
 				fiber_count_dec();
 
 			fiber_ready(fiber);
-
 			fiber = FIRST_FIBER(&__ev_timer);
 		} while (fiber != NULL && now >= fiber->when);
 	}
@@ -177,7 +186,7 @@ acl_int64 fiber_delay(acl_int64 n)
 
 unsigned int sleep(unsigned int seconds)
 {
-	return fiber_delay(seconds * 1000000);
+	return fiber_delay(seconds * 1000000) / 1000000;
 }
 
 static void read_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)
@@ -504,4 +513,40 @@ ssize_t sendmsg(int sockfd, const struct msghdr *msg, int flags)
 
 		fiber_wait_write(sockfd);
 	}
+}
+
+static void poll_callback(EVENT *ev, POLL_EVENTS *pe)
+{
+	int i;
+
+	for (i = 0; i < pe->nfds; i++) {
+		if (pe->fds[i].events & POLLIN)
+			event_del(ev, pe->fds[i].fd, EVENT_READABLE);
+		if (pe->fds[i].events & POLLOUT)
+			event_del(ev, pe->fds[i].fd, EVENT_WRITABLE);
+		__io_count--;
+	}
+
+	fiber_ready(pe->curr);
+}
+
+int poll(struct pollfd *fds, nfds_t nfds, int timeout)
+{
+	POLL_EVENTS pe;
+
+	if (__ev_fiber == NULL)
+		__ev_fiber = fiber_create(fiber_io_loop, __event, STACK_SIZE);
+
+	pe.fds    = fds;
+	pe.nfds   = nfds;
+	pe.nrefer = 0;
+	pe.curr   = fiber_running();
+	pe.proc   = poll_callback;
+
+	event_poll(__event, &pe, timeout);
+
+	__io_count++;
+	fiber_switch();
+
+	return pe.nready;
 }

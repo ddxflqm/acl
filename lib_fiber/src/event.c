@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <string.h>
+#include <poll.h>
 #include <errno.h>
 
 #include "event_epoll.h"
@@ -20,6 +21,7 @@ EVENT *event_create(int size)
 	ev->setsize = size;
 	ev->maxfd   = -1;
 	ev->ndefer  = 0;
+	ev->timeout = -1;
 
 	/* Events with mask == AE_NONE are not set. So let's initialize the
 	 * vector with it.
@@ -72,11 +74,40 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 	if (mask & EVENT_WRITABLE)
 		fe->w_proc = proc;
 
-	fe->ctx = ctx;
+	fe->ctx      = ctx;
+	fe->pevents  = NULL;
+	fe->pfd      = NULL;
+
 	if (fd > ev->maxfd)
 		ev->maxfd = fd;
 
 	return 0;
+}
+
+void event_poll(EVENT *ev, POLL_EVENTS *pe, int timeout)
+{
+	int i;
+
+	pe->nready = 0;
+
+	for (i = 0; i < pe->nfds; i++) {
+		if (pe->fds[i].events & POLLIN) {
+			event_add(ev, pe->fds[i].fd, EVENT_READABLE, NULL, pe);
+			ev->events[pe->fds[i].fd].pevents = pe;
+			ev->events[pe->fds[i].fd].pfd = &pe->fds[i];
+		}
+
+		if (pe->fds[i].events & POLLOUT) {
+			event_add(ev, pe->fds[i].fd, EVENT_WRITABLE, NULL, pe);
+			ev->events[pe->fds[i].fd].pevents = pe;
+			ev->events[pe->fds[i].fd].pfd = &pe->fds[i];
+		}
+
+		pe->fds[i].revents = 0;
+	}
+
+	if (timeout > 0 && timeout < ev->timeout)
+		ev->timeout = timeout;
 }
 
 static void __event_del(EVENT *ev, int fd, int mask)
@@ -86,14 +117,17 @@ static void __event_del(EVENT *ev, int fd, int mask)
 	if (fd >= ev->setsize)
 		return;
 
-	fe = &ev->events[fd];
-	fe->defer = NULL;
+	fe          = &ev->events[fd];
+	fe->defer   = NULL;
+	fe->pevents = NULL;
+	fe->pfd     = NULL;
 
 	if (fe->mask == EVENT_NONE)
 		return;
 
 	ev->del(ev, fd, mask);
 	fe->mask = fe->mask & (~mask);
+
 	if (fd == ev->maxfd && fe->mask == EVENT_NONE) {
 		/* Update the max fd */
 		int j;
@@ -129,6 +163,7 @@ int event_process(EVENT *ev, acl_int64 left)
 	struct timeval tv, *tvp;
 	FILE_EVENT *fe;
 	int mask, fd, rfired;
+	ACL_RING pes;
 
 	if (left < 0) {
 		tv.tv_sec = 1;
@@ -147,10 +182,32 @@ int event_process(EVENT *ev, acl_int64 left)
 
 	numevents = ev->loop(ev, tvp);
 
+	acl_ring_init(&pes);
+
 	for (j = 0; j < numevents; j++) {
 		fe   = &ev->events[ev->fired[j].fd];
 		mask = ev->fired[j].mask;
 		fd   = ev->fired[j].fd;
+
+		if (fe->pevents != NULL) {
+			if (fe->pevents->nrefer > 0)
+				continue;
+
+			if (fe->mask & mask & EVENT_READABLE) {
+				fe->pfd->revents |= POLLIN;
+				fe->pevents->nready++;
+			}
+
+			if (fe->mask & mask & EVENT_WRITABLE) {
+				fe->pfd->revents |= POLLOUT;
+				fe->pevents->nready++;
+			}
+
+			acl_ring_prepend(&pes, &fe->pevents->me);
+			fe->pevents->nrefer++;
+
+			continue;
+		}
 
 		/* note the fe->mask & mask & ... code: maybe an already
 		 * processed event removed an element that fired and we
@@ -169,6 +226,17 @@ int event_process(EVENT *ev, acl_int64 left)
 		}
 
 		processed++;
+	}
+
+	if (acl_ring_size(&pes) > 0) {
+		POLL_EVENTS *pe;
+		ACL_RING_ITER iter;
+
+		acl_ring_foreach(iter, &pes) {
+			 pe = acl_ring_to_appl(iter.ptr, POLL_EVENTS, me);
+			 pe->proc(ev, pe);
+			 processed++;
+		}
 	}
 
 	/* return the number of processed file/time events */
