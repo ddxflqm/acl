@@ -5,6 +5,7 @@
 #include <dlfcn.h>
 #include "event.h"
 #include "fiber_schedule.h"
+#include "fiber_io.h"
 #include "fiber.h"
 
 typedef int (*accept_fn)(int, struct sockaddr *, socklen_t *);
@@ -159,11 +160,18 @@ struct hostent *gethostbyname(const char *name)
 		== 0 ? result : NULL;
 }
 
+static char dns_ip[128] = "8.8.8.8";
+static int dns_port = 53;
+
+void fiber_set_dns(const char* ip, int port)
+{
+	snprintf(dns_ip, sizeof(dns_ip), "%s", ip);
+	dns_port = port;
+}
+
 int gethostbyname_r(const char *name, struct hostent *ret,
 	char *buf, size_t buflen, struct hostent **result, int *h_errnop)
 {
-	const char *dns_ip = "8.8.8.8";
-	int dns_port = 53;
 	ACL_RES *ns = acl_res_new(dns_ip, dns_port);
 	ACL_DNS_DB *res = NULL;
 	size_t n = 0, len, i = 0;
