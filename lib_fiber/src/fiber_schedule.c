@@ -110,6 +110,7 @@ void fiber_init(void)
 
 	__called++;
 	acl_ring_init(&__fibers_queue);
+	fiber_io_hook();
 }
 
 void fiber_schedule(void)

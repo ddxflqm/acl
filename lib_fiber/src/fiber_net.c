@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include <poll.h>
+#include <netdb.h>
 #define __USE_GNU
 #include <dlfcn.h>
 #include "event.h"
@@ -92,7 +93,11 @@ static void poll_callback(EVENT *ev, POLL_EVENTS *pe)
 int poll(struct pollfd *fds, nfds_t nfds, int timeout)
 {
 	POLL_EVENTS pe;
-	EVENT *event = fiber_io_event();
+	EVENT *event;
+
+	fiber_io_check();
+
+	event = fiber_io_event();
 
 	pe.fds    = fds;
 	pe.nfds   = nfds;
@@ -142,4 +147,107 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 	acl_myfree(fds);
 
 	return nfds;
+}
+
+struct hostent *gethostbyname(const char *name)
+{
+	static __thread struct hostent ret, *result;
+#define BUF_LEN	4096
+	static __thread char buf[BUF_LEN];
+
+	return gethostbyname_r(name, &ret, buf, BUF_LEN, &result, &h_errno)
+		== 0 ? result : NULL;
+}
+
+int gethostbyname_r(const char *name, struct hostent *ret,
+	char *buf, size_t buflen, struct hostent **result, int *h_errnop)
+{
+	const char *dns_ip = "8.8.8.8";
+	int dns_port = 53;
+	ACL_RES *ns = acl_res_new(dns_ip, dns_port);
+	ACL_DNS_DB *res = NULL;
+	size_t n = 0, len, i = 0;
+	ACL_ITER iter;
+
+#define	RETURN(x) do { \
+	if (res) \
+		acl_netdb_free(res); \
+	if (ns) \
+		acl_res_free(ns); \
+	return (x); \
+} while (0)
+
+	memset(ret, 0, sizeof(struct hostent));
+	memset(buf, 0, buflen);
+
+	if (ns == NULL) {
+		acl_msg_error("%s(%d), %s: acl_res_new NULL, name: %s,"
+			" dns_ip: %s, dns_port: %d", __FILE__, __LINE__,
+			__FUNCTION__, name, dns_ip, dns_port);
+		RETURN (-1);
+	}
+
+	res = acl_res_lookup(ns, name);
+	if (res == NULL) {
+		acl_msg_error("%s(%d), %s: acl_res_lookup NULL, name: %s,"
+			" dns_ip: %s, dns_port: %d", __FILE__, __LINE__,
+			__FUNCTION__, name, dns_ip, dns_port);
+		if (h_errnop)
+			*h_errnop = HOST_NOT_FOUND;
+		RETURN (-1);
+	}
+
+	len = strlen(name);
+	n += len;
+	if (n >= buflen) {
+		acl_msg_error("%s(%d), %s: n(%d) > buflen(%d)", __FILE__,
+			__LINE__, __FUNCTION__, (int) n, (int) buflen);
+		if (h_errnop)
+			*h_errnop = ERANGE;
+		RETURN (-1);
+	}
+	memcpy(buf, name, len);
+	buf[len] = 0;
+	ret->h_name = buf;
+	buf += len + 1;
+
+#define MAX_COUNT	64
+	len = 8 * MAX_COUNT;
+	n += len;
+	if (n >= buflen) {
+		acl_msg_error("%s(%d), %s: n(%d) > buflen(%d)", __FILE__,
+			__LINE__, __FUNCTION__, (int) n, (int) buflen);
+		if (h_errnop)
+			*h_errnop = ERANGE;
+		RETURN (-1);
+	}
+	ret->h_addr_list = (char**) buf;
+	buf += len;
+
+	acl_foreach(iter, res) {
+		ACL_HOSTNAME *h = (ACL_HOSTNAME*) iter.data;
+
+		len = strlen(h->ip);
+		n += len;
+		memcpy(buf, h->ip, len);
+		buf[len] = 0;
+
+		if (i >= MAX_COUNT)
+			break;
+		ret->h_addr_list[i++] = buf;
+		buf += len + 1;
+		ret->h_length += len;
+	}
+
+	if (i == 0) {
+		acl_msg_error("%s(%d), %s: i == 0",
+			__FILE__, __LINE__, __FUNCTION__);
+		if (h_errnop)
+			*h_errnop = ERANGE;
+		RETURN (-1);
+	}
+
+	*result = ret;
+
+	RETURN (0);
 }

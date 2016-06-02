@@ -23,6 +23,7 @@ static void nslookup(void *ctx)
 		}
 		printf(">>>> begin call acl_res_lookup resolve %s\r\n", name);
 		res = acl_res_lookup(ns, name);
+		acl_res_free(ns);
 	} else {
 		printf(">>>> begin call acl_gethostbyname resolve %s\r\n", name);
 		res = acl_gethostbyname(name, NULL);
@@ -36,6 +37,8 @@ static void nslookup(void *ctx)
 			ACL_HOSTNAME *h = (ACL_HOSTNAME*) iter.data;
 			printf("\tip: %s, ttl: %u\r\n", h->ip, h->ttl);
 		}
+
+		acl_netdb_free(res);
 	}
 
 	--__count;
@@ -56,8 +59,6 @@ int main(int argc, char *argv[])
 	char  buf[1024];
 	ACL_ARGV *tokens;
 	ACL_ITER  iter;
-
-	fiber_io_hook();
 
 	buf[0] = 0;
 	__dns_ip[0] = 0;

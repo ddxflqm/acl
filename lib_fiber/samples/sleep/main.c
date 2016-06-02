@@ -42,8 +42,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	fiber_io_hook();
-
 	printf("n: %d\r\n", n);
 	fiber_create(fiber_sleep, &n, 32768);
 
