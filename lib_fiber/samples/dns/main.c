@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 	ACL_ARGV *tokens;
 	ACL_ITER  iter;
 
-	fiber_init();
+	fiber_io_hook();
 
 	buf[0] = 0;
 	__dns_ip[0] = 0;

@@ -5,7 +5,6 @@
 #define	EVENT_READABLE	1
 #define	EVENT_WRITABLE	2
 
-
 typedef struct FIBER FIBER;
 typedef struct FILE_EVENT   FILE_EVENT;
 typedef struct POLL_EVENTS   POLL_EVENTS;

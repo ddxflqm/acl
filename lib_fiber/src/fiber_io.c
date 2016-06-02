@@ -1,15 +1,13 @@
 #include "stdafx.h"
 #include <fcntl.h>
-#include <poll.h>
 #define __USE_GNU
 #include <dlfcn.h>
 #include <sys/stat.h>
 #include "event.h"
 #include "fiber_schedule.h"
+#include "fiber.h"
 #include "fiber_io.h"
 
-typedef int (*accept_fn)(int, struct sockaddr *, socklen_t *);
-typedef int (*connect_fn)(int, const struct sockaddr *, socklen_t);
 typedef ssize_t (*read_fn)(int, void *, size_t);
 typedef ssize_t (*readv_fn)(int, const struct iovec *, int);
 typedef ssize_t (*recv_fn)(int, void *, size_t, int);
@@ -22,9 +20,6 @@ typedef ssize_t (*send_fn)(int, const void *, size_t, int);
 typedef ssize_t (*sendto_fn)(int, const void *, size_t, int,
 	const struct sockaddr *, socklen_t);
 typedef ssize_t (*sendmsg_fn)(int, const struct msghdr *, int);
-
-static accept_fn   __sys_accept   = NULL;
-static connect_fn  __sys_connect  = NULL;
 
 static read_fn     __sys_read     = NULL;
 static readv_fn    __sys_readv    = NULL;
@@ -53,8 +48,12 @@ static void fiber_io_loop(void *ctx);
 
 void fiber_io_hook(void)
 {
-	__sys_accept   = (accept_fn) dlsym(RTLD_NEXT, "accept");
-	__sys_connect  = (connect_fn) dlsym(RTLD_NEXT, "connect");
+	static int __called = 0;
+
+	if (__called)
+		return;
+
+	__called++;
 
 	__sys_read     = (read_fn) dlsym(RTLD_NEXT, "read");
 	__sys_readv    = (readv_fn) dlsym(RTLD_NEXT, "readv");
@@ -72,6 +71,8 @@ void fiber_io_hook(void)
 	__io_fibers    = (FIBER **) acl_mycalloc(MAXFD, sizeof(FIBER *));
 
 	acl_ring_init(&__ev_timer);
+
+	fiber_net_hook();
 }
 
 void fiber_io_stop(void)
@@ -88,6 +89,27 @@ void fiber_io_stop(void)
 #define SET_TIME(x) {  \
 	gettimeofday(&tv, NULL);  \
 	(x) = ((acl_int64) tv.tv_sec) * 1000000 + ((acl_int64) tv.tv_usec); \
+}
+
+void fiber_io_check(void)
+{
+	if (__ev_fiber == NULL)
+		__ev_fiber = fiber_create(fiber_io_loop, __event, STACK_SIZE);
+}
+
+void fiber_io_dec(void)
+{
+	__io_count--;
+}
+
+void fiber_io_inc(void)
+{
+	__io_count++;
+}
+
+EVENT *fiber_io_event(void)
+{
+	return __event;
 }
 
 static void fiber_io_loop(void *ctx)
@@ -198,7 +220,7 @@ static void read_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)
 	__io_fibers[fd] = __io_fibers[__io_count];
 }
 
-static void fiber_wait_read(int fd)
+void fiber_wait_read(int fd)
 {
 	if (__ev_fiber == NULL)
 		__ev_fiber = fiber_create(fiber_io_loop, __event, STACK_SIZE);
@@ -220,7 +242,7 @@ static void write_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)
 	__io_fibers[fd] = __io_fibers[__io_count];
 }
 
-static void fiber_wait_write(int fd)
+void fiber_wait_write(int fd)
 {
 	if (__ev_fiber == NULL)
 		__ev_fiber = fiber_create(fiber_io_loop, __event, STACK_SIZE);
@@ -231,54 +253,6 @@ static void fiber_wait_write(int fd)
 	__io_count++;
 
 	fiber_switch();
-}
-
-int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
-{
-	int   clifd;
-
-	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
-
-	while (1) {
-		clifd = __sys_accept(sockfd, addr, addrlen);
-
-		if (clifd >= 0) {
-			acl_non_blocking(clifd, ACL_NON_BLOCKING);
-			acl_tcp_nodelay(clifd, 1);
-			return clifd;
-		}
-
-#if EAGAIN == EWOULDBLOCK
-		if (errno != EAGAIN)
-#else
-		if (errno != EAGAIN && errno != EWOULDBLOCK)
-#endif
-			return -1;
-
-		fiber_wait_read(sockfd);
-	}
-}
-
-int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
-{
-	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
-
-	while (1) {
-		int ret = __sys_connect(sockfd, addr, addrlen);
-		if (ret >= 0) {
-			acl_tcp_nodelay(sockfd, 1);
-			return ret;
-		}
-
-#if EAGAIN == EWOULDBLOCK
-		if (errno != EAGAIN)
-#else
-		if (errno != EAGAIN && errno != EWOULDBLOCK)
-#endif
-			return -1;
-
-		fiber_wait_write(sockfd);
-	}
 }
 
 ssize_t read(int fd, void *buf, size_t count)
@@ -513,40 +487,4 @@ ssize_t sendmsg(int sockfd, const struct msghdr *msg, int flags)
 
 		fiber_wait_write(sockfd);
 	}
-}
-
-static void poll_callback(EVENT *ev, POLL_EVENTS *pe)
-{
-	int i;
-
-	for (i = 0; i < pe->nfds; i++) {
-		if (pe->fds[i].events & POLLIN)
-			event_del(ev, pe->fds[i].fd, EVENT_READABLE);
-		if (pe->fds[i].events & POLLOUT)
-			event_del(ev, pe->fds[i].fd, EVENT_WRITABLE);
-		__io_count--;
-	}
-
-	fiber_ready(pe->curr);
-}
-
-int poll(struct pollfd *fds, nfds_t nfds, int timeout)
-{
-	POLL_EVENTS pe;
-
-	if (__ev_fiber == NULL)
-		__ev_fiber = fiber_create(fiber_io_loop, __event, STACK_SIZE);
-
-	pe.fds    = fds;
-	pe.nfds   = nfds;
-	pe.nrefer = 0;
-	pe.curr   = fiber_running();
-	pe.proc   = poll_callback;
-
-	event_poll(__event, &pe, timeout);
-
-	__io_count++;
-	fiber_switch();
-
-	return pe.nready;
 }

@@ -7,10 +7,10 @@
 
 static void fiber_sleep(void *ctx)
 {
-	int  n = *(int*) ctx;
+	int   n = *((int*) ctx);
 	time_t last, now;
 
-	printf("begin sleep 1\r\n");
+	printf("begin sleep %d\r\n", n);
 	time(&last);
 	n = (int) sleep(n);
 	time(&now);
@@ -42,9 +42,11 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	fiber_init();
+	fiber_io_hook();
 
+	printf("n: %d\r\n", n);
 	fiber_create(fiber_sleep, &n, 32768);
+
 	fiber_schedule();
 
 	return 0;

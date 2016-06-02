@@ -99,12 +99,17 @@ void fiber_free(FIBER *fiber)
 	acl_myfree(fiber);
 }
 
-//void fiber_init(void) __attribute__ ((constructor));
+void fiber_init(void) __attribute__ ((constructor));
 
 void fiber_init(void)
 {
+	static int __called = 0;
+
+	if (__called != 0)
+		return;
+
+	__called++;
 	acl_ring_init(&__fibers_queue);
-	fiber_io_hook();
 }
 
 void fiber_schedule(void)

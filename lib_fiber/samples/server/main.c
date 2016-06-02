@@ -78,7 +78,7 @@ int main(void)
 	const char *addr = "0.0.0.0:9002";
 	ACL_VSTREAM *sstream;
 
-	fiber_init();
+	fiber_io_hook();
 
 	sstream = acl_vstream_listen(addr, 128);
 	if (sstream == NULL) {

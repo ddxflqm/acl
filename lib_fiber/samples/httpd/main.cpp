@@ -54,7 +54,7 @@ static void fiber_accept(void *)
 int main(void)
 {
 	acl::acl_cpp_init();
-	fiber_init();
+	fiber_io_hook();
 	fiber_create(fiber_accept, NULL, 32768);
 	fiber_schedule();
 }
