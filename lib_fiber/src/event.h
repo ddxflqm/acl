@@ -1,11 +1,12 @@
 #ifndef EVENT_INCLUDE_H
 #define EVENT_INCLUDE_H
 
+#include "fiber_schedule.h"
+
 #define	EVENT_NONE	0
 #define	EVENT_READABLE	1
 #define	EVENT_WRITABLE	2
 
-typedef struct FIBER FIBER;
 typedef struct FILE_EVENT   FILE_EVENT;
 typedef struct POLL_EVENTS   POLL_EVENTS;
 typedef struct FIRED_EVENT  FIRED_EVENT;
