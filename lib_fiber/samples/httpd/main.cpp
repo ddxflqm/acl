@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "http_servlet.h"
 
-#define	 STACK_SIZE	16000
+#define	 STACK_SIZE	32000
 
 static void http_server(FIBER *, void *ctx)
 {
