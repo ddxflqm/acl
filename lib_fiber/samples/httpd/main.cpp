@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include "http_servlet.h"
 
+#define	 STACK_SIZE	16000
+
 static void http_server(FIBER *, void *ctx)
 {
 	acl::socket_stream *conn = (acl::socket_stream *) ctx;
@@ -45,7 +47,7 @@ static void fiber_accept(FIBER *, void *)
 		}
 
 		printf("accept one: %d\r\n", client->sock_handle());
-		fiber_create(http_server, client, 326780);
+		fiber_create(http_server, client, STACK_SIZE);
 	}
 
 	exit (0);
@@ -54,6 +56,6 @@ static void fiber_accept(FIBER *, void *)
 int main(void)
 {
 	acl::acl_cpp_init();
-	fiber_create(fiber_accept, NULL, 32768);
+	fiber_create(fiber_accept, NULL, STACK_SIZE);
 	fiber_schedule();
 }

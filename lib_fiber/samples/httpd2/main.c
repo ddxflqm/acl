@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include "lib_fiber.h"
 
+#define	STACK_SIZE	16000
+
 static int http_client(ACL_VSTREAM *cstream, const char* res, size_t len)
 {
 	char  buf[8192];
@@ -65,7 +67,7 @@ static void fiber_accept(FIBER *fiber acl_unused, void *ctx)
 		}
 
 		printf("accept one\r\n");
-		fiber_create(echo_client, cstream, 32768);
+		fiber_create(echo_client, cstream, STACK_SIZE);
 		printf("accept one over\r\n");
 	}
 
@@ -86,7 +88,7 @@ int main(void)
 	printf("listen %s ok\r\n", addr);
 
 	printf("%s: call fiber_creater\r\n", __FUNCTION__);
-	fiber_create(fiber_accept, sstream, 32768);
+	fiber_create(fiber_accept, sstream, STACK_SIZE);
 
 	printf("call fiber_schedule\r\n");
 	fiber_schedule();
