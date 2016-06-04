@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "http_servlet.h"
 
-static void http_server(void *ctx)
+static void http_server(FIBER *, void *ctx)
 {
 	acl::socket_stream *conn = (acl::socket_stream *) ctx;
 
@@ -22,7 +22,7 @@ static void http_server(void *ctx)
 	delete conn;
 }
 
-static void fiber_accept(void *)
+static void fiber_accept(FIBER *, void *)
 {
 	acl::string addr = "127.0.0.1:9001";
 	acl::server_socket server;
@@ -54,7 +54,6 @@ static void fiber_accept(void *)
 int main(void)
 {
 	acl::acl_cpp_init();
-	fiber_io_hook();
 	fiber_create(fiber_accept, NULL, 32768);
 	fiber_schedule();
 }

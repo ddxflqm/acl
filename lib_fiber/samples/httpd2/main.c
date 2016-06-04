@@ -31,7 +31,7 @@ static int http_client(ACL_VSTREAM *cstream, const char* res, size_t len)
 	return 0;
 }
 
-static void echo_client(void *ctx)
+static void echo_client(FIBER *fiber acl_unused, void *ctx)
 {
 	ACL_VSTREAM *cstream = (ACL_VSTREAM *) ctx;
 	const char* res = "HTTP/1.1 200 OK\r\n"
@@ -52,7 +52,7 @@ static void echo_client(void *ctx)
 	acl_vstream_close(cstream);
 }
 
-static void fiber_accept(void *ctx)
+static void fiber_accept(FIBER *fiber acl_unused, void *ctx)
 {
 	ACL_VSTREAM *sstream = (ACL_VSTREAM *) ctx;
 
@@ -76,8 +76,6 @@ int main(void)
 {
 	const char *addr = "0.0.0.0:9001";
 	ACL_VSTREAM *sstream;
-
-	fiber_io_hook();
 
 	sstream = acl_vstream_listen(addr, 128);
 	if (sstream == NULL) {

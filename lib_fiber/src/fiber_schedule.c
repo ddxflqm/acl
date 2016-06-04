@@ -41,18 +41,18 @@ static void fiber_start(unsigned int x, unsigned int y)
 	z |= y;
 	fiber = (FIBER *) z;
 
-	fiber->fun(fiber->arg);
+	fiber->fn(fiber, fiber->arg);
 	fiber_exit(0);
 }
 
-static FIBER *fiber_alloc(void (*fun)(void *), void *arg, size_t size)
+static FIBER *fiber_alloc(void (*fn)(FIBER *, void *), void *arg, size_t size)
 {
 	FIBER *fiber = (FIBER *) acl_mycalloc(1, sizeof(FIBER) + size);
 	sigset_t zero;
 	unsigned long z;
 	unsigned int x, y;
 
-	fiber->fun   = fun;
+	fiber->fn    = fn;
 	fiber->arg   = arg;
 	fiber->stack = fiber->buf;
 	fiber->size  = size;
@@ -78,9 +78,9 @@ static FIBER *fiber_alloc(void (*fun)(void *), void *arg, size_t size)
 	return fiber;
 }
 
-FIBER *fiber_create(void (*fun)(void *), void *arg, size_t size)
+FIBER *fiber_create(void (*fn)(FIBER *, void *), void *arg, size_t size)
 {
-	FIBER *fiber = fiber_alloc(fun, arg, size);
+	FIBER *fiber = fiber_alloc(fn, arg, size);
 
 	__fiber_count++;
 	if (__fibers_size % 64 == 0)
@@ -97,6 +97,11 @@ FIBER *fiber_create(void (*fun)(void *), void *arg, size_t size)
 void fiber_free(FIBER *fiber)
 {
 	acl_myfree(fiber);
+}
+
+int fiber_id(const FIBER *fiber)
+{
+	return fiber->id;
 }
 
 void fiber_init(void) __attribute__ ((constructor));

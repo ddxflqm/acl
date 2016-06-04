@@ -31,7 +31,6 @@ struct POLL_EVENTS {
 	struct pollfd *fds;
 	int    nfds;
 	int    nready;
-	int    nrefer;
 	FIBER *curr;
 	events_proc *proc;
 };
@@ -55,6 +54,8 @@ struct EVENT {
 	DEFER_DELETE *defers;
 	int   ndefer;
 	int   timeout;
+	ACL_RING pevents_list;
+	ACL_RING_ITER iter;
 
 	const char *(*name)(void);
 	int  (*loop)(EVENT *, struct timeval *);
@@ -64,12 +65,12 @@ struct EVENT {
 };
 
 EVENT *event_create(int size);
-int event_size(EVENT *ev);
+int  event_size(EVENT *ev);
 void event_free(EVENT *ev);
-int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx);
+int  event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx);
 void event_poll(EVENT *ev, POLL_EVENTS *pe, int timeout);
 void event_del(EVENT *ev, int fd, int mask);
-int event_mask(EVENT *ev, int fd);
-int event_process(EVENT *ev, acl_int64 left);
+int  event_mask(EVENT *ev, int fd);
+int  event_process(EVENT *ev, int left);
 
 #endif

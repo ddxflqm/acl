@@ -41,7 +41,7 @@ static ACL_RING    __ev_timer;
 static int         __sleeping_count;
 static int         __io_stop      = 0;
 
-static void fiber_io_loop(void *ctx);
+static void fiber_io_loop(FIBER *fiber, void *ctx);
 
 #define MAXFD		1024
 #define STACK_SIZE	819200
@@ -88,7 +88,7 @@ void fiber_io_stop(void)
 
 #define SET_TIME(x) {  \
 	gettimeofday(&tv, NULL);  \
-	(x) = ((acl_int64) tv.tv_sec) * 1000000 + ((acl_int64) tv.tv_usec); \
+	(x) = tv.tv_sec * 1000 + tv.tv_usec / 1000; \
 }
 
 void fiber_io_check(void)
@@ -112,12 +112,12 @@ EVENT *fiber_io_event(void)
 	return __event;
 }
 
-static void fiber_io_loop(void *ctx)
+static void fiber_io_loop(FIBER *self acl_unused, void *ctx)
 {
 	EVENT *ev = (EVENT *) ctx;
-	acl_int64 timer_left;
+	int timer_left;
 	FIBER *fiber;
-	acl_int64 now, last = 0;
+	int now, last = 0;
 	struct timeval tv;
 
 	fiber_system();
@@ -138,9 +138,9 @@ static void fiber_io_loop(void *ctx)
 				timer_left = fiber->when - now;
 		}
 
-		/* add 1000 just for the deviation of epoll_wait */
+		/* add 1 just for the deviation of epoll_wait */
 		event_process(ev, timer_left > 0 ?
-			timer_left + 1000 : timer_left);
+			timer_left + 1 : timer_left);
 
 		if (__io_count == 0 && __io_stop)
 			break;
@@ -165,9 +165,9 @@ static void fiber_io_loop(void *ctx)
 	}
 }
 
-acl_int64 fiber_delay(acl_int64 n)
+int fiber_delay(int n)
 {
-	acl_int64 when, now;
+	int when, now;
 	struct timeval tv;
 	FIBER *fiber, *next = NULL;
 	ACL_RING_ITER iter;
@@ -208,7 +208,7 @@ acl_int64 fiber_delay(acl_int64 n)
 
 unsigned int sleep(unsigned int seconds)
 {
-	return fiber_delay(seconds * 1000000) / 1000000;
+	return fiber_delay(seconds * 1000) / 1000;
 }
 
 static void read_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)
@@ -261,21 +261,8 @@ ssize_t read(int fd, void *buf, size_t count)
 	acl_non_blocking(fd, ACL_NON_BLOCKING);
 #endif
 
-	while (1) {
-		ssize_t n = __sys_read(fd, buf, count);
-
-		if (n >= 0)
-			return n;
-
-#if EAGAIN == EWOULDBLOCK
-		if (errno != EAGAIN)
-#else
-		if (errno != EAGAIN && errno != EWOULDBLOCK)
-#endif
-			return -1;
-
-		fiber_wait_read(fd);
-	}
+	fiber_wait_read(fd);
+	return __sys_read(fd, buf, count);
 }
 
 ssize_t readv(int fd, const struct iovec *iov, int iovcnt)
@@ -284,21 +271,8 @@ ssize_t readv(int fd, const struct iovec *iov, int iovcnt)
 	acl_non_blocking(fd, ACL_NON_BLOCKING);
 #endif
 
-	while (1) {
-		ssize_t n = __sys_readv(fd, iov, iovcnt);
-
-		if (n >= 0)
-			return n;
-
-#if EAGAIN == EWOULDBLOCK
-		if (errno != EAGAIN)
-#else
-		if (errno != EAGAIN && errno != EWOULDBLOCK)
-#endif
-			return -1;
-
-		fiber_wait_read(fd);
-	}
+	fiber_wait_read(fd);
+	return __sys_readv(fd, iov, iovcnt);
 }
 
 ssize_t recv(int sockfd, void *buf, size_t len, int flags)
@@ -307,21 +281,8 @@ ssize_t recv(int sockfd, void *buf, size_t len, int flags)
 	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
 #endif
 
-	while (1) {
-		ssize_t n = __sys_recv(sockfd, buf, len, flags);
-
-		if (n >= 0)
-			return n;
-
-#if EAGAIN == EWOULDBLOCK
-		if (errno != EAGAIN)
-#else
-		if (errno != EAGAIN && errno != EWOULDBLOCK)
-#endif
-			return -1;
-
-		fiber_wait_read(sockfd);
-	}
+	fiber_wait_read(sockfd);
+	return __sys_recv(sockfd, buf, len, flags);
 }
 
 ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
@@ -331,22 +292,8 @@ ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
 	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
 #endif
 
-	while (1) {
-		ssize_t n = __sys_recvfrom(sockfd, buf, len, flags,
-				src_addr, addrlen);
-
-		if (n >= 0)
-			return n;
-
-#if EAGAIN == EWOULDBLOCK
-		if (errno != EAGAIN)
-#else
-		if (errno != EAGAIN && errno != EWOULDBLOCK)
-#endif
-			return -1;
-
-		fiber_wait_read(sockfd);
-	}
+	fiber_wait_read(sockfd);
+	return __sys_recvfrom(sockfd, buf, len, flags, src_addr, addrlen);
 }
 
 ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
@@ -355,21 +302,8 @@ ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
 	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
 #endif
 
-	while (1) {
-		ssize_t n = __sys_recvmsg(sockfd, msg, flags);
-
-		if (n >= 0)
-			return n;
-
-#if EAGAIN == EWOULDBLOCK
-		if (errno != EAGAIN)
-#else
-		if (errno != EAGAIN && errno != EWOULDBLOCK)
-#endif
-			return -1;
-
-		fiber_wait_read(sockfd);
-	}
+	fiber_wait_read(sockfd);
+	return __sys_recvmsg(sockfd, msg, flags);
 }
 
 ssize_t write(int fd, const void *buf, size_t count)

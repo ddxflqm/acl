@@ -22,6 +22,7 @@ EVENT *event_create(int size)
 	ev->maxfd   = -1;
 	ev->ndefer  = 0;
 	ev->timeout = -1;
+	acl_ring_init(&ev->pevents_list);
 
 	/* Events with mask == AE_NONE are not set. So let's initialize the
 	 * vector with it.
@@ -88,6 +89,7 @@ void event_poll(EVENT *ev, POLL_EVENTS *pe, int timeout)
 {
 	int i;
 
+	acl_ring_prepend(&ev->pevents_list, &pe->me);
 	pe->nready = 0;
 
 	for (i = 0; i < pe->nfds; i++) {
@@ -106,8 +108,10 @@ void event_poll(EVENT *ev, POLL_EVENTS *pe, int timeout)
 		pe->fds[i].revents = 0;
 	}
 
-	if (timeout > 0 && timeout < ev->timeout)
-		ev->timeout = timeout;
+	if (timeout > 0) {
+		if (ev->timeout < 0 || timeout < ev->timeout)
+			ev->timeout = timeout;
+	}
 }
 
 static void __event_del(EVENT *ev, int fd, int mask)
@@ -157,20 +161,30 @@ int event_mask(EVENT *ev, int fd)
 	return ev->events[fd].mask;
 }
 
-int event_process(EVENT *ev, acl_int64 left)
+int event_process(EVENT *ev, int left)
 {
 	int processed = 0, numevents, j;
 	struct timeval tv, *tvp;
-	FILE_EVENT *fe;
 	int mask, fd, rfired;
-	ACL_RING pes;
+	FILE_EVENT *fe;
 
-	if (left < 0) {
-		tv.tv_sec = 1;
-		tv.tv_usec = 0;
+	if (ev->timeout < 0) {
+		if (left < 0) {
+			tv.tv_sec = 1;
+			tv.tv_usec = 0;
+		} else {
+			tv.tv_sec  = left / 1000;
+			tv.tv_usec = (left - tv.tv_sec * 1000) * 1000;
+		}
+	} else if (left < 0) {
+		tv.tv_sec = ev->timeout / 1000;
+		tv.tv_usec = (ev->timeout - tv.tv_sec * 1000) * 1000;
+	} else if (left < ev->timeout) {
+		tv.tv_sec  = left / 1000;
+		tv.tv_usec = (left - tv.tv_sec * 1000) * 1000;
 	} else {
-		tv.tv_sec  = left / 1000000;
-		tv.tv_usec = left % 1000000;
+		tv.tv_sec = ev->timeout / 1000;
+		tv.tv_usec = (ev->timeout - tv.tv_sec * 1000) * 1000;
 	}
 
 	tvp = &tv;
@@ -182,17 +196,12 @@ int event_process(EVENT *ev, acl_int64 left)
 
 	numevents = ev->loop(ev, tvp);
 
-	acl_ring_init(&pes);
-
 	for (j = 0; j < numevents; j++) {
-		fe   = &ev->events[ev->fired[j].fd];
-		mask = ev->fired[j].mask;
 		fd   = ev->fired[j].fd;
+		mask = ev->fired[j].mask;
+		fe   = &ev->events[fd];
 
 		if (fe->pevents != NULL) {
-			if (fe->pevents->nrefer > 0)
-				continue;
-
 			if (fe->mask & mask & EVENT_READABLE) {
 				fe->pfd->revents |= POLLIN;
 				fe->pevents->nready++;
@@ -202,9 +211,6 @@ int event_process(EVENT *ev, acl_int64 left)
 				fe->pfd->revents |= POLLOUT;
 				fe->pevents->nready++;
 			}
-
-			acl_ring_prepend(&pes, &fe->pevents->me);
-			fe->pevents->nrefer++;
 
 			continue;
 		}
@@ -228,16 +234,15 @@ int event_process(EVENT *ev, acl_int64 left)
 		processed++;
 	}
 
-	if (acl_ring_size(&pes) > 0) {
-		POLL_EVENTS *pe;
-		ACL_RING_ITER iter;
+	acl_ring_foreach(ev->iter, &ev->pevents_list) {
+		POLL_EVENTS *pe = acl_ring_to_appl(ev->iter.ptr,
+				POLL_EVENTS, me);
 
-		acl_ring_foreach(iter, &pes) {
-			 pe = acl_ring_to_appl(iter.ptr, POLL_EVENTS, me);
-			 pe->proc(ev, pe);
-			 processed++;
-		}
+		pe->proc(ev, pe);
+		processed++;
 	}
+
+	acl_ring_init(&ev->pevents_list);
 
 	/* return the number of processed file/time events */
 	return processed;

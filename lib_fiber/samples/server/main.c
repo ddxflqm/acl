@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include "lib_fiber.h"
 
-static void echo_client(void *ctx)
+static void echo_client(FIBER *fiber acl_unused, void *ctx)
 {
 	ACL_VSTREAM *cstream = (ACL_VSTREAM *) ctx;
 	char  buf[8192];
@@ -29,7 +29,7 @@ static void echo_client(void *ctx)
 	acl_vstream_close(cstream);
 }
 
-static void fiber_accept(void *ctx)
+static void fiber_accept(FIBER *fiber acl_unused, void *ctx)
 {
 	ACL_VSTREAM *sstream = (ACL_VSTREAM *) ctx;
 
@@ -49,7 +49,7 @@ static void fiber_accept(void *ctx)
 	acl_vstream_close(sstream);
 }
 
-static void fiber_sleep(void *ctx acl_unused)
+static void fiber_sleep(FIBER *fiber acl_unused, void *ctx acl_unused)
 {
 	time_t last, now;
 
@@ -61,7 +61,7 @@ static void fiber_sleep(void *ctx acl_unused)
 	}
 }
 
-static void fiber_sleep2(void *ctx acl_unused)
+static void fiber_sleep2(FIBER *fiber acl_unused, void *ctx acl_unused)
 {
 	time_t last, now;
 
@@ -77,8 +77,6 @@ int main(void)
 {
 	const char *addr = "0.0.0.0:9002";
 	ACL_VSTREAM *sstream;
-
-	fiber_io_hook();
 
 	sstream = acl_vstream_listen(addr, 128);
 	if (sstream == NULL) {

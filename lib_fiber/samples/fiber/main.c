@@ -8,7 +8,7 @@
 static int __max_loop = 1000;
 static int __max_fiber = 1000;
 
-static void fiber_main(void *ctx acl_unused)
+static void fiber_main(FIBER *fiber acl_unused, void *ctx acl_unused)
 {
 	int  i;
 

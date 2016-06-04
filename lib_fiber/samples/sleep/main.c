@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include "lib_fiber.h"
 
-static void fiber_sleep(void *ctx)
+static void fiber_sleep(FIBER *fiber acl_unused, void *ctx)
 {
 	int   n = *((int*) ctx);
 	time_t last, now;

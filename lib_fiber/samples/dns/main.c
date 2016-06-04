@@ -8,7 +8,7 @@ static char  __dns_ip[256];
 static int   __dns_port = 53;
 static int   __count = 0;
 
-static void nslookup(void *ctx)
+static void nslookup(FIBER *fiber acl_unused, void *ctx)
 {
 	const char *name = (const char *)ctx;
 

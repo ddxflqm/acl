@@ -91,25 +91,42 @@ static void poll_callback(EVENT *ev, POLL_EVENTS *pe)
 	fiber_ready(pe->curr);
 }
 
+#define SET_TIME(x) do { \
+	struct timeval tv; \
+	gettimeofday(&tv, NULL); \
+	(x) = ((acl_int64) tv.tv_sec) * 1000 + ((acl_int64) tv.tv_usec)/ 1000; \
+} while (0)
+
 int poll(struct pollfd *fds, nfds_t nfds, int timeout)
 {
 	POLL_EVENTS pe;
 	EVENT *event;
+	acl_int64 last, now;
 
 	fiber_io_check();
 
-	event = fiber_io_event();
+	event     = fiber_io_event();
 
 	pe.fds    = fds;
 	pe.nfds   = nfds;
-	pe.nrefer = 0;
 	pe.curr   = fiber_running();
 	pe.proc   = poll_callback;
 
-	event_poll(event, &pe, timeout);
+	SET_TIME(last);
 
-	fiber_io_inc();
-	fiber_switch();
+	while (1) {
+		event_poll(event, &pe, timeout);
+
+		fiber_io_inc();
+		fiber_switch();
+
+		if (pe.nready != 0)
+			break;
+
+		SET_TIME(now);
+		if (now - last >= timeout)
+			break;
+	}
 
 	return pe.nready;
 }

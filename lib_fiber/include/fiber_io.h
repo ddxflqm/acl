@@ -7,7 +7,7 @@ extern "C" {
 
 void fiber_io_hook(void);
 void fiber_io_stop(void);
-acl_int64 fiber_delay(acl_int64 n);
+int  fiber_delay(int n);
 
 void fiber_set_dns(const char* ip, int port);
 
