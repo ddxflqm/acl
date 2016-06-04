@@ -1,0 +1,4 @@
+
+1) 2016.6.4
+1.1) 当前的协程支持 hook: read/redv/redv/recvfrom/recvmsg,
+write/writev/send/sendto/sendmsg, poll/select/sleep/gethostbyname/gethostbyname_r
