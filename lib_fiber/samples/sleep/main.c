@@ -3,33 +3,37 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "lib_fiber.h"
+#include "fiber/lib_fiber.h"
 
-static void fiber_sleep(FIBER *fiber acl_unused, void *ctx)
+static int __fibers_count = 2;
+
+static void fiber_sleep(FIBER *fiber, void *ctx)
 {
 	int   n = *((int*) ctx);
 	time_t last, now;
 
-	printf("begin sleep %d\r\n", n);
+	printf("fiber-%d: begin sleep %d\r\n", fiber_id(fiber), n);
 	time(&last);
 	n = (int) sleep(n);
 	time(&now);
 
-	printf("wakup, n: %d, sleep: %ld\r\n", n, (long) (now - last));
+	printf("fiber-%d: wakup, n: %d, sleep: %ld\r\n",
+		fiber_id(fiber), n, (long) (now - last));
 
-	fiber_io_stop();
+	if (--__fibers_count == 0)
+		fiber_io_stop();
 }
 
 static void usage(const char *procname)
 {
-	printf("usage: %s -h [help] -n seconds\r\n", procname);
+	printf("usage: %s -h [help] -n seconds -c nfibers\r\n", procname);
 }
 
 int main(int argc, char *argv[])
 {
-	int   ch, n = 1;
+	int   ch, n = 1, i;
 
-	while ((ch = getopt(argc, argv, "hn:")) > 0) {
+	while ((ch = getopt(argc, argv, "hn:c:")) > 0) {
 		switch (ch) {
 		case 'h':
 			usage(argv[0]);
@@ -37,13 +41,18 @@ int main(int argc, char *argv[])
 		case 'n':
 			n = atoi(optarg);
 			break;
+		case 'c':
+			__fibers_count = atoi(optarg);
+			break;
 		default:
 			break;
 		}
 	}
 
-	printf("n: %d\r\n", n);
-	fiber_create(fiber_sleep, &n, 32768);
+	printf("sleep n: %d, fibers: %d\r\n", n, __fibers_count);
+
+	for (i = 0; i < __fibers_count; i++)
+		fiber_create(fiber_sleep, &n, 32768);
 
 	fiber_schedule();
 

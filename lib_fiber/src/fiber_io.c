@@ -3,10 +3,10 @@
 #define __USE_GNU
 #include <dlfcn.h>
 #include <sys/stat.h>
+#include "fiber/fiber_schedule.h"
+#include "fiber/fiber_io.h"
 #include "event.h"
-#include "fiber_schedule.h"
 #include "fiber.h"
-#include "fiber_io.h"
 
 typedef ssize_t (*read_fn)(int, void *, size_t);
 typedef ssize_t (*readv_fn)(int, const struct iovec *, int);
@@ -95,11 +95,20 @@ static void thread_free(void *ctx)
 {
 	FIBER_TLS *tf = (FIBER_TLS *) ctx;
 
-	acl_assert(tf == __thread_fiber);
 	event_free(tf->event);
 	acl_myfree(tf->io_fibers);
 	fiber_free(tf->ev_fiber);
 	acl_myfree(tf);
+}
+
+static FIBER_TLS *__main_fiber = NULL;
+
+static void main_free(void)
+{
+	if (__main_fiber) {
+		thread_free(__main_fiber);
+		__main_fiber = NULL;
+	}
 }
 
 static void thread_init(void)
@@ -127,7 +136,11 @@ void fiber_io_check(void)
 	__thread_fiber->io_stop = 0;
 	acl_ring_init(&__thread_fiber->ev_timer);
 
-	acl_assert(!acl_pthread_setspecific(__fiber_key, __thread_fiber));
+	if ((unsigned long) acl_pthread_self() == acl_main_thread_self()) {
+		__main_fiber = __thread_fiber;
+		atexit(main_free);
+	} else if (acl_pthread_setspecific(__fiber_key, __thread_fiber) != 0)
+		acl_msg_fatal("acl_pthread_setspecific error!");
 }
 
 void fiber_io_dec(void)

@@ -35,6 +35,7 @@ void   fiber_count_inc(void);
 void   fiber_count_dec(void);
 
 /* in fiber_io.c */
+void fiber_io_hook(void);
 void fiber_io_check(void);
 void fiber_wait_read(int fd);
 void fiber_wait_write(int fd);

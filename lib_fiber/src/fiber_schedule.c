@@ -1,7 +1,7 @@
 #include "stdafx.h"
+#include "fiber/fiber_io.h"
+#include "fiber/fiber_schedule.h"
 #include "fiber.h"
-#include "fiber_io.h"
-#include "fiber_schedule.h"
 
 typedef struct {
 	ACL_RING queue;
@@ -23,8 +23,18 @@ static void thread_free(void *ctx)
 {
 	FIBER_TLS *tf = (FIBER_TLS *) ctx;
 
-	acl_assert(tf == __thread_fiber);
+	acl_myfree(tf->fibers);
 	acl_myfree(tf);
+}
+
+static FIBER_TLS *__main_fiber = NULL;
+
+static void main_free(void)
+{
+	if (__main_fiber) {
+		thread_free(__main_fiber);
+		__main_fiber = NULL;
+	}
 }
 
 static void thread_init(void)
@@ -45,7 +55,11 @@ static void fiber_check(void)
 	__thread_fiber->fibers = NULL;
 	acl_ring_init(&__thread_fiber->queue);
 
-	acl_assert(!acl_pthread_setspecific(__fiber_key, __thread_fiber));
+	if ((unsigned long) acl_pthread_self() == acl_main_thread_self()) {
+		__main_fiber = __thread_fiber;
+		atexit(main_free);
+	} else if (acl_pthread_setspecific(__fiber_key, __thread_fiber) != 0)
+		acl_msg_fatal("acl_pthread_setspecific error!");
 }
 
 static void fiber_swap(FIBER *from, FIBER *to)
@@ -193,7 +207,6 @@ void fiber_schedule(void)
 				__thread_fiber->fibers[--__thread_fiber->size];
 			__thread_fiber->fibers[slot]->slot = slot;
 
-			printf(">>%s: fiber_free: %p\r\n", __FUNCTION__, fiber);
 			fiber_free(fiber);
 		}
 	}

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "lib_fiber.h"
+#include "fiber/lib_fiber.h"
 
 #define	STACK_SIZE	16000
 

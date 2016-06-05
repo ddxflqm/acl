@@ -5,7 +5,6 @@
 extern "C" {
 #endif
 
-void fiber_io_hook(void);
 void fiber_io_stop(void);
 int  fiber_delay(int n);
 

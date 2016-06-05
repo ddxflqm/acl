@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "lib_fiber.h"
+#include "fiber/lib_fiber.h"
 
 static int __max_loop = 1000;
 static int __max_fiber = 1000;

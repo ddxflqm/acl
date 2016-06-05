@@ -1,7 +1,7 @@
 #ifndef EVENT_INCLUDE_H
 #define EVENT_INCLUDE_H
 
-#include "fiber_schedule.h"
+#include "fiber/fiber_schedule.h"
 
 #define	EVENT_NONE	0
 #define	EVENT_READABLE	1

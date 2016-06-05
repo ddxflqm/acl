@@ -1,16 +1,20 @@
 #include "stdafx.h"
 #include <poll.h>
 #include <netdb.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #define __USE_GNU
 #include <dlfcn.h>
+#include "fiber/fiber_schedule.h"
+#include "fiber/fiber_io.h"
 #include "event.h"
-#include "fiber_schedule.h"
-#include "fiber_io.h"
 #include "fiber.h"
 
+typedef int (*socket_fn)(int, int, int);
 typedef int (*accept_fn)(int, struct sockaddr *, socklen_t *);
 typedef int (*connect_fn)(int, const struct sockaddr *, socklen_t);
 
+static socket_fn   __sys_socket   = NULL;
 static accept_fn   __sys_accept   = NULL;
 static connect_fn  __sys_connect  = NULL;
 
@@ -23,15 +27,26 @@ void fiber_net_hook(void)
 
 	__called++;
 
+	__sys_socket    = (socket_fn) dlsym(RTLD_NEXT, "socket");
 	__sys_accept   = (accept_fn) dlsym(RTLD_NEXT, "accept");
 	__sys_connect  = (connect_fn) dlsym(RTLD_NEXT, "connect");
+}
+
+int socket(int domain, int type, int protocol)
+{
+	int sockfd = __sys_socket(domain, type, protocol);
+
+	if (sockfd >= 0)
+	{
+		acl_non_blocking(sockfd, ACL_NON_BLOCKING);
+		printf("set non blocking: %d\r\n", sockfd);
+	}
+	return sockfd;
 }
 
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {
 	int   clifd;
-
-	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
 
 	while (1) {
 		clifd = __sys_accept(sockfd, addr, addrlen);
@@ -55,8 +70,6 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 
 int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 {
-	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
-
 	while (1) {
 		int ret = __sys_connect(sockfd, addr, addrlen);
 		if (ret >= 0) {
