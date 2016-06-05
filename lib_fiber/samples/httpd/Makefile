@@ -1,2 +1,2 @@
-include ./Makefile.in
+include ../Makefile_cpp.in
 PROG = httpd

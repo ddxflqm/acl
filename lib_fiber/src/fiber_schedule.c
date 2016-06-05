@@ -15,6 +15,7 @@ typedef struct {
 	int      switched;
 } FIBER_TLS;
 
+static FIBER_TLS *__main_fiber = NULL;
 static __thread FIBER_TLS *__thread_fiber = NULL;
 
 static acl_pthread_key_t __fiber_key;
@@ -23,16 +24,22 @@ static void thread_free(void *ctx)
 {
 	FIBER_TLS *tf = (FIBER_TLS *) ctx;
 
+	if (__thread_fiber == NULL)
+		return;
+
 	acl_myfree(tf->fibers);
 	acl_myfree(tf);
+	if (__main_fiber == __thread_fiber)
+		__main_fiber = NULL;
+	__thread_fiber = NULL;
 }
-
-static FIBER_TLS *__main_fiber = NULL;
 
 static void main_free(void)
 {
 	if (__main_fiber) {
 		thread_free(__main_fiber);
+		if (__thread_fiber == __main_fiber)
+			__thread_fiber = NULL;
 		__main_fiber = NULL;
 	}
 }
@@ -51,8 +58,11 @@ static void fiber_check(void)
 
 	acl_assert(acl_pthread_once(&__once_control, thread_init) == 0);
 
-	__thread_fiber = (FIBER_TLS *) acl_mymalloc(sizeof(FIBER_TLS));
+	__thread_fiber = (FIBER_TLS *) acl_mycalloc(1, sizeof(FIBER_TLS));
 	__thread_fiber->fibers = NULL;
+	__thread_fiber->size   = 0;
+	__thread_fiber->idgen  = 0;
+	__thread_fiber->count  = 0;
 	acl_ring_init(&__thread_fiber->queue);
 
 	if ((unsigned long) acl_pthread_self() == acl_main_thread_self()) {

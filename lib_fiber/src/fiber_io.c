@@ -43,6 +43,7 @@ typedef struct {
 	int      io_stop;
 } FIBER_TLS;
 
+static FIBER_TLS *__main_fiber = NULL;
 static __thread FIBER_TLS *__thread_fiber = NULL;
 
 static void fiber_io_loop(FIBER *fiber, void *ctx);
@@ -95,18 +96,26 @@ static void thread_free(void *ctx)
 {
 	FIBER_TLS *tf = (FIBER_TLS *) ctx;
 
-	event_free(tf->event);
-	acl_myfree(tf->io_fibers);
-	fiber_free(tf->ev_fiber);
-	acl_myfree(tf);
-}
+	if (__thread_fiber == NULL)
+		return;
 
-static FIBER_TLS *__main_fiber = NULL;
+	if (tf->event)
+		event_free(tf->event);
+	if (tf->io_fibers)
+		acl_myfree(tf->io_fibers);
+	acl_myfree(tf);
+
+	if (__main_fiber == __thread_fiber)
+		__main_fiber = NULL;
+	__thread_fiber = NULL;
+}
 
 static void main_free(void)
 {
 	if (__main_fiber) {
 		thread_free(__main_fiber);
+		if (__thread_fiber == __main_fiber)
+			__thread_fiber = NULL;
 		__main_fiber = NULL;
 	}
 }
