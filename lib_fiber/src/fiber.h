@@ -1,7 +1,38 @@
 #ifndef FIBER_INCLUDE_H
 #define FIBER_INCLUDE_H
 
+#include <ucontext.h>
 #include "event.h"
+
+typedef enum {
+	FIBER_STATUS_READY,
+	FIBER_STATUS_RUNNING,
+	FIBER_STATUS_EXITING,
+} fiber_status_t;
+
+struct FIBER {
+	ACL_RING me;
+	size_t id;
+	size_t slot;
+	acl_int64 when;
+	int sys;
+	fiber_status_t status;
+	ucontext_t uctx;
+	void (*fn)(FIBER *, void *);
+	void *arg;
+	char *stack;
+	size_t size;
+	char  buf[1];
+};
+
+/* in fiber_schedule.c */
+void   fiber_ready(FIBER *fiber);
+FIBER *fiber_running(void);
+void   fiber_exit(int exit_code);
+void   fiber_free(FIBER *fiber);
+void   fiber_system(void);
+void   fiber_count_inc(void);
+void   fiber_count_dec(void);
 
 /* in fiber_io.c */
 void fiber_io_check(void);
