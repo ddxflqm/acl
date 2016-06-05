@@ -37,10 +37,7 @@ int socket(int domain, int type, int protocol)
 	int sockfd = __sys_socket(domain, type, protocol);
 
 	if (sockfd >= 0)
-	{
 		acl_non_blocking(sockfd, ACL_NON_BLOCKING);
-		printf("set non blocking: %d\r\n", sockfd);
-	}
 	return sockfd;
 }
 
@@ -70,6 +67,8 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 
 int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 {
+	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
+
 	while (1) {
 		int ret = __sys_connect(sockfd, addr, addrlen);
 		if (ret >= 0) {
