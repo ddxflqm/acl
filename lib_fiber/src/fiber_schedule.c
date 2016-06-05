@@ -1,16 +1,52 @@
 #include "stdafx.h"
+#include "fiber.h"
 #include "fiber_io.h"
 #include "fiber_schedule.h"
 
-static ACL_RING __fibers_queue;
-static FIBER  **__fibers = NULL;
-static size_t   __fibers_size = 0;
-static int      __fiber_exitcode = 0;
-static FIBER   *__fiber_running = NULL;
-static FIBER    __fiber_schedule;
-static size_t   __fiber_idgen = 0;
-static int      __fiber_count = 0;
-static int      __fiber_switched = 0;
+typedef struct {
+	ACL_RING queue;
+	FIBER  **fibers;
+	size_t   size;
+	int      exitcode;
+	FIBER   *running;
+	FIBER    schedule;
+	size_t   idgen;
+	int      count;
+	int      switched;
+} FIBER_TLS;
+
+static __thread FIBER_TLS *__thread_fiber = NULL;
+
+static acl_pthread_key_t __fiber_key;
+
+static void thread_free(void *ctx)
+{
+	FIBER_TLS *tf = (FIBER_TLS *) ctx;
+
+	acl_assert(tf == __thread_fiber);
+	acl_myfree(tf);
+}
+
+static void thread_init(void)
+{
+	acl_assert(acl_pthread_key_create(&__fiber_key, thread_free) == 0);
+}
+
+static acl_pthread_once_t __once_control = ACL_PTHREAD_ONCE_INIT;
+
+static void fiber_check(void)
+{
+	if (__thread_fiber != NULL)
+		return;
+
+	acl_assert(acl_pthread_once(&__once_control, thread_init) == 0);
+
+	__thread_fiber = (FIBER_TLS *) acl_mymalloc(sizeof(FIBER_TLS));
+	__thread_fiber->fibers = NULL;
+	acl_ring_init(&__thread_fiber->queue);
+
+	acl_assert(!acl_pthread_setspecific(__fiber_key, __thread_fiber));
+}
 
 static void fiber_swap(FIBER *from, FIBER *to)
 {
@@ -21,13 +57,17 @@ static void fiber_swap(FIBER *from, FIBER *to)
 
 FIBER *fiber_running(void)
 {
-	return __fiber_running;
+	fiber_check();
+	return __thread_fiber->running;
 }
 
 void fiber_exit(int exit_code)
 {
-	__fiber_exitcode = exit_code;
-	__fiber_running->status = FIBER_STATUS_EXITING;
+	fiber_check();
+
+	__thread_fiber->exitcode = exit_code;
+	__thread_fiber->running->status = FIBER_STATUS_EXITING;
+
 	fiber_switch();
 }
 
@@ -47,16 +87,19 @@ static void fiber_start(unsigned int x, unsigned int y)
 
 static FIBER *fiber_alloc(void (*fn)(FIBER *, void *), void *arg, size_t size)
 {
-	FIBER *fiber = (FIBER *) acl_mycalloc(1, sizeof(FIBER) + size);
+	FIBER *fiber;
 	sigset_t zero;
 	unsigned long z;
 	unsigned int x, y;
 
+	fiber_check();
+
+	fiber        = (FIBER *) acl_mycalloc(1, sizeof(FIBER) + size);
 	fiber->fn    = fn;
 	fiber->arg   = arg;
 	fiber->stack = fiber->buf;
 	fiber->size  = size;
-	fiber->id    = ++__fiber_idgen;
+	fiber->id    = ++__thread_fiber->idgen;
 
 	sigemptyset(&zero);
 	sigprocmask(SIG_BLOCK, &zero, &fiber->uctx.uc_sigmask);
@@ -82,13 +125,14 @@ FIBER *fiber_create(void (*fn)(FIBER *, void *), void *arg, size_t size)
 {
 	FIBER *fiber = fiber_alloc(fn, arg, size);
 
-	__fiber_count++;
-	if (__fibers_size % 64 == 0)
-		__fibers = (FIBER **) acl_myrealloc(__fibers, 
-				(__fibers_size + 64) * sizeof(FIBER *));
+	__thread_fiber->count++;
+	if (__thread_fiber->size % 64 == 0)
+		__thread_fiber->fibers = (FIBER **) acl_myrealloc(
+			__thread_fiber->fibers, 
+			(__thread_fiber->size + 64) * sizeof(FIBER *));
 
-	fiber->slot = __fibers_size;
-	__fibers[__fibers_size++] = fiber;
+	fiber->slot = __thread_fiber->size;
+	__thread_fiber->fibers[__thread_fiber->size++] = fiber;
 	fiber_ready(fiber);
 
 	return fiber;
@@ -114,8 +158,8 @@ void fiber_init(void)
 		return;
 
 	__called++;
-	acl_ring_init(&__fibers_queue);
 	fiber_io_hook();
+	fiber_net_hook();
 }
 
 void fiber_schedule(void)
@@ -124,7 +168,7 @@ void fiber_schedule(void)
 	ACL_RING *head;
 
 	for (;;) {
-		head = acl_ring_pop_head(&__fibers_queue);
+		head = acl_ring_pop_head(&__thread_fiber->queue);
 		if (head == NULL) {
 			printf("------- NO FIBER NOW --------\r\n");
 			break;
@@ -133,20 +177,22 @@ void fiber_schedule(void)
 		fiber = ACL_RING_TO_APPL(head, FIBER, me);
 		fiber->status = FIBER_STATUS_READY;
 
-		__fiber_running = fiber;
-		__fiber_switched++;
+		__thread_fiber->running = fiber;
+		__thread_fiber->switched++;
 
-		fiber_swap(&__fiber_schedule, fiber);
-		__fiber_running = NULL;
+		fiber_swap(&__thread_fiber->schedule, fiber);
+		__thread_fiber->running = NULL;
 
 		if (fiber->status == FIBER_STATUS_EXITING) {
 			size_t slot = fiber->slot;
 
 			if (!fiber->sys)
-				__fiber_count--;
+				__thread_fiber->count--;
 
-			__fibers[slot] = __fibers[--__fibers_size];
-			__fibers[slot]->slot = slot;
+			__thread_fiber->fibers[slot] =
+				__thread_fiber->fibers[--__thread_fiber->size];
+			__thread_fiber->fibers[slot]->slot = slot;
+
 			printf(">>%s: fiber_free: %p\r\n", __FUNCTION__, fiber);
 			fiber_free(fiber);
 		}
@@ -156,38 +202,38 @@ void fiber_schedule(void)
 void fiber_ready(FIBER *fiber)
 {
 	fiber->status = FIBER_STATUS_READY;
-	acl_ring_prepend(&__fibers_queue, &fiber->me);
+	acl_ring_prepend(&__thread_fiber->queue, &fiber->me);
 }
 
 int fiber_yield(void)
 {
-	int  n = __fiber_switched;
+	int  n = __thread_fiber->switched;
 
-	fiber_ready(__fiber_running);
+	fiber_ready(__thread_fiber->running);
 	fiber_switch();
 
-	return __fiber_switched - n - 1;
+	return __thread_fiber->switched - n - 1;
 }
 
 void fiber_system(void)
 {
-	if (!__fiber_running->sys) {
-		__fiber_running->sys = 1;
-		__fiber_count--;
+	if (!__thread_fiber->running->sys) {
+		__thread_fiber->running->sys = 1;
+		__thread_fiber->count--;
 	}
 }
 
 void fiber_count_inc(void)
 {
-	__fiber_count++;
+	__thread_fiber->count++;
 }
 
 void fiber_count_dec(void)
 {
-	__fiber_count--;
+	__thread_fiber->count--;
 }
 
 void fiber_switch(void)
 {
-	fiber_swap(__fiber_running, &__fiber_schedule);
+	fiber_swap(__thread_fiber->running, &__thread_fiber->schedule);
 }
