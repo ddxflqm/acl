@@ -11,6 +11,8 @@ static void echo_client(FIBER *fiber acl_unused, void *ctx)
 	char  buf[8192];
 	int   ret;
 
+	cstream->rw_timeout = 5;
+
 #define	SOCK ACL_VSTREAM_SOCK
 
 	while (1) {
