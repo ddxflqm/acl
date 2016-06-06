@@ -145,6 +145,10 @@ static void __event_del(EVENT *ev, int fd, int mask)
 
 void event_del(EVENT *ev, int fd, int mask)
 {
+	__event_del(ev, fd, mask);
+	return;
+
+	//printf(">>>defer del fd: %d\r\n", fd);
 	ev->defers[ev->ndefer].fd   = fd;
 	ev->defers[ev->ndefer].mask = mask;
 	ev->defers[ev->ndefer].pos  = ev->ndefer;
@@ -189,6 +193,7 @@ int event_process(EVENT *ev, int left)
 
 	tvp = &tv;
 
+	//printf(">>>ndefer: %d\r\n", ev->ndefer);
 	for (j = 0; j < ev->ndefer; j++)
 		__event_del(ev, ev->defers[j].fd, ev->defers[j].mask);
 

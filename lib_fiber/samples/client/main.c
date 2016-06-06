@@ -29,7 +29,6 @@ static void echo_client(ACL_VSTREAM *cstream)
 		}
 		buf[ret] = 0;
 		//printf("gets line: %s", buf);
-
 	}
 
 	acl_vstream_close(cstream);
@@ -53,7 +52,7 @@ static void fiber_connect(FIBER *fiber acl_unused, void *ctx)
 static void usage(const char *procname)
 {
 	printf("usage: %s -h [help]\r\n"
-		" -s redis_addr\r\n"
+		" -s addr\r\n"
 		" -c max_fibers\r\n"
 		" -n max_loop\r\n", procname);
 }

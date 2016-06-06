@@ -11,17 +11,19 @@ static void echo_client(FIBER *fiber acl_unused, void *ctx)
 	char  buf[8192];
 	int   ret;
 
+#define	SOCK ACL_VSTREAM_SOCK
+
 	while (1) {
 		ret = acl_vstream_gets(cstream, buf, sizeof(buf) - 1);
 		if (ret == ACL_VSTREAM_EOF) {
-			printf("gets error\r\n");
+			printf("gets error, fd: %d\r\n", SOCK(cstream));
 			break;
 		}
 		buf[ret] = 0;
 		//printf("gets line: %s", buf);
 
 		if (acl_vstream_writen(cstream, buf, ret) == ACL_VSTREAM_EOF) {
-			printf("write error\r\n");
+			printf("write error, fd: %d\r\n", SOCK(cstream));
 			break;
 		}
 	}
@@ -91,8 +93,10 @@ int main(void)
 	printf("%s: call fiber_creater\r\n", __FUNCTION__);
 	fiber_create(fiber_accept, sstream, 32768);
 
+	if (0)
 	fiber_create(fiber_sleep, NULL, 32768);
 
+	if (0)
 	fiber_create(fiber_sleep2, NULL, 32768);
 
 	printf("call fiber_schedule\r\n");

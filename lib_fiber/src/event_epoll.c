@@ -38,6 +38,8 @@ static int __event_add(EVENT *ev, int fd, int mask)
 	if (mask & EVENT_WRITABLE)
 		ee.events |= EPOLLOUT;
 
+	ee.events |= EPOLLERR | EPOLLRDHUP | EPOLLHUP;
+
 	if (epoll_ctl(ep->epfd, op, fd, &ee) == -1) {
 		acl_msg_error("%s, %s(%d): epoll_ctl error %s",
 			__FILE__, __FUNCTION__, __LINE__, acl_last_serror());
@@ -95,9 +97,9 @@ static int __event_loop(EVENT *ev, struct timeval *tv)
 			if (e->events & EPOLLOUT)
 				mask |= EVENT_WRITABLE;
 			if (e->events & EPOLLERR)
-				mask |= EVENT_WRITABLE;
+				mask |= EVENT_READABLE;
 			if (e->events & EPOLLHUP)
-				mask |= EVENT_WRITABLE;
+				mask |= EVENT_READABLE;
 
 			ev->fired[j].fd = e->data.fd;
 			ev->fired[j].mask = mask;

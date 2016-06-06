@@ -57,6 +57,7 @@ static void echo_client(FIBER *fiber acl_unused, void *ctx)
 static void fiber_accept(FIBER *fiber acl_unused, void *ctx)
 {
 	ACL_VSTREAM *sstream = (ACL_VSTREAM *) ctx;
+	int  fd;
 
 	for (;;) {
 		ACL_VSTREAM *cstream = acl_vstream_accept(sstream, NULL, 0);
@@ -66,9 +67,9 @@ static void fiber_accept(FIBER *fiber acl_unused, void *ctx)
 			break;
 		}
 
-		printf("accept one\r\n");
+		fd = ACL_VSTREAM_SOCK(cstream);
 		fiber_create(echo_client, cstream, STACK_SIZE);
-		printf("accept one over\r\n");
+		printf("accept one over: %d\r\n", fd);
 	}
 
 	acl_vstream_close(sstream);

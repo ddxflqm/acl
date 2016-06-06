@@ -11,10 +11,12 @@
 #include "fiber.h"
 
 typedef int (*socket_fn)(int, int, int);
+typedef int (*listen_fn)(int, int);
 typedef int (*accept_fn)(int, struct sockaddr *, socklen_t *);
 typedef int (*connect_fn)(int, const struct sockaddr *, socklen_t);
 
 static socket_fn   __sys_socket   = NULL;
+static listen_fn   __sys_listen   = NULL;
 static accept_fn   __sys_accept   = NULL;
 static connect_fn  __sys_connect  = NULL;
 
@@ -27,7 +29,8 @@ void fiber_net_hook(void)
 
 	__called++;
 
-	__sys_socket    = (socket_fn) dlsym(RTLD_NEXT, "socket");
+	__sys_socket   = (socket_fn) dlsym(RTLD_NEXT, "socket");
+	__sys_listen   = (listen_fn) dlsym(RTLD_NEXT, "listen");
 	__sys_accept   = (accept_fn) dlsym(RTLD_NEXT, "accept");
 	__sys_connect  = (connect_fn) dlsym(RTLD_NEXT, "connect");
 }
@@ -41,11 +44,18 @@ int socket(int domain, int type, int protocol)
 	return sockfd;
 }
 
+int listen(int sockfd, int backlog)
+{
+	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
+	return __sys_listen(sockfd, backlog);
+}
+
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {
 	int   clifd;
 
 	while (1) {
+		fiber_wait_read(sockfd);
 		clifd = __sys_accept(sockfd, addr, addrlen);
 
 		if (clifd >= 0) {
@@ -60,8 +70,6 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 		if (errno != EAGAIN && errno != EWOULDBLOCK)
 #endif
 			return -1;
-
-		fiber_wait_read(sockfd);
 	}
 }
 
