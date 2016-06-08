@@ -110,7 +110,7 @@ static void thread_free(void *ctx)
 	__thread_fiber = NULL;
 }
 
-static void main_free(void)
+static void fiber_io_main_free(void)
 {
 	if (__main_fiber) {
 		thread_free(__main_fiber);
@@ -147,7 +147,7 @@ void fiber_io_check(void)
 
 	if ((unsigned long) acl_pthread_self() == acl_main_thread_self()) {
 		__main_fiber = __thread_fiber;
-		atexit(main_free);
+		atexit(fiber_io_main_free);
 	} else if (acl_pthread_setspecific(__fiber_key, __thread_fiber) != 0)
 		acl_msg_fatal("acl_pthread_setspecific error!");
 }

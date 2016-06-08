@@ -61,15 +61,44 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 	fe = &ev->events[fd];
 
 	if (fe->defer != NULL) {
+		int defer_fd, defer_pos = fe->defer->pos;
+
 		ev->ndefer--;
-		ev->defers[fe->defer->pos] = ev->defers[ev->ndefer];
-		fe->defer = NULL;
-	} else if (ev->add(ev, fd, mask) == -1) {
+
+		defer_fd = ev->defers[ev->ndefer].fd;
+
+		if (ev->ndefer < 0 || fe->defer->fd == -1)
+		{
+			printf(">>>%s(%d)->ndefer: %d, "
+				"pos: %d, %d, fd: %d, %d, %d\r\n",
+				__FUNCTION__, __LINE__, ev->ndefer,
+				ev->defers[fe->defer->pos].pos,
+				fe->defer->pos, fe->defer->fd,
+				ev->defers[fe->defer->pos].fd, fd);
+			abort();
+		}
+
+		mask |= fe->mask & ~(ev->defers[defer_pos].mask);
+
+		ev->defers[defer_pos].mask = ev->defers[ev->ndefer].mask;
+		ev->defers[defer_pos].pos  = fe->defer->pos;
+		ev->defers[defer_pos].fd   = defer_fd;
+
+		ev->events[defer_fd].defer = &ev->defers[defer_pos];
+		ev->defers[ev->ndefer].fd = -1;
+	}
+
+	if (ev->add(ev, fd, mask) == -1) {
 		acl_msg_error("add fd(%d) error", fd);
 		return -1;
 	}
 
-	fe->mask |= mask;
+	if (fe->defer) {
+		fe->defer = NULL;
+		fe->mask  = mask;
+	} else
+		fe->mask |= mask;
+
 	if (mask & EVENT_READABLE)
 		fe->r_proc = proc;
 	if (mask & EVENT_WRITABLE)
@@ -91,7 +120,6 @@ void event_poll(EVENT *ev, POLL_EVENTS *pe, int timeout)
 
 	acl_ring_prepend(&ev->pevents_list, &pe->me);
 	pe->nready = 0;
-
 	for (i = 0; i < pe->nfds; i++) {
 		if (pe->fds[i].events & POLLIN) {
 			event_add(ev, pe->fds[i].fd, EVENT_READABLE, NULL, pe);
@@ -127,7 +155,10 @@ static void __event_del(EVENT *ev, int fd, int mask)
 	fe->pfd     = NULL;
 
 	if (fe->mask == EVENT_NONE)
+	{
+		printf("mask NONE\r\n");
 		return;
+	}
 
 	ev->del(ev, fd, mask);
 	fe->mask = fe->mask & (~mask);
@@ -145,16 +176,21 @@ static void __event_del(EVENT *ev, int fd, int mask)
 
 void event_del(EVENT *ev, int fd, int mask)
 {
-	__event_del(ev, fd, mask);
-	return;
+	//__event_del(ev, fd, mask);
+	//return;
 
-	//printf(">>>defer del fd: %d\r\n", fd);
+	int eq = ev->defers[ev->ndefer].fd == fd ? 1 : 0;
 	ev->defers[ev->ndefer].fd   = fd;
 	ev->defers[ev->ndefer].mask = mask;
 	ev->defers[ev->ndefer].pos  = ev->ndefer;
 	ev->events[fd].defer        = &ev->defers[ev->ndefer];
 
-	ev->ndefer++;
+	if (!eq)
+		ev->ndefer++;
+	else
+		printf("---fd: %d, eq: %s, pos: %d, ndefer: %d---\r\n",
+			fd, eq ? "yes" : "no",
+			ev->defers[ev->ndefer].pos, ev->ndefer);
 }
 
 int event_mask(EVENT *ev, int fd)
@@ -169,7 +205,7 @@ int event_process(EVENT *ev, int left)
 {
 	int processed = 0, numevents, j;
 	struct timeval tv, *tvp;
-	int mask, fd, rfired;
+	int mask, fd, rfired, ndefer;
 	FILE_EVENT *fe;
 
 	if (ev->timeout < 0) {
@@ -193,11 +229,14 @@ int event_process(EVENT *ev, int left)
 
 	tvp = &tv;
 
-	//printf(">>>ndefer: %d\r\n", ev->ndefer);
-	for (j = 0; j < ev->ndefer; j++)
-		__event_del(ev, ev->defers[j].fd, ev->defers[j].mask);
+	ndefer = ev->ndefer;
 
-	ev->ndefer = 0;
+	for (j = 0; j < ndefer; j++) {
+		__event_del(ev, ev->defers[j].fd, ev->defers[j].mask);
+		ev->events[ev->defers[j].fd].defer = NULL;
+		ev->defers[j].fd = -1;
+		ev->ndefer--;
+	}
 
 	numevents = ev->loop(ev, tvp);
 

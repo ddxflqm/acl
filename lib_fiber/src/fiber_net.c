@@ -84,11 +84,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 			return ret;
 		}
 
-#if EAGAIN == EWOULDBLOCK
-		if (errno != EAGAIN)
-#else
-		if (errno != EAGAIN && errno != EWOULDBLOCK)
-#endif
+		if (errno != EINPROGRESS)
 			return -1;
 
 		fiber_wait_write(sockfd);

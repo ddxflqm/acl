@@ -11,7 +11,7 @@ static void echo_client(FIBER *fiber acl_unused, void *ctx)
 	char  buf[8192];
 	int   ret;
 
-	cstream->rw_timeout = 5;
+	cstream->rw_timeout = 0;
 
 #define	SOCK ACL_VSTREAM_SOCK
 
@@ -95,10 +95,8 @@ int main(void)
 	printf("%s: call fiber_creater\r\n", __FUNCTION__);
 	fiber_create(fiber_accept, sstream, 32768);
 
-	if (0)
 	fiber_create(fiber_sleep, NULL, 32768);
 
-	if (0)
 	fiber_create(fiber_sleep2, NULL, 32768);
 
 	printf("call fiber_schedule\r\n");

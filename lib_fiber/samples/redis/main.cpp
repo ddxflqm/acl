@@ -39,7 +39,7 @@ static void fiber_redis(FIBER *fiber, void *ctx)
 			printf("fiber-%d: set error: %s, key: %s\r\n",
 				fiber_id(fiber), cmd.result_error(), key.c_str());
 			break;
-		} else if (i < 10)
+		} else if (i < 5)
 			printf("fiber-%d: set ok, key: %s\r\n",
 				fiber_id(fiber), key.c_str());
 		cmd.clear();

@@ -9,7 +9,7 @@ typedef struct EVENT_EPOLL {
 	struct epoll_event *epoll_events;
 } EVENT_EPOLL;
 
-static void __event_free(EVENT *ev)
+static void epoll_event_free(EVENT *ev)
 {
 	EVENT_EPOLL *ep = (EVENT_EPOLL *) ev;
 
@@ -18,7 +18,7 @@ static void __event_free(EVENT *ev)
 	acl_myfree(ep);
 }
 
-static int __event_add(EVENT *ev, int fd, int mask)
+static int epoll_event_add(EVENT *ev, int fd, int mask)
 {
 	EVENT_EPOLL *ep = (EVENT_EPOLL *) ev;
 	struct epoll_event ee;
@@ -49,7 +49,7 @@ static int __event_add(EVENT *ev, int fd, int mask)
 	return 0;
 }
 
-static void __event_del(EVENT *ev, int fd, int delmask)
+static void epoll_event_del(EVENT *ev, int fd, int delmask)
 {
 	EVENT_EPOLL *ep = (EVENT_EPOLL *) ev;
 	struct epoll_event ee;
@@ -75,7 +75,7 @@ static void __event_del(EVENT *ev, int fd, int delmask)
 	}
 }
 
-static int __event_loop(EVENT *ev, struct timeval *tv)
+static int epoll_event_loop(EVENT *ev, struct timeval *tv)
 {
 	EVENT_EPOLL *ep = (EVENT_EPOLL *) ev;
 	int retval, numevents = 0;
@@ -109,7 +109,7 @@ static int __event_loop(EVENT *ev, struct timeval *tv)
 	return numevents;
 }
 
-static const char *__event_name(void)
+static const char *epoll_event_name(void)
 {
 	return "epoll";
 }
@@ -124,11 +124,11 @@ EVENT *event_epoll_create(int setsize)
 	ep->epfd = epoll_create(1024);
 	acl_assert(ep->epfd >= 0);
 
-	ep->event.name = __event_name;
-	ep->event.loop = __event_loop;
-	ep->event.add  = __event_add;
-	ep->event.del  = __event_del;
-	ep->event.free = __event_free;
+	ep->event.name = epoll_event_name;
+	ep->event.loop = epoll_event_loop;
+	ep->event.add  = epoll_event_add;
+	ep->event.del  = epoll_event_del;
+	ep->event.free = epoll_event_free;
 
 	return (EVENT*) ep;
 }
