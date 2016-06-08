@@ -55,7 +55,7 @@ static void fiber_redis(FIBER *fiber, void *ctx)
 	gettimeofday(&last, NULL);
 
 	for (int j = 0; j < i; j++) {
-		key.format("key-%d-%d", fiber_id(fiber), i);
+		key.format("key-%d-%d", fiber_id(fiber), j);
 		if (cmd.get(key, val) == false) {
 			printf("fiber-%d: get error: %s, key: %s\r\n",
 				fiber_id(fiber), cmd.result_error(), key.c_str());
@@ -73,7 +73,7 @@ static void fiber_redis(FIBER *fiber, void *ctx)
 	gettimeofday(&last, NULL);
 
 	for (int j = 0; j < i; j++) {
-		key.format("key-%d-%d", fiber_id(fiber), i);
+		key.format("key-%d-%d", fiber_id(fiber), j);
 		if (cmd.del_one(key) < 0) {
 			printf("fiber-%d: del error: %s, key: %s\r\n",
 				fiber_id(fiber), cmd.result_error(), key.c_str());
@@ -111,7 +111,7 @@ static void usage(const char *procname)
 
 int main(int argc, char *argv[])
 {
-	int   ch, i, conn_timeout = 10, rw_timeout = 10;
+	int   ch, i, conn_timeout = 2, rw_timeout = 2;
 	acl::string addr("127.0.0.1:6379");
 
 	while ((ch = getopt(argc, argv, "hs:n:c:r:t:")) > 0) {
