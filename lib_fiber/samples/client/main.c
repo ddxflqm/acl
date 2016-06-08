@@ -9,6 +9,8 @@ static int __conn_timeout = 0;
 static int __rw_timeout   = 0;
 static int __max_loop     = 10000;
 static int __max_fibers   = 100;
+static int __left_fibers  = 100;
+static struct timeval __begin, __end;
 
 static void echo_client(ACL_VSTREAM *cstream)
 {
@@ -36,6 +38,22 @@ static void echo_client(ACL_VSTREAM *cstream)
 	acl_vstream_close(cstream);
 }
 
+static double stamp_sub(const struct timeval *from, const struct timeval *sub_by)
+{
+	struct timeval res;
+
+	memcpy(&res, from, sizeof(struct timeval));
+
+	res.tv_usec -= sub_by->tv_usec;
+	if (res.tv_usec < 0) {
+		--res.tv_sec;
+		res.tv_usec += 1000000;
+	}
+	res.tv_sec -= sub_by->tv_sec;
+
+	return (res.tv_sec * 1000.0 + res.tv_usec/1000.0);
+}
+
 static void fiber_connect(FIBER *fiber acl_unused, void *ctx)
 {
 	const char *addr = (const char *) ctx;
@@ -46,10 +64,21 @@ static void fiber_connect(FIBER *fiber acl_unused, void *ctx)
 	else
 		echo_client(cstream);
 
-	--__max_fibers;
-	printf("max_fibers: %d\r\n", __max_fibers);
-	if (__max_fibers == 0)
+	--__left_fibers;
+	printf("max_fibers: %d, left: %d\r\n", __max_fibers, __left_fibers);
+
+	if (__left_fibers == 0) {
+		double spent;
+
+		gettimeofday(&__end, NULL);
+		spent = stamp_sub(&__end, &__begin);
+		printf("fibers: %d, count: %d, spent: %.2f, speed: %.2f\r\n",
+			__max_fibers, __max_fibers * __max_loop, spent,
+			(__max_fibers * __max_loop * 1000) /
+				(spent > 0 ? spent : 1));
+
 		fiber_io_stop();
+	}
 }
 
 static void usage(const char *procname)
@@ -78,6 +107,7 @@ int main(int argc, char *argv[])
 			return 0;
 		case 'c':
 			__max_fibers = atoi(optarg);
+			__left_fibers = __max_fibers;
 			break;
 		case 't':
 			__conn_timeout = atoi(optarg);
@@ -95,6 +125,8 @@ int main(int argc, char *argv[])
 			break;
 		}
 	}
+
+	gettimeofday(&__begin, NULL);
 
 	for (i = 0; i < __max_fibers; i++)
 		fiber_create(fiber_connect, addr, 32768);
