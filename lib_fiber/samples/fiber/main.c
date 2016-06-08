@@ -7,6 +7,24 @@
 
 static int __max_loop = 1000;
 static int __max_fiber = 1000;
+static int __left_fiber = 1000;
+static struct timeval __begin, __end;
+
+static double stamp_sub(const struct timeval *from, const struct timeval *sub_by)
+{
+	struct timeval res;
+
+	memcpy(&res, from, sizeof(struct timeval));
+
+	res.tv_usec -= sub_by->tv_usec;
+	if (res.tv_usec < 0) {
+		--res.tv_sec;
+		res.tv_usec += 1000000;
+	}
+	res.tv_sec -= sub_by->tv_sec;
+
+	return (res.tv_sec * 1000.0 + res.tv_usec/1000.0);
+}
 
 static void fiber_main(FIBER *fiber acl_unused, void *ctx acl_unused)
 {
@@ -14,6 +32,19 @@ static void fiber_main(FIBER *fiber acl_unused, void *ctx acl_unused)
 
 	for (i = 0; i < __max_loop; i++)
 		fiber_yield();
+
+	--__left_fiber;
+	if (__left_fiber == 0) {
+		double spent;
+		long long count;
+
+		gettimeofday(&__end, NULL);
+		count = __max_fiber * __max_loop;
+		spent = stamp_sub(&__end, &__begin);
+		printf("fibers: %d, count: %lld, spent: %.2f, speed: %.2f\r\n",
+			__max_fiber, count, spent,
+			(count * 1000) / (spent > 0 ? spent : 1));
+	}
 }
 
 static void usage(const char *procname)
@@ -35,13 +66,14 @@ int main(int argc, char *argv[])
 			break;
 		case 'm':
 			__max_fiber = atoi(optarg);
+			__left_fiber = __max_fiber;
 			break;
 		default:
 			break;
 		}
 	}
 
-	fiber_init();
+	gettimeofday(&__begin, NULL);
 
 	for (i = 0; i < __max_fiber; i++)
 		fiber_create(fiber_main, NULL, 32768);

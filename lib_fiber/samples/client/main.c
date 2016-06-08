@@ -69,13 +69,13 @@ static void fiber_connect(FIBER *fiber acl_unused, void *ctx)
 
 	if (__left_fibers == 0) {
 		double spent;
+		long long count = __max_loop * __max_fibers;
 
 		gettimeofday(&__end, NULL);
 		spent = stamp_sub(&__end, &__begin);
-		printf("fibers: %d, count: %d, spent: %.2f, speed: %.2f\r\n",
-			__max_fibers, __max_fibers * __max_loop, spent,
-			(__max_fibers * __max_loop * 1000) /
-				(spent > 0 ? spent : 1));
+		printf("fibers: %d, count: %lld, spent: %.2f, speed: %.2f\r\n",
+			__max_fibers, count, spent,
+			(count * 1000) / (spent > 0 ? spent : 1));
 
 		fiber_io_stop();
 	}
