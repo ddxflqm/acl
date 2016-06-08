@@ -38,7 +38,11 @@ static int epoll_event_add(EVENT *ev, int fd, int mask)
 	if (mask & EVENT_WRITABLE)
 		ee.events |= EPOLLOUT;
 
+#ifdef	EPOLLRDHUP
 	ee.events |= EPOLLERR | EPOLLRDHUP | EPOLLHUP;
+#else
+	ee.events |= EPOLLERR | EPOLLHUP;
+#endif
 
 	if (epoll_ctl(ep->epfd, op, fd, &ee) == -1) {
 		acl_msg_error("%s, %s(%d): epoll_ctl error %s",
