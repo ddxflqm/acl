@@ -7,10 +7,14 @@
 
 #define	STACK_SIZE	16000
 
+static int __rw_timeout = 0;
+
 static int http_client(ACL_VSTREAM *cstream, const char* res, size_t len)
 {
 	char  buf[8192];
 	int   ret;
+
+	cstream->rw_timeout = __rw_timeout;
 
 	while (1) {
 		ret = acl_vstream_gets(cstream, buf, sizeof(buf) - 1);
@@ -75,10 +79,29 @@ static void fiber_accept(FIBER *fiber acl_unused, void *ctx)
 	acl_vstream_close(sstream);
 }
 
-int main(void)
+static void usage(const char *procname)
+{
+	printf("usage: %s -h [help] -r rw_timeout\r\n", procname);
+}
+
+int main(int argc, char *argv[])
 {
 	const char *addr = "0.0.0.0:9001";
 	ACL_VSTREAM *sstream;
+	int  ch;
+
+	while ((ch = getopt(argc, argv, "hr:")) > 0) {
+		switch (ch) {
+		case 'h':
+			usage(argv[0]);
+			return 0;
+		case 'r':
+			__rw_timeout = atoi(optarg);
+			break;
+		default:
+			break;
+		}
+	}
 
 	sstream = acl_vstream_listen(addr, 128);
 	if (sstream == NULL) {

@@ -67,6 +67,7 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 
 		defer_fd = ev->defers[ev->ndefer].fd;
 
+#ifdef _DEBUG
 		if (ev->ndefer < 0 || fe->defer->fd == -1)
 		{
 			printf(">>>%s(%d)->ndefer: %d, "
@@ -77,7 +78,7 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 				ev->defers[fe->defer->pos].fd, fd);
 			abort();
 		}
-
+#endif
 		mask |= fe->mask & ~(ev->defers[defer_pos].mask);
 
 		ev->defers[defer_pos].mask = ev->defers[ev->ndefer].mask;
@@ -176,21 +177,29 @@ static void __event_del(EVENT *ev, int fd, int mask)
 
 void event_del(EVENT *ev, int fd, int mask)
 {
-	//__event_del(ev, fd, mask);
-	//return;
+#ifdef DEL_NOBUF
+	__event_del(ev, fd, mask);
+	return;
+#endif
 
+#ifdef _DEBUG
 	int eq = ev->defers[ev->ndefer].fd == fd ? 1 : 0;
+#endif
 	ev->defers[ev->ndefer].fd   = fd;
 	ev->defers[ev->ndefer].mask = mask;
 	ev->defers[ev->ndefer].pos  = ev->ndefer;
 	ev->events[fd].defer        = &ev->defers[ev->ndefer];
 
+#ifdef _DEBUG
 	if (!eq)
 		ev->ndefer++;
 	else
 		printf("---fd: %d, eq: %s, pos: %d, ndefer: %d---\r\n",
 			fd, eq ? "yes" : "no",
 			ev->defers[ev->ndefer].pos, ev->ndefer);
+#else
+	ev->ndefer++;
+#endif
 }
 
 int event_mask(EVENT *ev, int fd)
