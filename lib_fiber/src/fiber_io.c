@@ -50,6 +50,7 @@ static void fiber_io_loop(FIBER *fiber, void *ctx);
 
 #define MAXFD		1024
 #define STACK_SIZE	819200
+static int __maxfd    = 1024;
 
 void fiber_io_hook(void)
 {
@@ -134,8 +135,12 @@ void fiber_io_check(void)
 
 	acl_assert(acl_pthread_once(&__once_control, thread_init) == 0);
 
+	__maxfd = acl_open_limit(0);
+	if (__maxfd <= 0)
+		__maxfd = MAXFD;
+
 	__thread_fiber = (FIBER_TLS *) acl_mymalloc(sizeof(FIBER_TLS));
-	__thread_fiber->event = event_create(MAXFD);
+	__thread_fiber->event = event_create(__maxfd);
 	__thread_fiber->io_fibers = (FIBER **)
 		acl_mycalloc(MAXFD, sizeof(FIBER *));
 	__thread_fiber->ev_fiber = fiber_create(fiber_io_loop,
