@@ -55,7 +55,7 @@ static void fiber_accept(FIBER *fiber acl_unused, void *ctx)
 	acl_vstream_close(sstream);
 }
 
-static void fiber_sleep(FIBER *fiber acl_unused, void *ctx acl_unused)
+static void fiber_sleep_main(FIBER *fiber acl_unused, void *ctx acl_unused)
 {
 	time_t last, now;
 
@@ -67,7 +67,7 @@ static void fiber_sleep(FIBER *fiber acl_unused, void *ctx acl_unused)
 	}
 }
 
-static void fiber_sleep2(FIBER *fiber acl_unused, void *ctx acl_unused)
+static void fiber_sleep2_main(FIBER *fiber acl_unused, void *ctx acl_unused)
 {
 	time_t last, now;
 
@@ -120,8 +120,8 @@ int main(int argc, char *argv[])
 	fiber_create(fiber_accept, sstream, 32768);
 
 	if (enable_sleep) {
-		fiber_create(fiber_sleep, NULL, 32768);
-		fiber_create(fiber_sleep2, NULL, 32768);
+		fiber_create(fiber_sleep_main, NULL, 32768);
+		fiber_create(fiber_sleep2_main, NULL, 32768);
 	}
 
 	printf("call fiber_schedule\r\n");
