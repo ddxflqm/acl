@@ -12,7 +12,6 @@ int    fiber_id(const FIBER *fiber);
 int    fiber_yield(void);
 void   fiber_switch(void);
 void   fiber_schedule(void);
-void   fiber_init(void);
 
 #ifdef __cplusplus
 }

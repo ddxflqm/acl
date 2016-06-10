@@ -26,6 +26,7 @@ struct FIBER {
 };
 
 /* in fiber_schedule.c */
+void   fiber_init(void);
 void   fiber_ready(FIBER *fiber);
 FIBER *fiber_running(void);
 void   fiber_exit(int exit_code);
