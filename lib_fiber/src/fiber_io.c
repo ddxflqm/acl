@@ -142,7 +142,7 @@ void fiber_io_check(void)
 	__thread_fiber = (FIBER_TLS *) acl_mymalloc(sizeof(FIBER_TLS));
 	__thread_fiber->event = event_create(__maxfd);
 	__thread_fiber->io_fibers = (FIBER **)
-		acl_mycalloc(MAXFD, sizeof(FIBER *));
+		acl_mycalloc(__maxfd, sizeof(FIBER *));
 	__thread_fiber->ev_fiber = fiber_create(fiber_io_loop,
 			__thread_fiber->event, STACK_SIZE);
 	__thread_fiber->io_count = 0;
