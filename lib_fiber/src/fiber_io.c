@@ -228,9 +228,9 @@ static void fiber_io_loop(FIBER *self acl_unused, void *ctx)
 	}
 }
 
-int fiber_delay(int n)
+unsigned int fiber_delay(unsigned int milliseconds)
 {
-	int when, now;
+	unsigned int when, now;
 	struct timeval tv;
 	FIBER *fiber, *next = NULL;
 	ACL_RING_ITER iter;
@@ -238,7 +238,7 @@ int fiber_delay(int n)
 	fiber_io_check();
 
 	SET_TIME(when);
-	when += n;
+	when += milliseconds;
 
 	acl_ring_foreach(iter, &__thread_fiber->ev_timer) {
 		fiber = acl_ring_to_appl(iter.ptr, FIBER, me);
@@ -264,11 +264,12 @@ int fiber_delay(int n)
 
 	SET_TIME(now);
 
-	now -= when;
-	return now < 0 ? 0 : now;
+	if (now < when)
+		return 0;
+	return now - when;
 }
 
-unsigned int sleep(unsigned int seconds)
+unsigned int fiber_sleep(unsigned int seconds)
 {
 	return fiber_delay(seconds * 1000) / 1000;
 }

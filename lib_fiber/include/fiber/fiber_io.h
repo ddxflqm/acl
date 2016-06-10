@@ -6,7 +6,8 @@ extern "C" {
 #endif
 
 void fiber_io_stop(void);
-int  fiber_delay(int n);
+unsigned int fiber_delay(unsigned int milliseconds);
+unsigned int fiber_sleep(unsigned int seconds);
 
 void fiber_set_dns(const char* ip, int port);
 

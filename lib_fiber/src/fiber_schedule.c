@@ -215,10 +215,9 @@ void fiber_schedule(void)
 
 	// release dead fiber 
 	for (;;) {
-		head = acl_ring_pop_head (&__thread_fiber->dead);
-		if (head == NULL) {
+		head = acl_ring_pop_head(&__thread_fiber->dead);
+		if (head == NULL)
 			break;
-		}
 
 		fiber = ACL_RING_TO_APPL(head, FIBER, me);
 		fiber_free (fiber);
@@ -277,10 +276,10 @@ void fiber_switch(void)
 		__thread_fiber->fibers[slot] =
 			__thread_fiber->fibers[--__thread_fiber->size];
 		__thread_fiber->fibers[slot]->slot = slot;
-		acl_ring_append (&__thread_fiber->dead, &current->me);
+		acl_ring_append(&__thread_fiber->dead, &current->me);
 	}
 
-	head = acl_ring_pop_head (&__thread_fiber->queue);
+	head = acl_ring_pop_head(&__thread_fiber->queue);
 
 	if (head == NULL) {
 		fiber_swap(__thread_fiber->running, &__thread_fiber->schedule);
