@@ -7,8 +7,9 @@
 
 static int __max_loop = 1000;
 static int __max_fiber = 1000;
-static int __left_fiber = 1000;
-static struct timeval __begin, __end;
+
+static __thread struct timeval __begin;
+static __thread int __left_fiber = 1000;
 
 static double stamp_sub(const struct timeval *from, const struct timeval *sub_by)
 {
@@ -33,30 +34,47 @@ static void fiber_main(FIBER *fiber acl_unused, void *ctx acl_unused)
 	for (i = 0; i < __max_loop; i++)
 		fiber_yield();
 
-	--__left_fiber;
-	if (__left_fiber == 0) {
+	if (--__left_fiber == 0) {
+		long long count = __max_fiber * __max_loop;
+		struct timeval end;
 		double spent;
-		long long count;
 
-		gettimeofday(&__end, NULL);
-		count = __max_fiber * __max_loop;
-		spent = stamp_sub(&__end, &__begin);
+		gettimeofday(&end, NULL);
+		spent = stamp_sub(&end, &__begin);
 		printf("fibers: %d, count: %lld, spent: %.2f, speed: %.2f\r\n",
 			__max_fiber, count, spent,
 			(count * 1000) / (spent > 0 ? spent : 1));
 	}
 }
 
+static void *thread_main(void *ctx acl_unused)
+{
+	int i;
+
+	gettimeofday(&__begin, NULL);
+	__left_fiber = __max_fiber;
+
+	printf("thread: %lu\r\n", (unsigned long) acl_pthread_self());
+	for (i = 0; i < __max_fiber; i++)
+		fiber_create(fiber_main, NULL, 32768);
+
+	fiber_schedule();
+
+	return NULL;
+}
+
 static void usage(const char *procname)
 {
-	printf("usage: %s -h [help] -n max_loop -m max_fiber\r\n", procname);
+	printf("usage: %s -h [help] -n max_loop -m max_fiber -t max_threads\r\n", procname);
 }
 
 int main(int argc, char *argv[])
 {
-	int   ch, i;
+	int   ch, i, nthreads = 1;
+	acl_pthread_attr_t attr;
+	acl_pthread_t *tids;
 
-	while ((ch = getopt(argc, argv, "hn:m:")) > 0) {
+	while ((ch = getopt(argc, argv, "hn:m:t:")) > 0) {
 		switch (ch) {
 		case 'h':
 			usage(argv[0]);
@@ -66,19 +84,27 @@ int main(int argc, char *argv[])
 			break;
 		case 'm':
 			__max_fiber = atoi(optarg);
-			__left_fiber = __max_fiber;
+			break;
+		case 't':
+			nthreads = atoi(optarg);
+			if (nthreads <= 0)
+				nthreads = 1;
 			break;
 		default:
 			break;
 		}
 	}
 
-	gettimeofday(&__begin, NULL);
+	acl_pthread_attr_init(&attr);
+	tids = (acl_pthread_t *) acl_mycalloc(nthreads, sizeof(acl_pthread_t));
 
-	for (i = 0; i < __max_fiber; i++)
-		fiber_create(fiber_main, NULL, 32768);
+	for (i = 0; i < nthreads; i++)
+		acl_pthread_create(&tids[i], &attr, thread_main, NULL);
 
-	fiber_schedule();
+	for (i = 0; i < nthreads; i++)
+		acl_pthread_join(tids[i], NULL);
+
+	acl_myfree(tids);
 
 	return 0;
 }
