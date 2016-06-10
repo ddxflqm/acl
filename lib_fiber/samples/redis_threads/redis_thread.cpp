@@ -107,12 +107,13 @@ void redis_thread::fiber_redis(FIBER *fiber, void *ctx)
 }
 
 redis_thread::redis_thread(const char* addr, int conn_timeout, int rw_timeout,
-	int fibers_max, int oper_count)
+	int fibers_max, int stack_size, int oper_count)
 	: addr_(addr)
 	, conn_timeout_(conn_timeout)
 	, rw_timeout_(rw_timeout)
 	, fibers_max_(fibers_max)
 	, fibers_cnt_(fibers_max)
+	, stack_size_(stack_size)
 	, oper_count_(oper_count)
 {
 }
@@ -125,7 +126,7 @@ void* redis_thread::run(void)
 	gettimeofday(&begin_, NULL);
 
 	for (int i = 0; i < fibers_max_; i++)
-		fiber_create(fiber_redis, this, 327680);
+		fiber_create(fiber_redis, this, stack_size_);
 
 	fiber_schedule();
 

@@ -2,7 +2,7 @@ class redis_thread : public acl::thread
 {
 public:
 	redis_thread(const char* addr, int conn_timeout, int rw_timeout,
-		int fibers_max, int oper_count);
+		int fibers_max, int stack_size, int oper_count);
 
 	~redis_thread(void) {}
 
@@ -41,6 +41,7 @@ private:
 	int rw_timeout_;
 	int fibers_max_;
 	int fibers_cnt_;
+	int stack_size_;
 	int oper_count_;
 	struct timeval begin_;
 	acl::redis_client_cluster cluster_;

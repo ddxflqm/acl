@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "redis_thread.h"
 
+#define	STACK_SIZE 32000
+
 static void usage(const char *procname)
 {
 	printf("usage: %s -h [help]\r\n"
@@ -50,12 +52,14 @@ int main(int argc, char *argv[])
 	acl::acl_cpp_init();
 
 	std::vector<acl::thread*> threads;
+	int stack_size = STACK_SIZE;
 
 	for (int i = 0; i < nthreads; i++)
 	{
 		redis_thread* thread = new redis_thread(addr, conn_timeout,
-			rw_timeout, fibers_max, oper_count);
+			rw_timeout, fibers_max, stack_size, oper_count);
 		thread->set_detachable(false);
+		thread->set_stacksize(stack_size * (fibers_max + 6400));
 		threads.push_back(thread);
 		thread->start();
 	}
