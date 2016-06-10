@@ -320,6 +320,10 @@ void fiber_wait_write(int fd)
 	fiber_switch();
 }
 
+#define READ_WAIT_FIRST
+
+#ifdef READ_WAIT_FIRST
+
 ssize_t read(int fd, void *buf, size_t count)
 {
 	fiber_wait_read(fd);
@@ -350,6 +354,106 @@ ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
 	fiber_wait_read(sockfd);
 	return __sys_recvmsg(sockfd, msg, flags);
 }
+
+#else
+
+ssize_t read(int fd, void *buf, size_t count)
+{
+	while (1) {
+		ssize_t n = __sys_read(fd, buf, count);
+
+		if (n >= 0)
+			return n;
+
+#if EAGAIN == EWOULDBLOCK
+		if (errno != EAGAIN)
+#else
+		if (errno != EAGAIN && errno != EWOULDBLOCK)
+#endif
+			return -1;
+		fiber_wait_read(fd);
+	}
+}
+
+ssize_t readv(int fd, const struct iovec *iov, int iovcnt)
+{
+	while (1) {
+		ssize_t n = __sys_readv(fd, iov, iovcnt);
+
+		if (n >= 0)
+			return n;
+
+#if EAGAIN == EWOULDBLOCK
+		if (errno != EAGAIN)
+#else
+		if (errno != EAGAIN && errno != EWOULDBLOCK)
+#endif
+			return -1;
+
+		fiber_wait_read(fd);
+	}
+}
+
+ssize_t recv(int sockfd, void *buf, size_t len, int flags)
+{
+	while (1) {
+		ssize_t n = __sys_recv(sockfd, buf, len, flags);
+
+		if (n >= 0)
+			return n;
+
+#if EAGAIN == EWOULDBLOCK
+		if (errno != EAGAIN)
+#else
+		if (errno != EAGAIN && errno != EWOULDBLOCK)
+#endif
+			return -1;
+
+		fiber_wait_read(sockfd);
+	}
+}
+
+ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
+	struct sockaddr *src_addr, socklen_t *addrlen)
+{
+	while (1) {
+		ssize_t n = __sys_recvfrom(sockfd, buf, len, flags,
+				src_addr, addrlen);
+
+		if (n >= 0)
+			return n;
+
+#if EAGAIN == EWOULDBLOCK
+		if (errno != EAGAIN)
+#else
+		if (errno != EAGAIN && errno != EWOULDBLOCK)
+#endif
+			return -1;
+
+		fiber_wait_read(sockfd);
+	}
+}
+
+ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
+{
+	while (1) {
+		ssize_t n = __sys_recvmsg(sockfd, msg, flags);
+
+		if (n >= 0)
+			return n;
+
+#if EAGAIN == EWOULDBLOCK
+		if (errno != EAGAIN)
+#else
+		if (errno != EAGAIN && errno != EWOULDBLOCK)
+#endif
+			return -1;
+
+		fiber_wait_read(sockfd);
+	}
+}
+
+#endif
 
 ssize_t write(int fd, const void *buf, size_t count)
 {
