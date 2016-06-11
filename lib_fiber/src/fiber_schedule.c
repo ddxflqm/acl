@@ -1,4 +1,9 @@
 #include "stdafx.h"
+
+#ifdef USE_VALGRIND
+#include <valgrind/valgrind.h>
+#endif
+
 #include "fiber/fiber_io.h"
 #include "fiber/fiber_schedule.h"
 #include "fiber.h"
@@ -142,6 +147,12 @@ static FIBER *fiber_alloc(void (*fn)(FIBER *, void *), void *arg, size_t size)
 	fiber->uctx.uc_stack.ss_sp   = fiber->stack + 8;
 	fiber->uctx.uc_stack.ss_size = fiber->size - 64;
 	fiber->uctx.uc_link = &__thread_fiber->schedule.uctx;
+
+#ifdef USE_VALGRIND
+	fiber->vid = VALGRIND_STACK_REGISTER(fiber->uctx.uc_stack.ss_sp,
+			fiber->uctx.uc_stack.ss_sp
+			+ fiber->uctx.uc_stack.ss_size);
+#endif
 
 	carg.p = fiber;
 	makecontext(&fiber->uctx, (void(*)(void)) fiber_start,

@@ -1,4 +1,7 @@
 
+4) 2016.6.11
+4.1) valgrind: 增加编译开关以防止 valgrind 工具对 swapcontext 跳转的误报
+
 3) 2016.6.9
 3.1) performance: fiber_schedule.c，由星形切换改为环形切换，从而提升了上下文件
 切换的效率 --- by niukey@qq.com

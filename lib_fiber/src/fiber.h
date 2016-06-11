@@ -13,6 +13,9 @@ typedef enum {
 struct FIBER {
 	ACL_RING me;
 	size_t id;
+#ifdef USE_VALGRIND
+	unsigned int vid;
+#endif
 	size_t slot;
 	acl_int64 when;
 	int sys;
