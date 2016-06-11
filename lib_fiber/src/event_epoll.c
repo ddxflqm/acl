@@ -32,6 +32,9 @@ static int epoll_event_add(EVENT *ev, int fd, int mask)
 	ee.data.ptr = NULL;
 	ee.data.fd  = fd;
 
+	//printf(">>>fd: %d, mask: %d, op: %s\r\n",
+	//	fd, mask, op == EPOLL_CTL_ADD ?  "add" : "mod");
+
 	mask |= ev->events[fd].mask; /* Merge old events */
 	if (mask & EVENT_READABLE)
 		ee.events |= EPOLLIN;

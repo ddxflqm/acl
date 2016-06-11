@@ -48,9 +48,38 @@ void event_free(EVENT *ev)
 	ev->free(ev);
 }
 
+void event_poll(EVENT *ev, POLL_EVENTS *pe, int timeout)
+{
+	int i;
+
+	acl_ring_prepend(&ev->pevents_list, &pe->me);
+	pe->nready = 0;
+	for (i = 0; i < pe->nfds; i++) {
+		if (pe->fds[i].events & POLLIN) {
+			event_add(ev, pe->fds[i].fd, EVENT_READABLE, NULL, pe);
+			ev->events[pe->fds[i].fd].pevents = pe;
+			ev->events[pe->fds[i].fd].pfd = &pe->fds[i];
+		}
+
+		if (pe->fds[i].events & POLLOUT) {
+			event_add(ev, pe->fds[i].fd, EVENT_WRITABLE, NULL, pe);
+			ev->events[pe->fds[i].fd].pevents = pe;
+			ev->events[pe->fds[i].fd].pfd = &pe->fds[i];
+		}
+
+		pe->fds[i].revents = 0;
+	}
+
+	if (timeout > 0) {
+		if (ev->timeout < 0 || timeout < ev->timeout)
+			ev->timeout = timeout;
+	}
+}
+
 int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 {
 	FILE_EVENT *fe;
+	int curr = mask;
 
 	if (fd >= ev->setsize) {
 		errno = ERANGE;
@@ -86,11 +115,12 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 		ev->defers[defer_pos].fd   = defer_fd;
 
 		ev->events[defer_fd].defer = &ev->defers[defer_pos];
-		ev->defers[ev->ndefer].fd = -1;
+		ev->defers[ev->ndefer].fd  = -1;
 	}
 
-	if (ev->add(ev, fd, mask) == -1) {
-		acl_msg_error("add fd(%d) error", fd);
+	//printf("fe->mask: %d, mask: %d\r\n", fe->mask, curr);
+	if ((fe->mask & curr) != curr && ev->add(ev, fd, mask) == -1) {
+		acl_msg_error("add fd(%d) error: %s", fd, acl_last_serror());
 		return -1;
 	}
 
@@ -105,42 +135,14 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 	if (mask & EVENT_WRITABLE)
 		fe->w_proc = proc;
 
-	fe->ctx      = ctx;
-	fe->pevents  = NULL;
-	fe->pfd      = NULL;
+	fe->ctx     = ctx;
+	fe->pevents = NULL;
+	fe->pfd     = NULL;
 
 	if (fd > ev->maxfd)
 		ev->maxfd = fd;
 
 	return 0;
-}
-
-void event_poll(EVENT *ev, POLL_EVENTS *pe, int timeout)
-{
-	int i;
-
-	acl_ring_prepend(&ev->pevents_list, &pe->me);
-	pe->nready = 0;
-	for (i = 0; i < pe->nfds; i++) {
-		if (pe->fds[i].events & POLLIN) {
-			event_add(ev, pe->fds[i].fd, EVENT_READABLE, NULL, pe);
-			ev->events[pe->fds[i].fd].pevents = pe;
-			ev->events[pe->fds[i].fd].pfd = &pe->fds[i];
-		}
-
-		if (pe->fds[i].events & POLLOUT) {
-			event_add(ev, pe->fds[i].fd, EVENT_WRITABLE, NULL, pe);
-			ev->events[pe->fds[i].fd].pevents = pe;
-			ev->events[pe->fds[i].fd].pfd = &pe->fds[i];
-		}
-
-		pe->fds[i].revents = 0;
-	}
-
-	if (timeout > 0) {
-		if (ev->timeout < 0 || timeout < ev->timeout)
-			ev->timeout = timeout;
-	}
 }
 
 static void __event_del(EVENT *ev, int fd, int mask)

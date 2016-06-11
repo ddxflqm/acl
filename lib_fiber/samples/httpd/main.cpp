@@ -60,6 +60,7 @@ static void fiber_accept(FIBER *, void *)
 int main(void)
 {
 	acl::acl_cpp_init();
+	acl::log::stdout_open(true);
 	signal(SIGPIPE, SIG_IGN);
 	fiber_create(fiber_accept, NULL, STACK_SIZE);
 	fiber_schedule();
