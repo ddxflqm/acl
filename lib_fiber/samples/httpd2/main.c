@@ -84,6 +84,11 @@ static void usage(const char *procname)
 	printf("usage: %s -h [help] -r rw_timeout\r\n", procname);
 }
 
+static void fiber_dummy(FIBER *fiber, void *ctx acl_unused)
+{
+	printf(">>>curr fiber: %d\r\n", fiber_id(fiber));
+}
+
 int main(int argc, char *argv[])
 {
 	const char *addr = "0.0.0.0:9001";
@@ -108,6 +113,9 @@ int main(int argc, char *argv[])
 		printf("acl_vstream_listen error %s\r\n", acl_last_serror());
 		return 1;
 	}
+
+	fiber_create(fiber_dummy, NULL, 1024000);
+	fiber_create(fiber_dummy, NULL, 1024000);
 
 	printf("listen %s ok\r\n", addr);
 

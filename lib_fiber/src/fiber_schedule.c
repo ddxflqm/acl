@@ -127,10 +127,24 @@ static FIBER *fiber_alloc(void (*fn)(FIBER *, void *), void *arg, size_t size)
 	FIBER *fiber;
 	sigset_t zero;
 	union cc_arg carg;
+	ACL_RING *head;
 
 	fiber_check();
 
-	fiber        = (FIBER *) acl_mycalloc(1, sizeof(FIBER) + size);
+	head = acl_ring_pop_head(&__thread_fiber->dead);
+	if (head != NULL) {
+		fiber = ACL_RING_TO_APPL(head, FIBER, me);
+		if (fiber->size < size) {
+			fiber_free(fiber);
+			fiber = NULL;
+		} else
+			size = fiber->size;
+	} else
+		fiber = NULL;
+
+	if (fiber == NULL)
+		fiber = (FIBER *) acl_mycalloc(1, sizeof(FIBER) + size);
+
 	fiber->fn    = fn;
 	fiber->arg   = arg;
 	fiber->stack = fiber->buf;
@@ -275,7 +289,7 @@ void fiber_switch(void)
 	ACL_RING *head;
 
 #ifdef _DEBUG
-	acl_assert (current);
+	acl_assert(current);
 #endif
 
 	if (current->status == FIBER_STATUS_EXITING) {
@@ -293,7 +307,7 @@ void fiber_switch(void)
 	head = acl_ring_pop_head(&__thread_fiber->queue);
 
 	if (head == NULL) {
-		fiber_swap(__thread_fiber->running, &__thread_fiber->schedule);
+		fiber_swap(current, &__thread_fiber->schedule);
 		return;
 	}
 
@@ -302,5 +316,5 @@ void fiber_switch(void)
 
 	__thread_fiber->running = fiber;
 	__thread_fiber->switched++;
-	fiber_swap (current, __thread_fiber->running);
+	fiber_swap(current, __thread_fiber->running);
 }
