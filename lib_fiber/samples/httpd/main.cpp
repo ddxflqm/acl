@@ -21,6 +21,8 @@ static void http_server(FIBER *, void *ctx)
 			break;
 	}
 
+	printf("close one connection: %d, %s\r\n", conn->sock_handle(),
+		acl::last_serror());
 	delete conn;
 }
 
@@ -53,9 +55,12 @@ static void fiber_accept(FIBER *, void *)
 	exit (0);
 }
 
+#include <signal.h>
+
 int main(void)
 {
 	acl::acl_cpp_init();
+	signal(SIGPIPE, SIG_IGN);
 	fiber_create(fiber_accept, NULL, STACK_SIZE);
 	fiber_schedule();
 }

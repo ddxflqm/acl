@@ -54,23 +54,15 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {
 	int   clifd;
 
-	while (1) {
-		fiber_wait_read(sockfd);
-		clifd = __sys_accept(sockfd, addr, addrlen);
+	fiber_wait_read(sockfd);
+	clifd = __sys_accept(sockfd, addr, addrlen);
 
-		if (clifd >= 0) {
-			acl_non_blocking(clifd, ACL_NON_BLOCKING);
-			acl_tcp_nodelay(clifd, 1);
-			return clifd;
-		}
-
-#if EAGAIN == EWOULDBLOCK
-		if (errno != EAGAIN)
-#else
-		if (errno != EAGAIN && errno != EWOULDBLOCK)
-#endif
-			return -1;
+	if (clifd >= 0) {
+		acl_non_blocking(clifd, ACL_NON_BLOCKING);
+		acl_tcp_nodelay(clifd, 1);
+		return clifd;
 	}
+	return clifd;
 }
 
 int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
