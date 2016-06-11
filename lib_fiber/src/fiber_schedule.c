@@ -132,18 +132,13 @@ static FIBER *fiber_alloc(void (*fn)(FIBER *, void *), void *arg, size_t size)
 	fiber_check();
 
 	head = acl_ring_pop_head(&__thread_fiber->dead);
-	if (head != NULL) {
-		fiber = ACL_RING_TO_APPL(head, FIBER, me);
-		if (fiber->size < size) {
-			fiber_free(fiber);
-			fiber = NULL;
-		} else
-			size = fiber->size;
-	} else
-		fiber = NULL;
-
-	if (fiber == NULL)
+	if (head == NULL) {
 		fiber = (FIBER *) acl_mycalloc(1, sizeof(FIBER) + size);
+	} else if ((fiber = ACL_RING_TO_APPL(head, FIBER, me))->size < size) {
+		fiber_free(fiber);
+		fiber = (FIBER *) acl_mycalloc(1, sizeof(FIBER) + size);
+	} else
+		size = fiber->size;
 
 	fiber->fn    = fn;
 	fiber->arg   = arg;
