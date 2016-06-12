@@ -81,20 +81,25 @@ static void fiber_sleep2_main(FIBER *fiber acl_unused, void *ctx acl_unused)
 
 static void usage(const char *procname)
 {
-	printf("usage: %s -h [help] -r rw_timeout -S [if sleep]\r\n", procname);
+	printf("usage: %s -h [help] -s listen_addr -r rw_timeout -S [if sleep]\r\n", procname);
 }
 
 int main(int argc, char *argv[])
 {
-	const char *addr = "0.0.0.0:9002";
+	char addr[64];
 	ACL_VSTREAM *sstream;
 	int   ch, enable_sleep = 0;
 
-	while ((ch = getopt(argc, argv, "hr:S")) > 0) {
+	snprintf(addr, sizeof(addr), "%s", "127.0.0.1:9002");
+
+	while ((ch = getopt(argc, argv, "hs:r:S")) > 0) {
 		switch (ch) {
 		case 'h':
 			usage(argv[0]);
 			return 0;
+		case 's':
+			snprintf(addr, sizeof(addr), "%s", optarg);
+			break;
 		case 'r':
 			__rw_timeout = atoi(optarg);
 			break;
