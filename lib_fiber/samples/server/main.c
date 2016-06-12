@@ -47,9 +47,8 @@ static void fiber_accept(FIBER *fiber acl_unused, void *ctx)
 			break;
 		}
 
-		printf("accept one\r\n");
+		printf("accept one, fd: %d\r\n", ACL_VSTREAM_SOCK(cstream));
 		fiber_create(echo_client, cstream, 32768);
-		printf("accept one over\r\n");
 	}
 
 	acl_vstream_close(sstream);
