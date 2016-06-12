@@ -4,8 +4,9 @@
 #include "fiber/fiber_schedule.h"
 
 #define	EVENT_NONE	0
-#define	EVENT_READABLE	1
-#define	EVENT_WRITABLE	2
+#define	EVENT_READABLE	1 << 1
+#define	EVENT_WRITABLE	1 << 2
+#define	EVENT_ERROR	1 << 3
 
 typedef struct FILE_EVENT   FILE_EVENT;
 typedef struct POLL_EVENTS   POLL_EVENTS;

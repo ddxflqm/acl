@@ -41,10 +41,12 @@ static int epoll_event_add(EVENT *ev, int fd, int mask)
 	if (mask & EVENT_WRITABLE)
 		ee.events |= EPOLLOUT;
 
+#if 0
 #ifdef	EPOLLRDHUP
 	ee.events |= EPOLLERR | EPOLLRDHUP | EPOLLHUP;
 #else
 	ee.events |= EPOLLERR | EPOLLHUP;
+#endif
 #endif
 
 	if (epoll_ctl(ep->epfd, op, fd, &ee) == -1) {
@@ -104,9 +106,9 @@ static int epoll_event_loop(EVENT *ev, struct timeval *tv)
 			if (e->events & EPOLLOUT)
 				mask |= EVENT_WRITABLE;
 			if (e->events & EPOLLERR)
-				mask |= EVENT_READABLE;
+				mask |= EVENT_READABLE | EVENT_WRITABLE | EVENT_ERROR;
 			if (e->events & EPOLLHUP)
-				mask |= EVENT_READABLE;
+				mask |= EVENT_READABLE | EVENT_WRITABLE | EVENT_ERROR;
 
 			ev->fired[j].fd = e->data.fd;
 			ev->fired[j].mask = mask;
