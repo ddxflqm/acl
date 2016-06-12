@@ -8,6 +8,7 @@
 #include "event.h"
 #include "fiber.h"
 
+typedef int     (*close_fn)(int);
 typedef ssize_t (*read_fn)(int, void *, size_t);
 typedef ssize_t (*readv_fn)(int, const struct iovec *, int);
 typedef ssize_t (*recv_fn)(int, void *, size_t, int);
@@ -21,6 +22,7 @@ typedef ssize_t (*sendto_fn)(int, const void *, size_t, int,
 	const struct sockaddr *, socklen_t);
 typedef ssize_t (*sendmsg_fn)(int, const struct msghdr *, int);
 
+static close_fn    __sys_close    = NULL;
 static read_fn     __sys_read     = NULL;
 static readv_fn    __sys_readv    = NULL;
 static recv_fn     __sys_recv     = NULL;
@@ -61,6 +63,7 @@ void fiber_io_hook(void)
 
 	__called++;
 
+	__sys_close    = (close_fn) dlsym(RTLD_NEXT, "close");
 	__sys_read     = (read_fn) dlsym(RTLD_NEXT, "read");
 	__sys_readv    = (readv_fn) dlsym(RTLD_NEXT, "readv");
 	__sys_recv     = (recv_fn) dlsym(RTLD_NEXT, "recv");
@@ -318,6 +321,13 @@ void fiber_wait_write(int fd)
 	__thread_fiber->io_count++;
 
 	fiber_switch();
+}
+
+int close(int fd)
+{
+	event_del(__thread_fiber->event, fd, EVENT_ERROR);
+
+	return __sys_close(fd);
 }
 
 #define READ_WAIT_FIRST

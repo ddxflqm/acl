@@ -8,8 +8,8 @@ ARFL    = rv
 RANLIB  = ${ENV_RANLIB}
 
 CFLAGS = -c -g -W \
--O3 \
 -Wall \
+-O3 \
 -Wcast-qual \
 -Waggregate-return \
 -Wmissing-prototypes \

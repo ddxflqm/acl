@@ -61,8 +61,10 @@ static void fiber_connect(FIBER *fiber acl_unused, void *ctx)
 			__conn_timeout, __rw_timeout, 4096);
 	if (cstream == NULL)
 		printf("connect %s error %s\r\n", addr, acl_last_serror());
-	else
+	else {
+		printf("connect %s ok\r\n", addr);
 		echo_client(cstream);
+	}
 
 	--__left_fibers;
 	printf("max_fibers: %d, left: %d\r\n", __max_fibers, __left_fibers);

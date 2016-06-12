@@ -67,20 +67,31 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 
 int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 {
+	int err;
+	socklen_t len = sizeof(err);
+
 	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
 
-	while (1) {
-		int ret = __sys_connect(sockfd, addr, addrlen);
-		if (ret >= 0) {
-			acl_tcp_nodelay(sockfd, 1);
-			return ret;
-		}
-
-		if (errno != EINPROGRESS)
-			return -1;
-
-		fiber_wait_write(sockfd);
+	int ret = __sys_connect(sockfd, addr, addrlen);
+	if (ret >= 0) {
+		acl_tcp_nodelay(sockfd, 1);
+		return ret;
 	}
+
+	if (errno != EINPROGRESS)
+		return -1;
+
+	fiber_wait_write(sockfd);
+
+	ret = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, (char *) &err, &len);
+	if (ret == 0 && err == 0)
+		return sockfd;
+
+	acl_set_error(err);
+	acl_msg_error("%s(%d): getsockopt error: %s, ret: %d, err: %d",
+		__FUNCTION__, __LINE__, acl_last_serror(), ret, err);
+
+	return -1;
 }
 
 static void poll_callback(EVENT *ev, POLL_EVENTS *pe)

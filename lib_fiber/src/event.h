@@ -62,6 +62,7 @@ struct EVENT {
 	int  (*loop)(EVENT *, struct timeval *);
 	int  (*add)(EVENT *, int, int);
 	void (*del)(EVENT *, int, int);
+	int  (*mod)(EVENT *, int, int);
 	void (*free)(EVENT *);
 };
 
