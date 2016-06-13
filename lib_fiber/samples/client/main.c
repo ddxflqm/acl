@@ -5,6 +5,10 @@
 #include <unistd.h>
 #include "fiber/lib_fiber.h"
 
+static long long int __total_count = 0;
+static int __total_clients         = 0;
+static int __total_error_clients   = 0;
+
 static int __conn_timeout = 0;
 static int __rw_timeout   = 0;
 static int __max_loop     = 10000;
@@ -32,6 +36,7 @@ static void echo_client(ACL_VSTREAM *cstream)
 			break;
 		}
 		buf[ret] = 0;
+		__total_count++;
 		//printf("gets line: %s", buf);
 	}
 
@@ -59,10 +64,13 @@ static void fiber_connect(FIBER *fiber acl_unused, void *ctx)
 	const char *addr = (const char *) ctx;
 	ACL_VSTREAM *cstream = acl_vstream_connect(addr, ACL_BLOCKING,
 			__conn_timeout, __rw_timeout, 4096);
-	if (cstream == NULL)
+	if (cstream == NULL) {
 		printf("connect %s error %s\r\n", addr, acl_last_serror());
-	else {
-		printf("connect %s ok\r\n", addr);
+		__total_error_clients++;
+	} else {
+		__total_clients++;
+		printf("connect %s ok, clients: %d, fd: %d\r\n",
+			addr, __total_clients, ACL_VSTREAM_SOCK(cstream));
 		echo_client(cstream);
 	}
 
@@ -71,13 +79,13 @@ static void fiber_connect(FIBER *fiber acl_unused, void *ctx)
 
 	if (__left_fibers == 0) {
 		double spent;
-		long long count = __max_loop * __max_fibers;
 
 		gettimeofday(&__end, NULL);
 		spent = stamp_sub(&__end, &__begin);
-		printf("fibers: %d, count: %lld, spent: %.2f, speed: %.2f\r\n",
-			__max_fibers, count, spent,
-			(count * 1000) / (spent > 0 ? spent : 1));
+		printf("fibers: %d, clients: %d, error: %d, count: %lld, "
+			"spent: %.2f, speed: %.2f\r\n", __max_fibers,
+			__total_clients, __total_error_clients, __total_count,
+			spent, (__total_count * 1000) / (spent > 0 ? spent : 1));
 
 		fiber_io_stop();
 	}

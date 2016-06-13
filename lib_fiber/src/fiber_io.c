@@ -326,7 +326,6 @@ void fiber_wait_write(int fd)
 int close(int fd)
 {
 	event_del(__thread_fiber->event, fd, EVENT_ERROR);
-
 	return __sys_close(fd);
 }
 

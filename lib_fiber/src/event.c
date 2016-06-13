@@ -100,13 +100,13 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 
 		assert(to_mask != 0);
 
-		ev->ndefer--;
+		fe->defer = NULL;
 
 		fd2 = ev->defers[ev->ndefer].fd;
 
 		if (ev->ndefer > 0) {
 			ev->defers[pos].mask  = ev->defers[ev->ndefer].mask;
-			ev->defers[pos].pos   = fe->defer->pos;
+			ev->defers[pos].pos   = pos;
 			ev->defers[pos].fd    = fd2;
 
 			ev->events[fd2].defer = &ev->defers[pos];
@@ -117,15 +117,14 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 			ev->defers[0].pos  = 0;
 		}
 
-		ev->defers[ev->ndefer].fd  = -1;
-		fe->defer = NULL;
-
 		if (ev->mod(ev, fd, to_mask) == -1) {
 			acl_msg_error("mod fd(%d) error: %s",
 				fd, acl_last_serror());
 			return -1;
 		}
 
+		ev->ndefer--;
+		ev->defers[ev->ndefer].fd  = -1;
 		fe->mask = to_mask;
 	} else {
 		if (ev->add(ev, fd, mask) == -1) {

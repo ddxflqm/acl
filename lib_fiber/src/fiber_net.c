@@ -84,10 +84,12 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 	fiber_wait_write(sockfd);
 
 	ret = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, (char *) &err, &len);
+
 	if (ret == 0 && err == 0)
-		return sockfd;
+		return 0;
 
 	acl_set_error(err);
+
 	acl_msg_error("%s(%d): getsockopt error: %s, ret: %d, err: %d",
 		__FUNCTION__, __LINE__, acl_last_serror(), ret, err);
 
