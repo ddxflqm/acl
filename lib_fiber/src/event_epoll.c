@@ -13,7 +13,6 @@ static void epoll_event_free(EVENT *ev)
 {
 	EVENT_EPOLL *ep = (EVENT_EPOLL *) ev;
 
-	printf("---begin close epfd: %d---\r\n", ep->epfd);
 	close(ep->epfd);
 	acl_myfree(ep->epoll_events);
 	acl_myfree(ep);

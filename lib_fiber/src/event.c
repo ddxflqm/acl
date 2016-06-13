@@ -100,8 +100,7 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 
 		assert(to_mask != 0);
 
-		fe->defer = NULL;
-
+		ev->ndefer--;
 		fd2 = ev->defers[ev->ndefer].fd;
 
 		if (ev->ndefer > 0) {
@@ -123,8 +122,8 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 			return -1;
 		}
 
-		ev->ndefer--;
 		ev->defers[ev->ndefer].fd  = -1;
+		fe->defer = NULL;
 		fe->mask = to_mask;
 	} else {
 		if (ev->add(ev, fd, mask) == -1) {

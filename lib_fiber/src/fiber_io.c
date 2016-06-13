@@ -325,7 +325,14 @@ void fiber_wait_write(int fd)
 
 int close(int fd)
 {
-	event_del(__thread_fiber->event, fd, EVENT_ERROR);
+	if (fd < 0) {
+		acl_msg_error("%s: invalid fd: %d", __FUNCTION__, fd);
+		return -1;
+	}
+
+	if (__thread_fiber != NULL)
+		event_del(__thread_fiber->event, fd, EVENT_ERROR);
+
 	return __sys_close(fd);
 }
 
@@ -335,18 +342,33 @@ int close(int fd)
 
 ssize_t read(int fd, void *buf, size_t count)
 {
+	if (fd < 0) {
+		acl_msg_error("%s: invalid fd: %d", __FUNCTION__, fd);
+		return -1;
+	}
+
 	fiber_wait_read(fd);
 	return __sys_read(fd, buf, count);
 }
 
 ssize_t readv(int fd, const struct iovec *iov, int iovcnt)
 {
+	if (fd < 0) {
+		acl_msg_error("%s: invalid fd: %d", __FUNCTION__, fd);
+		return -1;
+	}
+
 	fiber_wait_read(fd);
 	return __sys_readv(fd, iov, iovcnt);
 }
 
 ssize_t recv(int sockfd, void *buf, size_t len, int flags)
 {
+	if (sockfd < 0) {
+		acl_msg_error("%s: invalid sockfd: %d", __FUNCTION__, sockfd);
+		return -1;
+	}
+
 	fiber_wait_read(sockfd);
 	return __sys_recv(sockfd, buf, len, flags);
 }
@@ -354,12 +376,22 @@ ssize_t recv(int sockfd, void *buf, size_t len, int flags)
 ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
 	struct sockaddr *src_addr, socklen_t *addrlen)
 {
+	if (sockfd < 0) {
+		acl_msg_error("%s: invalid sockfd: %d", __FUNCTION__, sockfd);
+		return -1;
+	}
+
 	fiber_wait_read(sockfd);
 	return __sys_recvfrom(sockfd, buf, len, flags, src_addr, addrlen);
 }
 
 ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
 {
+	if (sockfd < 0) {
+		acl_msg_error("%s: invalid sockfd: %d", __FUNCTION__, sockfd);
+		return -1;
+	}
+
 	fiber_wait_read(sockfd);
 	return __sys_recvmsg(sockfd, msg, flags);
 }
