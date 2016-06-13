@@ -206,9 +206,12 @@ void event_del(EVENT *ev, int fd, int mask)
 	fe = &ev->events[fd];
 
 	if (fe->defer != NULL) {
-		int fd2 = ev->defers[ev->ndefer].fd;
+		int fd2;
 
-		if (--ev->ndefer > 0) {
+		ev->ndefer--;
+		fd2 = ev->defers[ev->ndefer].fd;
+
+		if (ev->ndefer > 0) {
 			int pos = fe->defer->pos;
 
 			ev->defers[pos].mask  = ev->defers[ev->ndefer].mask;
