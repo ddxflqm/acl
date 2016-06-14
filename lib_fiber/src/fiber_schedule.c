@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#define __USE_GNU
+#include <dlfcn.h>
 
 #ifdef USE_VALGRIND
 #include <valgrind/valgrind.h>
@@ -7,6 +9,10 @@
 #include "fiber/fiber_io.h"
 #include "fiber/fiber_schedule.h"
 #include "fiber.h"
+
+typedef int *(*errno_fn)(void);
+
+static errno_fn __sys_errno = NULL;
 
 typedef struct {
 	ACL_RING queue;
@@ -57,6 +63,20 @@ static void thread_init(void)
 
 static acl_pthread_once_t __once_control = ACL_PTHREAD_ONCE_INIT;
 
+/* see /usr/include/bits/errno.h for __errno_location */
+int *__errno_location (void)
+{
+	return &__thread_fiber->running->errnum;
+}
+
+void fiber_save_errno(void)
+{
+	if (__sys_errno != NULL)
+		__thread_fiber->running->errnum = *__sys_errno();
+	else
+		__thread_fiber->running->errnum = errno;
+}
+
 static void fiber_check(void)
 {
 	if (__thread_fiber != NULL)
@@ -64,11 +84,14 @@ static void fiber_check(void)
 
 	acl_assert(acl_pthread_once(&__once_control, thread_init) == 0);
 
+	__sys_errno = (errno_fn) dlsym(RTLD_NEXT, "__errno_location");
+
 	__thread_fiber = (FIBER_TLS *) acl_mycalloc(1, sizeof(FIBER_TLS));
 	__thread_fiber->fibers = NULL;
 	__thread_fiber->size   = 0;
 	__thread_fiber->idgen  = 0;
 	__thread_fiber->count  = 0;
+
 	acl_ring_init(&__thread_fiber->queue);
 	acl_ring_init(&__thread_fiber->dead);
 
@@ -140,11 +163,12 @@ static FIBER *fiber_alloc(void (*fn)(FIBER *, void *), void *arg, size_t size)
 	} else
 		size = fiber->size;
 
-	fiber->fn    = fn;
-	fiber->arg   = arg;
-	fiber->stack = fiber->buf;
-	fiber->size  = size;
-	fiber->id    = ++__thread_fiber->idgen;
+	fiber->errnum = 0;
+	fiber->fn     = fn;
+	fiber->arg    = arg;
+	fiber->stack  = fiber->buf;
+	fiber->size   = size;
+	fiber->id     = ++__thread_fiber->idgen;
 
 	sigemptyset(&zero);
 	sigprocmask(SIG_BLOCK, &zero, &fiber->uctx.uc_sigmask);

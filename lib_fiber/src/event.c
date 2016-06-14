@@ -116,7 +116,7 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 			ev->defers[0].pos  = 0;
 		}
 
-		if (ev->mod(ev, fd, to_mask) == -1) {
+		if (ev->add(ev, fd, to_mask) == -1) {
 			acl_msg_error("mod fd(%d) error: %s",
 				fd, acl_last_serror());
 			return -1;

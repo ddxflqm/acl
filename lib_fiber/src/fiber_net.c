@@ -41,13 +41,19 @@ int socket(int domain, int type, int protocol)
 
 	if (sockfd >= 0)
 		acl_non_blocking(sockfd, ACL_NON_BLOCKING);
+	else
+		fiber_save_errno();
 	return sockfd;
 }
 
 int listen(int sockfd, int backlog)
 {
 	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
-	return __sys_listen(sockfd, backlog);
+	if (__sys_listen(sockfd, backlog) == 0)
+		return 0;
+
+	fiber_save_errno();
+	return -1;
 }
 
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
@@ -62,6 +68,8 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 		acl_tcp_nodelay(clifd, 1);
 		return clifd;
 	}
+
+	fiber_save_errno();
 	return clifd;
 }
 
@@ -77,6 +85,8 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 		acl_tcp_nodelay(sockfd, 1);
 		return ret;
 	}
+
+	fiber_save_errno();
 
 	if (errno != EINPROGRESS)
 		return -1;

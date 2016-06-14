@@ -1,4 +1,8 @@
 
+5) 2016.6.14
+5.1) feature: hook 了 errno 所依赖的函数 __errno_location，从而使 errno 针对
+每个协程是安全的
+
 4) 2016.6.11
 4.1) valgrind: 增加编译开关以防止 valgrind 工具对 swapcontext 跳转的误报
 

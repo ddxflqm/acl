@@ -19,7 +19,7 @@ static int http_client(ACL_VSTREAM *cstream, const char* res, size_t len)
 	while (1) {
 		ret = acl_vstream_gets(cstream, buf, sizeof(buf) - 1);
 		if (ret == ACL_VSTREAM_EOF) {
-			printf("gets error\r\n");
+			printf("gets error: %s\r\n", acl_last_serror());
 			return -1;
 		}
 

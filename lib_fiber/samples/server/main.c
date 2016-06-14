@@ -20,7 +20,8 @@ static void echo_client(FIBER *fiber acl_unused, void *ctx)
 	while (1) {
 		ret = acl_vstream_gets(cstream, buf, sizeof(buf) - 1);
 		if (ret == ACL_VSTREAM_EOF) {
-			printf("gets error, fd: %d\r\n", SOCK(cstream));
+			printf("gets error: %s, fd: %d\r\n",
+				acl_last_serror(), SOCK(cstream));
 			break;
 		}
 		buf[ret] = 0;

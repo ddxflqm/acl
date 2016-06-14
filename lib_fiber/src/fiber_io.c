@@ -327,6 +327,8 @@ void fiber_wait_write(int fd)
 
 int close(int fd)
 {
+	int ret;
+
 	if (fd < 0) {
 		acl_msg_error("%s: invalid fd: %d", __FUNCTION__, fd);
 		return -1;
@@ -335,7 +337,12 @@ int close(int fd)
 	if (__thread_fiber != NULL)
 		event_del(__thread_fiber->event, fd, EVENT_ERROR);
 
-	return __sys_close(fd);
+	ret = __sys_close(fd);
+	if (ret == 0)
+		return ret;
+
+	fiber_save_errno();
+	return ret;
 }
 
 #define READ_WAIT_FIRST
@@ -344,58 +351,93 @@ int close(int fd)
 
 ssize_t read(int fd, void *buf, size_t count)
 {
+	ssize_t ret;
+
 	if (fd < 0) {
 		acl_msg_error("%s: invalid fd: %d", __FUNCTION__, fd);
 		return -1;
 	}
 
 	fiber_wait_read(fd);
-	return __sys_read(fd, buf, count);
+	ret = __sys_read(fd, buf, count);
+	if (ret > 0)
+		return ret;
+
+	fiber_save_errno();
+	return ret;
 }
 
 ssize_t readv(int fd, const struct iovec *iov, int iovcnt)
 {
+	ssize_t ret;
+
 	if (fd < 0) {
 		acl_msg_error("%s: invalid fd: %d", __FUNCTION__, fd);
 		return -1;
 	}
 
 	fiber_wait_read(fd);
-	return __sys_readv(fd, iov, iovcnt);
+	ret = __sys_readv(fd, iov, iovcnt);
+	if (ret > 0)
+		return ret;
+
+	fiber_save_errno();
+	return ret;
 }
 
 ssize_t recv(int sockfd, void *buf, size_t len, int flags)
 {
+	ssize_t ret;
+
 	if (sockfd < 0) {
 		acl_msg_error("%s: invalid sockfd: %d", __FUNCTION__, sockfd);
 		return -1;
 	}
 
 	fiber_wait_read(sockfd);
-	return __sys_recv(sockfd, buf, len, flags);
+	ret = __sys_recv(sockfd, buf, len, flags);
+	if (ret > 0)
+		return ret;
+
+	fiber_save_errno();
+	return ret;
 }
 
 ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
 	struct sockaddr *src_addr, socklen_t *addrlen)
 {
+	ssize_t ret;
+
 	if (sockfd < 0) {
 		acl_msg_error("%s: invalid sockfd: %d", __FUNCTION__, sockfd);
 		return -1;
 	}
 
 	fiber_wait_read(sockfd);
-	return __sys_recvfrom(sockfd, buf, len, flags, src_addr, addrlen);
+	ret = __sys_recvfrom(sockfd, buf, len, flags, src_addr, addrlen);
+	if (ret > 0)
+		return ret;
+
+	fiber_save_errno();
+	return ret;
 }
 
 ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
 {
+	ssize_t ret;
+
 	if (sockfd < 0) {
 		acl_msg_error("%s: invalid sockfd: %d", __FUNCTION__, sockfd);
 		return -1;
 	}
 
 	fiber_wait_read(sockfd);
-	return __sys_recvmsg(sockfd, msg, flags);
+	ret = __sys_recvmsg(sockfd, msg, flags);
+	if (ret > 0)
+		return ret;
+
+	fiber_save_errno();
+	return ret;
 }
 
 #else
@@ -407,6 +449,8 @@ ssize_t read(int fd, void *buf, size_t count)
 
 		if (n >= 0)
 			return n;
+
+		fiber_save_errno();
 
 #if EAGAIN == EWOULDBLOCK
 		if (errno != EAGAIN)
@@ -426,6 +470,8 @@ ssize_t readv(int fd, const struct iovec *iov, int iovcnt)
 		if (n >= 0)
 			return n;
 
+		fiber_save_errno();
+
 #if EAGAIN == EWOULDBLOCK
 		if (errno != EAGAIN)
 #else
@@ -444,6 +490,8 @@ ssize_t recv(int sockfd, void *buf, size_t len, int flags)
 
 		if (n >= 0)
 			return n;
+
+		fiber_save_errno();
 
 #if EAGAIN == EWOULDBLOCK
 		if (errno != EAGAIN)
@@ -466,6 +514,8 @@ ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
 		if (n >= 0)
 			return n;
 
+		fiber_save_errno();
+
 #if EAGAIN == EWOULDBLOCK
 		if (errno != EAGAIN)
 #else
@@ -484,6 +534,8 @@ ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags)
 
 		if (n >= 0)
 			return n;
+
+		fiber_save_errno();
 
 #if EAGAIN == EWOULDBLOCK
 		if (errno != EAGAIN)
@@ -506,6 +558,8 @@ ssize_t write(int fd, const void *buf, size_t count)
 		if (n >= 0)
 			return n;
 
+		fiber_save_errno();
+
 #if EAGAIN == EWOULDBLOCK
 		if (errno != EAGAIN)
 #else
@@ -525,6 +579,8 @@ ssize_t writev(int fd, const struct iovec *iov, int iovcnt)
 		if (n >= 0)
 			return n;
 
+		fiber_save_errno();
+
 #if EAGAIN == EWOULDBLOCK
 		if (errno != EAGAIN)
 #else
@@ -543,6 +599,8 @@ ssize_t send(int sockfd, const void *buf, size_t len, int flags)
 
 		if (n >= 0)
 			return n;
+
+		fiber_save_errno();
 
 #if EAGAIN == EWOULDBLOCK
 		if (errno != EAGAIN)
@@ -565,6 +623,8 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
 		if (n >= 0)
 			return n;
 
+		fiber_save_errno();
+
 #if EAGAIN == EWOULDBLOCK
 		if (errno != EAGAIN)
 #else
@@ -583,6 +643,8 @@ ssize_t sendmsg(int sockfd, const struct msghdr *msg, int flags)
 
 		if (n >= 0)
 			return n;
+
+		fiber_save_errno();
 
 #if EAGAIN == EWOULDBLOCK
 		if (errno != EAGAIN)

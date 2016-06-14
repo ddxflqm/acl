@@ -22,18 +22,20 @@ static int epoll_event_add(EVENT *ev, int fd, int mask)
 {
 	EVENT_EPOLL *ep = (EVENT_EPOLL *) ev;
 	struct epoll_event ee;
+	int  op;
+
+	if ((ev->events[fd].mask & mask) == mask)
+		return 0;
+
 	/* If the fd was already monitored for some event, we need a MOD
 	 * operation. Otherwise we need an ADD operation. */
-	int op = ev->events[fd].mask == EVENT_NONE ?
-		EPOLL_CTL_ADD : EPOLL_CTL_MOD;
+	op = ev->events[fd].mask == EVENT_NONE
+		? EPOLL_CTL_ADD : EPOLL_CTL_MOD;
 
 	ee.events   = 0;
 	ee.data.u64 = 0;
 	ee.data.ptr = NULL;
 	ee.data.fd  = fd;
-
-	//printf(">>>fd: %d, mask: %d, op: %s\r\n",
-	//	fd, mask, op == EPOLL_CTL_ADD ?  "add" : "mod");
 
 	mask |= ev->events[fd].mask; /* Merge old events */
 	if (mask & EVENT_READABLE)
@@ -74,47 +76,18 @@ static void epoll_event_del(EVENT *ev, int fd, int delmask)
 	if (mask & EVENT_WRITABLE)
 		ee.events |= EPOLLOUT;
 
-	if (mask != EVENT_NONE)
-		epoll_ctl(ep->epfd, EPOLL_CTL_MOD, fd, &ee);
-	else {
+	if (mask != EVENT_NONE) {
+		if (epoll_ctl(ep->epfd, EPOLL_CTL_MOD, fd, &ee) < 0)
+			acl_msg_error("%s(%d), epoll_ctl error: %s, fd: %d",
+				__FUNCTION__, __LINE__, acl_last_serror(), fd);
+	} else {
 		/* Note, Kernel < 2.6.9 requires a non null event pointer
 		 * even for EPOLL_CTL_DEL.
 		 */
 		if (epoll_ctl(ep->epfd, EPOLL_CTL_DEL, fd, &ee) < 0)
-			acl_msg_error("epoll_ctl error: %s, fd: %d",
-				acl_last_serror(), fd);
+			acl_msg_error("%s(%d), epoll_ctl error: %s, fd: %d",
+				__FUNCTION__, __LINE__, acl_last_serror(), fd);
 	}
-}
-
-static int epoll_event_mod(EVENT *ev, int fd, int mask)
-{
-	EVENT_EPOLL *ep = (EVENT_EPOLL *) ev;
-	struct epoll_event ee;
-	int  op;
-
-	if ((ev->events[fd].mask & mask) == mask)
-		return 0;
-
-	op = ev->events[fd].mask == EVENT_NONE
-		? EPOLL_CTL_ADD : EPOLL_CTL_MOD;
-
-	ee.events   = 0;
-	ee.data.u64 = 0;
-	ee.data.ptr = NULL;
-	ee.data.fd  = fd;
-
-	if (mask & EVENT_READABLE)
-		ee.events |= EPOLLIN;
-	if (mask & EVENT_WRITABLE)
-		ee.events |= EPOLLOUT;
-
-	if (epoll_ctl(ep->epfd, op, fd, &ee) == -1) {
-		acl_msg_error("%s, %s(%d): epoll_ctl error %s",
-			__FILE__, __FUNCTION__, __LINE__, acl_last_serror());
-		return -1;
-	}
-
-	return 0;
 }
 
 static int epoll_event_loop(EVENT *ev, struct timeval *tv)
@@ -139,9 +112,9 @@ static int epoll_event_loop(EVENT *ev, struct timeval *tv)
 			mask |= EVENT_WRITABLE;
 		if (e->events & EPOLLERR || e->events & EPOLLHUP ) {
 			if (ev->events[e->data.fd].mask & EVENT_READABLE)
-				mask |= EVENT_READABLE | EVENT_ERROR;
+				mask |= EVENT_READABLE;
 			if (ev->events[e->data.fd].mask & EVENT_WRITABLE)
-				mask |= EVENT_WRITABLE | EVENT_ERROR;
+				mask |= EVENT_WRITABLE;
 		}
 
 		ev->fired[j].fd = e->data.fd;
@@ -170,7 +143,6 @@ EVENT *event_epoll_create(int setsize)
 	ep->event.loop = epoll_event_loop;
 	ep->event.add  = epoll_event_add;
 	ep->event.del  = epoll_event_del;
-	ep->event.mod  = epoll_event_mod;
 	ep->event.free = epoll_event_free;
 
 	return (EVENT*) ep;

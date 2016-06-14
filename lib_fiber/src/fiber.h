@@ -20,6 +20,7 @@ struct FIBER {
 	acl_int64 when;
 	int sys;
 	fiber_status_t status;
+	int errnum;
 	ucontext_t uctx;
 	void (*fn)(FIBER *, void *);
 	void *arg;
@@ -32,6 +33,7 @@ struct FIBER {
 void   fiber_init(void);
 void   fiber_ready(FIBER *fiber);
 FIBER *fiber_running(void);
+void   fiber_save_errno(void);
 void   fiber_exit(int exit_code);
 void   fiber_free(FIBER *fiber);
 void   fiber_system(void);
