@@ -9,7 +9,6 @@ RANLIB  = ${ENV_RANLIB}
 
 CFLAGS = -c -g -W \
 -Wall \
--O3 \
 -Wcast-qual \
 -Waggregate-return \
 -Wmissing-prototypes \
@@ -18,8 +17,8 @@ CFLAGS = -c -g -W \
 -D_REENTRANT \
 -D_POSIX_PTHREAD_SEMANTICS \
 -D_USE_FAST_MACRO \
--Wno-long-long \
--Wno-clobbered
+-Wno-long-long
+#-Wno-clobbered
 #-DUSE_VALGRIND
 
 #-pedantic
