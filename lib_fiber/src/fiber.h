@@ -11,22 +11,22 @@ typedef enum {
 } fiber_status_t;
 
 struct FIBER {
-	ACL_RING me;
-	size_t id;
-#ifdef USE_VALGRIND
-	unsigned int vid;
-#endif
-	size_t slot;
-	acl_int64 when;
-	int sys;
 	fiber_status_t status;
-	int errnum;
-	ucontext_t uctx;
-	void (*fn)(FIBER *, void *);
-	void *arg;
-	char *stack;
-	size_t size;
-	char  buf[1];
+	ACL_RING       me;
+	size_t         id;
+#ifdef USE_VALGRIND
+	unsigned int   vid;
+#endif
+	size_t         slot;
+	acl_int64      when;
+	int            errnum;
+	int            sys;
+	ucontext_t     uctx;
+	void           (*fn)(FIBER *, void *);
+	void          *arg;
+	char          *stack;
+	size_t         size;
+	char           buf[1];
 };
 
 /* in fiber_schedule.c */

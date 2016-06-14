@@ -90,6 +90,8 @@ int main(int argc, char *argv[])
 	ACL_VSTREAM *sstream;
 	int   ch, enable_sleep = 0, qlen = 128;
 
+	acl_msg_stdout_enable(1);
+
 	snprintf(addr, sizeof(addr), "%s", "127.0.0.1:9002");
 
 	while ((ch = getopt(argc, argv, "hs:r:Sq:")) > 0) {

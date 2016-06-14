@@ -22,6 +22,7 @@ typedef struct {
 	int      exitcode;
 	FIBER   *running;
 	FIBER    schedule;
+	int      errnum;
 	size_t   idgen;
 	int      count;
 	int      switched;
@@ -39,7 +40,8 @@ static void thread_free(void *ctx)
 	if (__thread_fiber == NULL)
 		return;
 
-	acl_myfree(tf->fibers);
+	if (tf->fibers)
+		acl_myfree(tf->fibers);
 	acl_myfree(tf);
 	if (__main_fiber == __thread_fiber)
 		__main_fiber = NULL;
@@ -63,28 +65,12 @@ static void thread_init(void)
 
 static acl_pthread_once_t __once_control = ACL_PTHREAD_ONCE_INIT;
 
-/* see /usr/include/bits/errno.h for __errno_location */
-int *__errno_location (void)
-{
-	return &__thread_fiber->running->errnum;
-}
-
-void fiber_save_errno(void)
-{
-	if (__sys_errno != NULL)
-		__thread_fiber->running->errnum = *__sys_errno();
-	else
-		__thread_fiber->running->errnum = errno;
-}
-
 static void fiber_check(void)
 {
 	if (__thread_fiber != NULL)
 		return;
 
 	acl_assert(acl_pthread_once(&__once_control, thread_init) == 0);
-
-	__sys_errno = (errno_fn) dlsym(RTLD_NEXT, "__errno_location");
 
 	__thread_fiber = (FIBER_TLS *) acl_mycalloc(1, sizeof(FIBER_TLS));
 	__thread_fiber->fibers = NULL;
@@ -100,6 +86,36 @@ static void fiber_check(void)
 		atexit(fiber_schedule_main_free);
 	} else if (acl_pthread_setspecific(__fiber_key, __thread_fiber) != 0)
 		acl_msg_fatal("acl_pthread_setspecific error!");
+}
+
+/* see /usr/include/bits/errno.h for __errno_location */
+int *__errno_location (void)
+{
+	if (__thread_fiber == NULL)
+		fiber_check();
+
+	if (__thread_fiber->running)
+		return &__thread_fiber->running->errnum;
+	else
+		return &__thread_fiber->schedule.errnum;
+}
+
+void fiber_save_errno(void)
+{
+	if (__thread_fiber == NULL)
+		fiber_check();
+
+	if (__thread_fiber->running) {
+		if (__sys_errno != NULL)
+			__thread_fiber->running->errnum = *__sys_errno();
+		else
+			__thread_fiber->running->errnum = errno;
+	} else {
+		if (__sys_errno != NULL)
+			__thread_fiber->schedule.errnum = *__sys_errno();
+		else
+			__thread_fiber->schedule.errnum = errno;
+	}
 }
 
 static void fiber_swap(FIBER *from, FIBER *to)
@@ -231,6 +247,9 @@ void fiber_init(void)
 		return;
 
 	__called++;
+
+	__sys_errno = (errno_fn) dlsym(RTLD_NEXT, "__errno_location");
+
 	fiber_io_hook();
 	fiber_net_hook();
 }

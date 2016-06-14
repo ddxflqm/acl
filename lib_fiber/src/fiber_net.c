@@ -11,11 +11,13 @@
 #include "fiber.h"
 
 typedef int (*socket_fn)(int, int, int);
+typedef int (*bind_fn)(int, const struct sockaddr *, socklen_t);
 typedef int (*listen_fn)(int, int);
 typedef int (*accept_fn)(int, struct sockaddr *, socklen_t *);
 typedef int (*connect_fn)(int, const struct sockaddr *, socklen_t);
 
 static socket_fn   __sys_socket   = NULL;
+static bind_fn     __sys_bind     = NULL;
 static listen_fn   __sys_listen   = NULL;
 static accept_fn   __sys_accept   = NULL;
 static connect_fn  __sys_connect  = NULL;
@@ -30,6 +32,7 @@ void fiber_net_hook(void)
 	__called++;
 
 	__sys_socket   = (socket_fn) dlsym(RTLD_NEXT, "socket");
+	__sys_bind     = (bind_fn) dlsym(RTLD_NEXT, "bind");
 	__sys_listen   = (listen_fn) dlsym(RTLD_NEXT, "listen");
 	__sys_accept   = (accept_fn) dlsym(RTLD_NEXT, "accept");
 	__sys_connect  = (connect_fn) dlsym(RTLD_NEXT, "connect");
@@ -44,6 +47,15 @@ int socket(int domain, int type, int protocol)
 	else
 		fiber_save_errno();
 	return sockfd;
+}
+
+int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
+{
+	if (__sys_bind(sockfd, addr, addrlen) == 0)
+		return 0;
+
+	fiber_save_errno();
+	return -1;
 }
 
 int listen(int sockfd, int backlog)
