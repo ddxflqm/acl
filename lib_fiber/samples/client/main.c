@@ -91,6 +91,18 @@ static void fiber_connect(FIBER *fiber acl_unused, void *ctx)
 	}
 }
 
+static void fiber_main(FIBER *fiber acl_unused, void *ctx)
+{
+	char *addr = (char *) ctx;
+	int i;
+
+	for (i = 0; i < __max_fibers; i++)
+	{
+		fiber_create(fiber_connect, addr, 32768);
+		//fiber_sleep(1);
+	}
+}
+
 static void usage(const char *procname)
 {
 	printf("usage: %s -h [help]\r\n"
@@ -103,7 +115,7 @@ static void usage(const char *procname)
 
 int main(int argc, char *argv[])
 {
-	int   ch, i;
+	int   ch;
 	char  addr[256];
        
 	acl_msg_stdout_enable(1);
@@ -138,8 +150,7 @@ int main(int argc, char *argv[])
 
 	gettimeofday(&__begin, NULL);
 
-	for (i = 0; i < __max_fibers; i++)
-		fiber_create(fiber_connect, addr, 32768);
+	fiber_create(fiber_main, addr, 32768);
 
 	printf("call fiber_schedule\r\n");
 

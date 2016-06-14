@@ -120,35 +120,35 @@ static int epoll_event_mod(EVENT *ev, int fd, int mask)
 static int epoll_event_loop(EVENT *ev, struct timeval *tv)
 {
 	EVENT_EPOLL *ep = (EVENT_EPOLL *) ev;
-	int retval, numevents = 0;
+	int retval, j, mask;
+	struct epoll_event *e;
 
 	retval = epoll_wait(ep->epfd, ep->epoll_events, ev->setsize,
 			tv ? (tv->tv_sec * 1000 + tv->tv_usec / 1000) : -1);
 
-	if (retval > 0) {
-		int j, mask;
-		struct epoll_event *e;
+	if (retval <= 0)
+		return retval;
 
-		numevents = retval;
-		for (j = 0; j < numevents; j++) {
-			mask = 0;
-			e = ep->epoll_events + j;
+	for (j = 0; j < retval; j++) {
+		mask = 0;
+		e = ep->epoll_events + j;
 
-			if (e->events & EPOLLIN)
-				mask |= EVENT_READABLE;
-			if (e->events & EPOLLOUT)
-				mask |= EVENT_WRITABLE;
-			if (e->events & EPOLLERR)
-				mask |= EVENT_READABLE | EVENT_WRITABLE | EVENT_ERROR;
-			if (e->events & EPOLLHUP)
-				mask |= EVENT_READABLE | EVENT_WRITABLE | EVENT_ERROR;
-
-			ev->fired[j].fd = e->data.fd;
-			ev->fired[j].mask = mask;
+		if (e->events & EPOLLIN)
+			mask |= EVENT_READABLE;
+		if (e->events & EPOLLOUT)
+			mask |= EVENT_WRITABLE;
+		if (e->events & EPOLLERR || e->events & EPOLLHUP ) {
+			if (ev->events[e->data.fd].mask & EVENT_READABLE)
+				mask |= EVENT_READABLE | EVENT_ERROR;
+			if (ev->events[e->data.fd].mask & EVENT_WRITABLE)
+				mask |= EVENT_WRITABLE | EVENT_ERROR;
 		}
+
+		ev->fired[j].fd = e->data.fd;
+		ev->fired[j].mask = mask;
 	}
 
-	return numevents;
+	return retval;
 }
 
 static const char *epoll_event_name(void)

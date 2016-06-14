@@ -208,8 +208,12 @@ static void fiber_io_loop(FIBER *self acl_unused, void *ctx)
 		event_process(ev, timer_left > 0 ?
 			timer_left + 1 : timer_left);
 
-		if (__thread_fiber->io_count == 0 && __thread_fiber->io_stop)
+		if (__thread_fiber->io_stop) {
+			if (__thread_fiber->io_count > 0)
+				printf("---------waiting io: %d----\r\n",
+					(int) __thread_fiber->io_count);
 			break;
+		}
 
 		if (fiber == NULL)
 			continue;
@@ -283,8 +287,7 @@ static void read_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)
 	fiber_ready(__thread_fiber->io_fibers[fd]);
 
 	__thread_fiber->io_count--;
-	__thread_fiber->io_fibers[fd] =
-		__thread_fiber->io_fibers[__thread_fiber->io_count];
+	__thread_fiber->io_fibers[fd] = NULL;
 }
 
 void fiber_wait_read(int fd)
@@ -306,8 +309,7 @@ static void write_callback(EVENT *ev, int fd, void *ctx acl_unused, int mask)
 	fiber_ready(__thread_fiber->io_fibers[fd]);
 
 	__thread_fiber->io_count--;
-	__thread_fiber->io_fibers[fd] =
-		__thread_fiber->io_fibers[__thread_fiber->io_count];
+	__thread_fiber->io_fibers[fd] = NULL;
 }
 
 void fiber_wait_write(int fd)

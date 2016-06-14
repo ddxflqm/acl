@@ -124,7 +124,7 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 
 		ev->defers[ev->ndefer].fd  = -1;
 		fe->defer = NULL;
-		fe->mask = to_mask;
+		fe->mask  = to_mask;
 	} else {
 		if (ev->add(ev, fd, mask) == -1) {
 			acl_msg_error("add fd(%d) error: %s",
