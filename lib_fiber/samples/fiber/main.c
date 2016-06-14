@@ -27,7 +27,7 @@ static double stamp_sub(const struct timeval *from, const struct timeval *sub_by
 	return (res.tv_sec * 1000.0 + res.tv_usec/1000.0);
 }
 
-static void fiber_main(FIBER *fiber acl_unused, void *ctx acl_unused)
+static void fiber_main(FIBER *fiber, void *ctx acl_unused)
 {
 	int  i;
 
@@ -35,7 +35,7 @@ static void fiber_main(FIBER *fiber acl_unused, void *ctx acl_unused)
 	for (i = 0; i < __max_loop; i++) {
 		fiber_yield();
 		if (i <= 2)
-			printf("my errno: %d\r\n", errno);
+			printf("fiber-%d, errno: %d\r\n", fiber_id(fiber), errno);
 	}
 
 	if (--__left_fiber == 0) {
