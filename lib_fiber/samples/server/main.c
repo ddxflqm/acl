@@ -80,18 +80,18 @@ static void fiber_sleep2_main(FIBER *fiber acl_unused, void *ctx acl_unused)
 
 static void usage(const char *procname)
 {
-	printf("usage: %s -h [help] -s listen_addr -r rw_timeout -S [if sleep]\r\n", procname);
+	printf("usage: %s -h [help] -s listen_addr -r rw_timeout -S [if sleep] -q listen_queue\r\n", procname);
 }
 
 int main(int argc, char *argv[])
 {
 	char addr[64];
 	ACL_VSTREAM *sstream;
-	int   ch, enable_sleep = 0;
+	int   ch, enable_sleep = 0, qlen = 128;
 
 	snprintf(addr, sizeof(addr), "%s", "127.0.0.1:9002");
 
-	while ((ch = getopt(argc, argv, "hs:r:S")) > 0) {
+	while ((ch = getopt(argc, argv, "hs:r:Sq:")) > 0) {
 		switch (ch) {
 		case 'h':
 			usage(argv[0]);
@@ -105,12 +105,15 @@ int main(int argc, char *argv[])
 		case 'S':
 			enable_sleep = 1;
 			break;
+		case 'q':
+			qlen = atoi(optarg);
+			break;
 		default:
 			break;
 		}
 	}
 
-	sstream = acl_vstream_listen(addr, 1024);
+	sstream = acl_vstream_listen(addr, qlen);
 	if (sstream == NULL) {
 		printf("acl_vstream_listen error %s\r\n", acl_last_serror());
 		return 1;
