@@ -6,8 +6,8 @@
 #include <valgrind/valgrind.h>
 #endif
 
-#include "fiber/fiber_io.h"
 #include "fiber/fiber_schedule.h"
+#include "fiber/fiber_io.h"
 #include "fiber.h"
 
 typedef int *(*errno_fn)(void);
@@ -100,22 +100,36 @@ int *__errno_location (void)
 		return &__thread_fiber->schedule.errnum;
 }
 
+void fiber_set_errno(FIBER *fiber, int errnum)
+{
+	fiber->errnum = errnum;
+}
+
+int fiber_errno(FIBER *fiber)
+{
+	fiber->flag |= FIBER_F_SAVE_ERRNO;
+	return fiber->errnum;
+}
+
 void fiber_save_errno(void)
 {
+	FIBER *curr;
+
 	if (__thread_fiber == NULL)
 		fiber_check();
 
-	if (__thread_fiber->running) {
-		if (__sys_errno != NULL)
-			__thread_fiber->running->errnum = *__sys_errno();
-		else
-			__thread_fiber->running->errnum = errno;
-	} else {
-		if (__sys_errno != NULL)
-			__thread_fiber->schedule.errnum = *__sys_errno();
-		else
-			__thread_fiber->schedule.errnum = errno;
+	if ((curr = __thread_fiber->running) == NULL)
+		curr = &__thread_fiber->schedule;
+
+	if (curr->flag & FIBER_F_SAVE_ERRNO) {
+		curr->flag &= ~FIBER_F_SAVE_ERRNO;
+		return;
 	}
+
+	if (__sys_errno != NULL)
+		curr->errnum = *__sys_errno();
+	else
+		curr->errnum = errno;
 }
 
 static void fiber_swap(FIBER *from, FIBER *to)
@@ -139,6 +153,22 @@ void fiber_exit(int exit_code)
 	__thread_fiber->running->status = FIBER_STATUS_EXITING;
 
 	fiber_switch();
+}
+
+void fiber_ready(FIBER *fiber)
+{
+	fiber->status = FIBER_STATUS_READY;
+	acl_ring_prepend(&__thread_fiber->queue, &fiber->me);
+}
+
+int fiber_yield(void)
+{
+	int  n = __thread_fiber->switched;
+
+	fiber_ready(__thread_fiber->running);
+	fiber_switch();
+
+	return __thread_fiber->switched - n - 1;
 }
 
 union cc_arg
@@ -237,9 +267,14 @@ int fiber_id(const FIBER *fiber)
 	return fiber->id;
 }
 
-void fiber_init(void) __attribute__ ((constructor));
+int fiber_status(const FIBER *fiber)
+{
+	return fiber->status;
+}
 
-void fiber_init(void)
+static void fiber_init(void) __attribute__ ((constructor));
+
+static void fiber_init(void)
 {
 	static int __called = 0;
 
@@ -285,22 +320,6 @@ void fiber_schedule(void)
 		fiber = ACL_RING_TO_APPL(head, FIBER, me);
 		fiber_free (fiber);
 	}
-}
-
-void fiber_ready(FIBER *fiber)
-{
-	fiber->status = FIBER_STATUS_READY;
-	acl_ring_prepend(&__thread_fiber->queue, &fiber->me);
-}
-
-int fiber_yield(void)
-{
-	int  n = __thread_fiber->switched;
-
-	fiber_ready(__thread_fiber->running);
-	fiber_switch();
-
-	return __thread_fiber->switched - n - 1;
 }
 
 void fiber_system(void)

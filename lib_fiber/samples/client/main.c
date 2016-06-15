@@ -14,34 +14,8 @@ static int __rw_timeout   = 0;
 static int __max_loop     = 10000;
 static int __max_fibers   = 100;
 static int __left_fibers  = 100;
-static struct timeval __begin, __end;
-
-static void echo_client(ACL_VSTREAM *cstream)
-{
-	char  buf[8192];
-	int   ret, i;
-	const char *str = "hello world\r\n";
-
-	for (i = 0; i < __max_loop; i++) {
-		if (acl_vstream_writen(cstream, str, strlen(str))
-			== ACL_VSTREAM_EOF)
-		{
-			printf("write error: %s\r\n", acl_last_serror());
-			break;
-		}
-
-		ret = acl_vstream_gets(cstream, buf, sizeof(buf) - 1);
-		if (ret == ACL_VSTREAM_EOF) {
-			printf("gets error: %s, i: %d\r\n", acl_last_serror(), i);
-			break;
-		}
-		buf[ret] = 0;
-		__total_count++;
-		//printf("gets line: %s", buf);
-	}
-
-	acl_vstream_close(cstream);
-}
+static int __read_data    = 0;
+static struct timeval __begin;
 
 static double stamp_sub(const struct timeval *from, const struct timeval *sub_by)
 {
@@ -57,6 +31,40 @@ static double stamp_sub(const struct timeval *from, const struct timeval *sub_by
 	res.tv_sec -= sub_by->tv_sec;
 
 	return (res.tv_sec * 1000.0 + res.tv_usec/1000.0);
+}
+
+static void echo_client(ACL_VSTREAM *cstream)
+{
+	char  buf[8192];
+	int   ret, i;
+	const char *str = "hello world\r\n";
+
+	for (i = 0; i < __max_loop; i++) {
+		if (acl_vstream_writen(cstream, str, strlen(str))
+			== ACL_VSTREAM_EOF)
+		{
+			printf("write error: %s\r\n", acl_last_serror());
+			break;
+		}
+
+
+		if (!__read_data) {
+			__total_count++;
+			continue;
+		}
+
+		ret = acl_vstream_gets(cstream, buf, sizeof(buf) - 1);
+		if (ret == ACL_VSTREAM_EOF) {
+			printf("gets error: %s, i: %d\r\n", acl_last_serror(), i);
+			break;
+		}
+
+		__total_count++;
+		//buf[ret] = 0;
+		//printf("gets line: %s", buf);
+	}
+
+	acl_vstream_close(cstream);
 }
 
 static void fiber_connect(FIBER *fiber acl_unused, void *ctx)
@@ -79,13 +87,16 @@ static void fiber_connect(FIBER *fiber acl_unused, void *ctx)
 
 	if (__left_fibers == 0) {
 		double spent;
+		struct timeval end;
 
-		gettimeofday(&__end, NULL);
-		spent = stamp_sub(&__end, &__begin);
+		gettimeofday(&end, NULL);
+		spent = stamp_sub(&end, &__begin);
+
 		printf("fibers: %d, clients: %d, error: %d, count: %lld, "
 			"spent: %.2f, speed: %.2f\r\n", __max_fibers,
-			__total_clients, __total_error_clients, __total_count,
-			spent, (__total_count * 1000) / (spent > 0 ? spent : 1));
+			__total_clients, __total_error_clients,
+			__total_count, spent,
+			(__total_count * 1000) / (spent > 0 ? spent : 1));
 
 		fiber_io_stop();
 	}
@@ -110,6 +121,7 @@ static void usage(const char *procname)
 		" -t connt_timeout\r\n"
 		" -r rw_timeout\r\n"
 		" -c max_fibers\r\n"
+		" -w [if wait for echo data from server, dafault: no]\r\n"
 		" -n max_loop\r\n", procname);
 }
 
@@ -122,7 +134,7 @@ int main(int argc, char *argv[])
 
 	snprintf(addr, sizeof(addr), "%s", "0.0.0.0:9002");
 
-	while ((ch = getopt(argc, argv, "hc:n:s:t:r:")) > 0) {
+	while ((ch = getopt(argc, argv, "hc:n:s:t:r:w")) > 0) {
 		switch (ch) {
 		case 'h':
 			usage(argv[0]);
@@ -142,6 +154,9 @@ int main(int argc, char *argv[])
 			break;
 		case 's':
 			snprintf(addr, sizeof(addr), "%s", optarg);
+			break;
+		case 'w':
+			__read_data = 1;
 			break;
 		default:
 			break;

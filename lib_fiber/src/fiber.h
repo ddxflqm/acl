@@ -11,34 +11,36 @@ typedef enum {
 } fiber_status_t;
 
 struct FIBER {
-	fiber_status_t status;
-	ACL_RING       me;
-	size_t         id;
 #ifdef USE_VALGRIND
 	unsigned int   vid;
 #endif
+	fiber_status_t status;
+	ACL_RING       me;
+	size_t         id;
 	size_t         slot;
 	acl_int64      when;
 	int            errnum;
 	int            sys;
+	unsigned int   flag;
+#define FIBER_F_SAVE_ERRNO	1 << 0
+
 	ucontext_t     uctx;
-	void           (*fn)(FIBER *, void *);
+	void         (*fn)(FIBER *, void *);
 	void          *arg;
 	char          *stack;
 	size_t         size;
+	void         (*timer_fn)(FIBER *, void *);
 	char           buf[1];
 };
 
 /* in fiber_schedule.c */
-void   fiber_init(void);
-void   fiber_ready(FIBER *fiber);
 FIBER *fiber_running(void);
-void   fiber_save_errno(void);
-void   fiber_exit(int exit_code);
-void   fiber_free(FIBER *fiber);
-void   fiber_system(void);
-void   fiber_count_inc(void);
-void   fiber_count_dec(void);
+void fiber_save_errno(void);
+void fiber_exit(int exit_code);
+void fiber_free(FIBER *fiber);
+void fiber_system(void);
+void fiber_count_inc(void);
+void fiber_count_dec(void);
 
 /* in fiber_io.c */
 void fiber_io_hook(void);

@@ -182,7 +182,7 @@ static void fiber_io_loop(FIBER *self acl_unused, void *ctx)
 {
 	EVENT *ev = (EVENT *) ctx;
 	int timer_left;
-	FIBER *fiber;
+	FIBER *timer;
 	int now, last = 0;
 	struct timeval tv;
 
@@ -191,17 +191,17 @@ static void fiber_io_loop(FIBER *self acl_unused, void *ctx)
 	for (;;) {
 		while (fiber_yield() > 0) {}
 
-		fiber = FIRST_FIBER(&__thread_fiber->ev_timer);
+		timer = FIRST_FIBER(&__thread_fiber->ev_timer);
 
-		if (fiber == NULL)
+		if (timer == NULL)
 			timer_left = -1;
 		else {
 			SET_TIME(now);
 			last = now;
-			if (now >= fiber->when)
+			if (now >= timer->when)
 				timer_left = 0;
 			else
-				timer_left = fiber->when - now;
+				timer_left = timer->when - now;
 		}
 
 		/* add 1 just for the deviation of epoll_wait */
@@ -215,7 +215,7 @@ static void fiber_io_loop(FIBER *self acl_unused, void *ctx)
 			break;
 		}
 
-		if (fiber == NULL)
+		if (timer == NULL)
 			continue;
 
 		SET_TIME(now);
@@ -224,14 +224,15 @@ static void fiber_io_loop(FIBER *self acl_unused, void *ctx)
 			continue;
 
 		do {
-			acl_ring_detach(&fiber->me);
+			acl_ring_detach(&timer->me);
 
-			if (!fiber->sys && --__thread_fiber->nsleeping == 0)
+			if (!timer->sys && --__thread_fiber->nsleeping == 0)
 				fiber_count_dec();
 
-			fiber_ready(fiber);
-			fiber = FIRST_FIBER(&__thread_fiber->ev_timer);
-		} while (fiber != NULL && now >= fiber->when);
+			fiber_ready(timer);
+			timer = FIRST_FIBER(&__thread_fiber->ev_timer);
+
+		} while (timer != NULL && now >= timer->when);
 	}
 }
 
@@ -274,6 +275,60 @@ unsigned int fiber_delay(unsigned int milliseconds)
 	if (now < when)
 		return 0;
 	return now - when;
+}
+
+static void fiber_timer_callback(FIBER *fiber, void *ctx)
+{
+	struct timeval tv;
+	unsigned int now, left;
+
+	SET_TIME(now);
+
+	for (;;) {
+		left = fiber->when > now ? fiber->when - now : 0;
+		if (left == 0)
+			break;
+
+		fiber_delay(left);
+
+		SET_TIME(now);
+		if (fiber->when <= now)
+			break;
+	}
+
+	fiber->timer_fn(fiber, ctx);
+	fiber_exit(0);
+}
+
+FIBER *fiber_create_timer(unsigned int milliseconds,
+	void (*fn)(FIBER *, void *), void *ctx)
+{
+	unsigned int when;
+	struct timeval tv;
+	FIBER *fiber;
+
+	fiber_io_check();
+
+	SET_TIME(when);
+	when += milliseconds;
+
+	fiber           = fiber_create(fiber_timer_callback, ctx, 4000);
+	fiber->when     = when;
+	fiber->timer_fn = fn;
+	return fiber;
+}
+
+void fiber_reset_timer(FIBER *fiber, unsigned int milliseconds)
+{
+	unsigned int when;
+	struct timeval tv;
+
+	fiber_io_check();
+
+	SET_TIME(when);
+	when += milliseconds;
+	fiber->when = when;
+	fiber->status = FIBER_STATUS_READY;
 }
 
 unsigned int fiber_sleep(unsigned int seconds)

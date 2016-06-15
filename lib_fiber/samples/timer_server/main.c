@@ -6,32 +6,55 @@
 #include "fiber/lib_fiber.h"
 
 static int __rw_timeout = 0;
-static int __echo_data  = 0;
 
-static void echo_client(FIBER *fiber acl_unused, void *ctx)
+typedef struct {
+	FIBER *fiber;
+	FIBER *timer;
+	ACL_VSTREAM *conn;
+} FIBER_TIMER;
+
+static void io_timer(FIBER *fiber, void *ctx)
+{
+	FIBER_TIMER *ft = (FIBER_TIMER *) ctx;
+
+	assert(fiber == ft->timer);
+
+	fiber_set_errno(ft->fiber, ETIMEDOUT);
+	printf("timer wakeup, set fiber-%d, errno: %d, %d\r\n",
+		fiber_id(ft->fiber), ETIMEDOUT, fiber_errno(ft->fiber));
+	fiber_ready(ft->fiber);
+}
+
+static void echo_client(FIBER *fiber, void *ctx)
 {
 	ACL_VSTREAM *cstream = (ACL_VSTREAM *) ctx;
 	char  buf[8192];
 	int   ret, count = 0;
+	FIBER_TIMER *ft = (FIBER_TIMER *) acl_mymalloc(sizeof(FIBER_TIMER));
 
-	cstream->rw_timeout = __rw_timeout;
+	ft->fiber = fiber;
+	ft->timer = fiber_create_timer(__rw_timeout * 1000, io_timer, ft);
+	ft->conn  = cstream;
+
+	//cstream->rw_timeout = __rw_timeout;
 
 #define	SOCK ACL_VSTREAM_SOCK
 
 	while (1) {
 		ret = acl_vstream_gets(cstream, buf, sizeof(buf) - 1);
+
 		if (ret == ACL_VSTREAM_EOF) {
-			printf("gets error: %s, fd: %d, count: %d\r\n",
-				acl_last_serror(), SOCK(cstream), count);
+			printf("fiber-%d, gets error: %s, %d, %d, fd: %d, "
+				"count: %d\r\n", fiber_id(fiber),
+				acl_last_serror(), errno, fiber_errno(fiber),
+				SOCK(cstream), count);
+
 			break;
 		}
+
+		fiber_reset_timer(ft->timer, __rw_timeout * 1000);
 		buf[ret] = 0;
 		//printf("gets line: %s", buf);
-
-		if (!__echo_data) {
-			count++;
-			continue;
-		}
 
 		if (acl_vstream_writen(cstream, buf, ret) == ACL_VSTREAM_EOF) {
 			printf("write error, fd: %d\r\n", SOCK(cstream));
@@ -41,6 +64,7 @@ static void echo_client(FIBER *fiber acl_unused, void *ctx)
 		count++;
 	}
 
+	acl_myfree(ft);
 	acl_vstream_close(cstream);
 }
 
@@ -93,8 +117,7 @@ static void usage(const char *procname)
 		"  -s listen_addr\r\n"
 		"  -r rw_timeout\r\n"
 		"  -S [if sleep]\r\n"
-		"  -q listen_queue\r\n"
-		"  -w [if echo data, default: no]\r\n", procname);
+		"  -q listen_queue\r\n", procname);
 }
 
 int main(int argc, char *argv[])
@@ -107,7 +130,7 @@ int main(int argc, char *argv[])
 
 	snprintf(addr, sizeof(addr), "%s", "127.0.0.1:9002");
 
-	while ((ch = getopt(argc, argv, "hs:r:Sq:w")) > 0) {
+	while ((ch = getopt(argc, argv, "hs:r:Sq:")) > 0) {
 		switch (ch) {
 		case 'h':
 			usage(argv[0]);
@@ -123,9 +146,6 @@ int main(int argc, char *argv[])
 			break;
 		case 'q':
 			qlen = atoi(optarg);
-			break;
-		case 'w':
-			__echo_data = 1;
 			break;
 		default:
 			break;

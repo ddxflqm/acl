@@ -1,4 +1,7 @@
 
+6) 2016.6.15
+6.1) feature: 增加定时器功能 -- fiber_create_timer()
+
 5) 2016.6.14
 5.1) feature: hook 了 errno 所依赖的函数 __errno_location，从而使 errno 针对
 每个协程是安全的
