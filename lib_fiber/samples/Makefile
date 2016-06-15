@@ -11,6 +11,8 @@ all:
 	@(cd poll; make)
 	@(cd redis; make)
 	@(cd redis_threads; make)
+	@(cd timer; make)
+	@(cd timer_server; make)
 
 cl clean:
 	@(cd dns; make clean)
@@ -24,3 +26,5 @@ cl clean:
 	@(cd poll; make clean)
 	@(cd redis; make clean)
 	@(cd redis_threads; make clean)
+	@(cd timer; make clean)
+	@(cd timer_server; make clean)

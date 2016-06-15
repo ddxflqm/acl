@@ -3,8 +3,7 @@
 #define __USE_GNU
 #include <dlfcn.h>
 #include <sys/stat.h>
-#include "fiber/fiber_schedule.h"
-#include "fiber/fiber_io.h"
+#include "fiber/lib_fiber.h"
 #include "event.h"
 #include "fiber.h"
 

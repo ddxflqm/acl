@@ -6,8 +6,7 @@
 #include <valgrind/valgrind.h>
 #endif
 
-#include "fiber/fiber_schedule.h"
-#include "fiber/fiber_io.h"
+#include "fiber/lib_fiber.h"
 #include "fiber.h"
 
 typedef int *(*errno_fn)(void);

@@ -20,8 +20,11 @@ static void io_timer(FIBER *fiber, void *ctx)
 	assert(fiber == ft->timer);
 
 	fiber_set_errno(ft->fiber, ETIMEDOUT);
-	printf("timer wakeup, set fiber-%d, errno: %d, %d\r\n",
-		fiber_id(ft->fiber), ETIMEDOUT, fiber_errno(ft->fiber));
+
+	printf("timer-%d wakeup, set fiber-%d, errno: %d, %d\r\n",
+		fiber_id(fiber), fiber_id(ft->fiber),
+		ETIMEDOUT, fiber_errno(ft->fiber));
+
 	fiber_ready(ft->fiber);
 }
 
@@ -30,13 +33,12 @@ static void echo_client(FIBER *fiber, void *ctx)
 	ACL_VSTREAM *cstream = (ACL_VSTREAM *) ctx;
 	char  buf[8192];
 	int   ret, count = 0;
+	int   ntimeout = 0;
 	FIBER_TIMER *ft = (FIBER_TIMER *) acl_mymalloc(sizeof(FIBER_TIMER));
 
 	ft->fiber = fiber;
 	ft->timer = fiber_create_timer(__rw_timeout * 1000, io_timer, ft);
 	ft->conn  = cstream;
-
-	//cstream->rw_timeout = __rw_timeout;
 
 #define	SOCK ACL_VSTREAM_SOCK
 
@@ -49,7 +51,15 @@ static void echo_client(FIBER *fiber, void *ctx)
 				acl_last_serror(), errno, fiber_errno(fiber),
 				SOCK(cstream), count);
 
-			break;
+			if (errno != ETIMEDOUT)
+				break;
+
+			if (++ntimeout > 2)
+				break;
+
+			printf("ntimeout: %d\r\n", ntimeout);
+			ft->timer = fiber_create_timer(__rw_timeout * 1000,
+					io_timer, ft);
 		}
 
 		fiber_reset_timer(ft->timer, __rw_timeout * 1000);
@@ -93,7 +103,7 @@ static void fiber_sleep_main(FIBER *fiber acl_unused, void *ctx acl_unused)
 
 	while (1) {
 		time(&last);
-		sleep(1);
+		fiber_sleep(1);
 		time(&now);
 		printf("wakeup, cost %ld seconds\r\n", (long) now - last);
 	}
@@ -105,7 +115,7 @@ static void fiber_sleep2_main(FIBER *fiber acl_unused, void *ctx acl_unused)
 
 	while (1) {
 		time(&last);
-		sleep(3);
+		fiber_sleep(3);
 		time(&now);
 		printf(">>>wakeup, cost %ld seconds<<<\r\n", (long) now - last);
 	}
