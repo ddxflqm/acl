@@ -237,9 +237,9 @@ static void fiber_io_loop(FIBER *self acl_unused, void *ctx)
 
 unsigned int fiber_delay(unsigned int milliseconds)
 {
-	unsigned int when, now;
+	acl_int64 when, now;
 	struct timeval tv;
-	FIBER *fiber, *next = NULL;
+	FIBER *fiber;
 	ACL_RING_ITER iter;
 
 	fiber_io_check();
@@ -247,22 +247,17 @@ unsigned int fiber_delay(unsigned int milliseconds)
 	SET_TIME(when);
 	when += milliseconds;
 
-	acl_ring_foreach(iter, &__thread_fiber->ev_timer) {
+	acl_ring_foreach_reverse(iter, &__thread_fiber->ev_timer) {
 		fiber = acl_ring_to_appl(iter.ptr, FIBER, me);
-		if (fiber->when >= when) {
-			next = fiber;
+		if (when >= fiber->when)
 			break;
-		}
 	}
 
 	fiber = fiber_running();
 	fiber->when = when;
 	acl_ring_detach(&fiber->me);
 
-	if (next)
-		acl_ring_prepend(&next->me, &fiber->me);
-	else
-		acl_ring_prepend(&__thread_fiber->ev_timer, &fiber->me);
+	acl_ring_append(iter.ptr, &fiber->me);
 
 	if (!fiber->sys && __thread_fiber->nsleeping++ == 0)
 		fiber_count_inc();
@@ -273,13 +268,13 @@ unsigned int fiber_delay(unsigned int milliseconds)
 
 	if (now < when)
 		return 0;
-	return now - when;
+	return (unsigned int) (now - when);
 }
 
 static void fiber_timer_callback(FIBER *fiber, void *ctx)
 {
 	struct timeval tv;
-	unsigned int now, left;
+	acl_int64 now, left;
 
 	SET_TIME(now);
 
@@ -302,7 +297,7 @@ static void fiber_timer_callback(FIBER *fiber, void *ctx)
 FIBER *fiber_create_timer(unsigned int milliseconds,
 	void (*fn)(FIBER *, void *), void *ctx)
 {
-	unsigned int when;
+	acl_int64 when;
 	struct timeval tv;
 	FIBER *fiber;
 
@@ -319,7 +314,7 @@ FIBER *fiber_create_timer(unsigned int milliseconds,
 
 void fiber_reset_timer(FIBER *fiber, unsigned int milliseconds)
 {
-	unsigned int when;
+	acl_int64 when;
 	struct timeval tv;
 
 	fiber_io_check();
