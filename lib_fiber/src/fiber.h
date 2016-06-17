@@ -33,6 +33,47 @@ struct FIBER {
 	char           buf[1];
 };
 
+/*
+ * channel communication
+ */
+enum
+{
+	CHANEND,
+	CHANSND,
+	CHANRCV,
+	CHANNOP,
+	CHANNOBLK,
+};
+
+typedef struct FIBER_ALT FIBER_ALT;
+typedef struct FIBER_ALT_ARRAY FIBER_ALT_ARRAY;
+typedef struct CHAN CHAN;
+
+struct FIBER_ALT {
+	CHAN         *c;
+	void         *v;
+	unsigned int  op;
+	FIBER        *fiber;
+	FIBER_ALT    *xalt;
+};
+
+struct FIBER_ALT_ARRAY {
+	FIBER_ALT  **a;
+	unsigned int n;
+	unsigned int m;
+};
+
+struct CHAN {
+	unsigned int    bufsize;
+	unsigned int    elemsize;
+	unsigned char  *buf;
+	unsigned int    nbuf;
+	unsigned int    off;
+	FIBER_ALT_ARRAY asend;
+	FIBER_ALT_ARRAY arecv;
+	char           *name;
+};
+
 /* in fiber_schedule.c */
 FIBER *fiber_running(void);
 void fiber_save_errno(void);
