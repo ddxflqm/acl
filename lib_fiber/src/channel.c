@@ -50,7 +50,7 @@ static void array_del(FIBER_ALT_ARRAY *a, int i)
 
 static FIBER_ALT_ARRAY* chan_array(CHAN *c, unsigned int op)
 {
-	switch(op){
+	switch (op) {
 	case CHANSND:
 		return &c->asend;
 	case CHANRCV:
@@ -73,7 +73,7 @@ static int alt_can_exec(FIBER_ALT *a)
 		return ar && ar->n;
 	}
 
-	switch(a->op){
+	switch (a->op) {
 		default:
 			return 0;
 		case CHANSND:
@@ -303,9 +303,9 @@ static int chan_op(CHAN *c, int op, void *p, int canblock)
 {
 	FIBER_ALT a[2];
 
-	a[0].c = c;
+	a[0].c  = c;
 	a[0].op = op;
-	a[0].v = p;
+	a[0].v  = p;
 	a[1].op = canblock ? CHANEND : CHANNOBLK;
 
 	if (chan_alt(a) < 0)
