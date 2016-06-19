@@ -300,6 +300,7 @@ static void usage(int argc, char * argv[])
 		service_name);
 }
 
+static int __first_name;
 static va_list __ap_dest;
 
 static void fiber_main(FIBER *fiber acl_unused, void *ctx acl_unused)
@@ -373,6 +374,7 @@ static void fiber_main(FIBER *fiber acl_unused, void *ctx acl_unused)
 	/* load configure, set signal */
 	server_init(__argv[0]);
 
+	name = __first_name;
 	for (; name != ACL_APP_CTL_END; name = va_arg(__ap_dest, int)) {
 		switch (name) {
 		case ACL_MASTER_SERVER_BOOL_TABLE:
@@ -406,6 +408,7 @@ static void fiber_main(FIBER *fiber acl_unused, void *ctx acl_unused)
 			break;
 		default:
 			acl_msg_fatal("%s: bad name(%d)", myname, name);
+			break;
 		}
 	}
 
@@ -492,6 +495,7 @@ void fiber_server_main(int argc, char *argv[],
 	__service     = service;
 	__service_ctx = ctx;
 
+	__first_name = name;
 	va_start(ap, name);
 	va_copy(__ap_dest, ap);
 	va_end(ap);

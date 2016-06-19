@@ -16,6 +16,7 @@ all:
 	@(cd channel; make)
 	@(cd redis_channel; make)
 	@(cd fiber_lock; make)
+	@(cd master_fiber; make)
 
 cl clean:
 	@(cd dns; make clean)
@@ -34,3 +35,4 @@ cl clean:
 	@(cd channel; make clean)
 	@(cd redis_channel; make clean)
 	@(cd fiber_lock; make clean)
+	@(cd master_fiber; make clean)
