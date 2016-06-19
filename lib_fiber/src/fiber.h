@@ -47,14 +47,14 @@ enum
 
 typedef struct FIBER_ALT FIBER_ALT;
 typedef struct FIBER_ALT_ARRAY FIBER_ALT_ARRAY;
-typedef struct CHAN CHAN;
+typedef struct FIBER_CHANNEL FIBER_CHANNEL;
 
 struct FIBER_ALT {
-	CHAN         *c;
-	void         *v;
-	unsigned int  op;
-	FIBER        *fiber;
-	FIBER_ALT    *xalt;
+	FIBER_CHANNEL *c;
+	void          *v;
+	unsigned int   op;
+	FIBER         *fiber;
+	FIBER_ALT     *xalt;
 };
 
 struct FIBER_ALT_ARRAY {
@@ -63,7 +63,7 @@ struct FIBER_ALT_ARRAY {
 	unsigned int m;
 };
 
-struct CHAN {
+struct FIBER_CHANNEL {
 	unsigned int    bufsize;
 	unsigned int    elemsize;
 	unsigned char  *buf;
@@ -72,6 +72,21 @@ struct CHAN {
 	FIBER_ALT_ARRAY asend;
 	FIBER_ALT_ARRAY arecv;
 	char           *name;
+};
+
+typedef struct FIBER_LOCK FIBER_LOCK;
+typedef struct FIBER_RWLOCK FIBER_RWLOCK;
+
+struct FIBER_LOCK {
+	FIBER *owner;
+	ACL_RING waiting;
+};
+
+struct FIBER_RWLOCK {
+	int      readers;
+	FIBER   *writer;
+	ACL_RING rwaiting;
+	ACL_RING wwaiting;
 };
 
 /* in fiber_schedule.c */

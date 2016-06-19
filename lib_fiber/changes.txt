@@ -1,4 +1,10 @@
 
+8) 2016.6.19
+8.1) feature: 增加了 FIBER 锁功能
+
+7) 2016.6.18
+7.1) feature: 增加了 FIBER_CHANNEL 用于协程间的交互通信
+
 6) 2016.6.15
 6.1) feature: 增加定时器功能 -- fiber_create_timer()
 

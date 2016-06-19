@@ -13,6 +13,9 @@ all:
 	@(cd redis_threads; make)
 	@(cd timer; make)
 	@(cd timer_server; make)
+	@(cd channel; make)
+	@(cd redis_channel; make)
+	@(cd fiber_lock; make)
 
 cl clean:
 	@(cd dns; make clean)
@@ -28,3 +31,6 @@ cl clean:
 	@(cd redis_threads; make clean)
 	@(cd timer; make clean)
 	@(cd timer_server; make clean)
+	@(cd channel; make clean)
+	@(cd redis_channel; make clean)
+	@(cd fiber_lock; make clean)

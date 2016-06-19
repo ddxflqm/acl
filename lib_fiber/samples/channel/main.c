@@ -9,13 +9,13 @@ static unsigned long __max = 10;
 
 static void fiber_producer(FIBER *fiber, void *ctx)
 {
-	CHAN *chan = (CHAN *) ctx;
+	FIBER_CHANNEL *chan = (FIBER_CHANNEL *) ctx;
 	unsigned long  i;
 
 	for (i = 0; i < __max; i++) {
-		int ret = chan_sendul(chan, i);
+		int ret = channel_sendul(chan, i);
 		if (ret <= 0) {
-			printf("fiber-%d, chan_sendul error!\r\n",
+			printf("fiber-%d, channel_sendul error!\r\n",
 				fiber_id(fiber));
 			break;
 		}
@@ -28,16 +28,16 @@ static void fiber_producer(FIBER *fiber, void *ctx)
 
 static void fiber_consumer(FIBER *fiber, void *ctx)
 {
-	CHAN *chan = (CHAN *) ctx;
+	FIBER_CHANNEL *chan = (FIBER_CHANNEL *) ctx;
 	unsigned long i;
 
 	for (i = 0; i < __max; i++) {
-		unsigned long n = chan_recvul(chan);
+		unsigned long n = channel_recvul(chan);
 		if (i < 10)
 			printf(">>fiber-%d, recv: %lu\r\n", fiber_id(fiber), n);
 	}
 
-	chan_free(chan);
+	channel_free(chan);
 }
 
 static void usage(const char *procname)
@@ -48,7 +48,7 @@ static void usage(const char *procname)
 int main(int argc, char *argv[])
 {
 	int   ch;
-	CHAN *chan;
+	FIBER_CHANNEL *chan;
 
 	while ((ch = getopt(argc, argv, "hn:")) > 0) {
 		switch (ch) {
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 
 	printf("max_count: %lu\r\n", __max);
 
-	chan = chan_create(sizeof(unsigned long), 100);
+	chan = channel_create(sizeof(unsigned long), 100);
 
 	fiber_create(fiber_consumer, chan, 32000);
 	fiber_create(fiber_producer, chan, 32000);

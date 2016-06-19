@@ -26,24 +26,44 @@ void fiber_reset_timer(FIBER *timer, unsigned int milliseconds);
 
 void fiber_set_dns(const char* ip, int port);
 
+/* fiber locking */
+
+typedef struct FIBER_LOCK FIBER_LOCK;
+typedef struct FIBER_RWLOCK FIBER_RWLOCK;
+
+FIBER_LOCK *fiber_lock_create(void);
+void fiber_lock_free(FIBER_LOCK *l);
+void fiber_lock(FIBER_LOCK *l);
+int fiber_trylock(FIBER_LOCK *l);
+void fiber_unlock(FIBER_LOCK *l);
+
+FIBER_RWLOCK *fiber_rwlock_create(void);
+void fiber_rwlock_free(FIBER_RWLOCK *l);
+void fiber_rlock(FIBER_RWLOCK *l);
+int fiber_tryrlock(FIBER_RWLOCK *l);
+void fiber_wlock(FIBER_RWLOCK *l);
+int fiber_trywlock(FIBER_RWLOCK *l);
+void fiber_runlock(FIBER_RWLOCK *l);
+void fiber_wunlock(FIBER_RWLOCK *l);
+
 /* channel communication */
 
-typedef struct CHAN CHAN;
+typedef struct FIBER_CHANNEL FIBER_CHANNEL;
 
-CHAN* chan_create(int elemsize, int bufsize);
-void chan_free(CHAN *c);
-int chan_send(CHAN *c, void *v);
-int chan_send_nb(CHAN *c, void *v);
-int chan_recv(CHAN *c, void *v);
-int chan_recv_nb(CHAN *c, void *v);
-int chan_sendp(CHAN *c, void *v);
-void *chan_recvp(CHAN *c);
-int chan_sendp_nb(CHAN *c, void *v);
-void *chan_recvp_nb(CHAN *c);
-int chan_sendul(CHAN *c, unsigned long val);
-unsigned long chan_recvul(CHAN *c);
-int chan_sendul_nb(CHAN *c, unsigned long val);
-unsigned long chan_recvul_nb(CHAN *c);
+FIBER_CHANNEL* channel_create(int elemsize, int bufsize);
+void channel_free(FIBER_CHANNEL *c);
+int channel_send(FIBER_CHANNEL *c, void *v);
+int channel_send_nb(FIBER_CHANNEL *c, void *v);
+int channel_recv(FIBER_CHANNEL *c, void *v);
+int channel_recv_nb(FIBER_CHANNEL *c, void *v);
+int channel_sendp(FIBER_CHANNEL *c, void *v);
+void *channel_recvp(FIBER_CHANNEL *c);
+int channel_sendp_nb(FIBER_CHANNEL *c, void *v);
+void *channel_recvp_nb(FIBER_CHANNEL *c);
+int channel_sendul(FIBER_CHANNEL *c, unsigned long val);
+unsigned long channel_recvul(FIBER_CHANNEL *c);
+int channel_sendul_nb(FIBER_CHANNEL *c, unsigned long val);
+unsigned long channel_recvul_nb(FIBER_CHANNEL *c);
 
 #ifdef __cplusplus
 }
