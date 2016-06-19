@@ -46,7 +46,7 @@ static ACL_CONFIG_STR_TABLE __conf_str_tab[] = {
 static int    __argc;
 static char **__argv;
 static int    __daemon_mode = 0;
-static void (*__service)(FIBER*, ACL_VSTREAM*, void*) = NULL;
+static void (*__service)(ACL_VSTREAM*, void*) = NULL;
 static int   *__service_ctx = NULL;
 static char   __service_name[256];
 static void (*__service_onexit) = NULL;
@@ -87,7 +87,9 @@ static void fiber_client(FIBER *fiber acl_unused, void *ctx)
 		return;
 	}
 
-	__service(fiber, cstream, ctx);
+	__service(cstream, ctx);
+
+	acl_vstream_close(cstream);
 }
 
 static void fiber_accept_main(FIBER *fiber acl_unused, void *ctx)
@@ -479,7 +481,7 @@ static void fiber_main(FIBER *fiber acl_unused, void *ctx acl_unused)
 }
 
 void fiber_server_main(int argc, char *argv[],
-	void (*service)(FIBER*, ACL_VSTREAM*, void*), void *ctx, int name, ...)
+	void (*service)(ACL_VSTREAM*, void*), void *ctx, int name, ...)
 {
 	va_list ap;
 
@@ -487,8 +489,8 @@ void fiber_server_main(int argc, char *argv[],
 	__argv = argv;
 
 	/* Set up call-back info. */
-	__service      = service;
-	__service_ctx  = ctx;
+	__service     = service;
+	__service_ctx = ctx;
 
 	va_start(ap, name);
 	va_copy(__ap_dest, ap);
