@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include "fiber/lib_fiber.h"
 
-static int __fibers_count = 2;
+static int __fibers_count = 10;
 
 static void fiber_main(FIBER *fiber, void *ctx)
 {
@@ -33,7 +33,7 @@ static void usage(const char *procname)
 
 int main(int argc, char *argv[])
 {
-	int  ch, n = 2, i;
+	int  ch, n = __fibers_count, i;
 	FIBER_LOCK *l = fiber_lock_create();
 
 	while ((ch = getopt(argc, argv, "hn:")) > 0) {
