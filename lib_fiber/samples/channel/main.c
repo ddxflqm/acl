@@ -9,7 +9,7 @@ static unsigned long __max = 10;
 
 static void fiber_producer(FIBER *fiber, void *ctx)
 {
-	FIBER_CHANNEL *chan = (FIBER_CHANNEL *) ctx;
+	CHANNEL *chan = (CHANNEL *) ctx;
 	unsigned long  i;
 
 	for (i = 0; i < __max; i++) {
@@ -28,7 +28,7 @@ static void fiber_producer(FIBER *fiber, void *ctx)
 
 static void fiber_consumer(FIBER *fiber, void *ctx)
 {
-	FIBER_CHANNEL *chan = (FIBER_CHANNEL *) ctx;
+	CHANNEL *chan = (CHANNEL *) ctx;
 	unsigned long i;
 
 	for (i = 0; i < __max; i++) {
@@ -48,7 +48,7 @@ static void usage(const char *procname)
 int main(int argc, char *argv[])
 {
 	int   ch;
-	FIBER_CHANNEL *chan;
+	CHANNEL *chan;
 
 	while ((ch = getopt(argc, argv, "hn:")) > 0) {
 		switch (ch) {

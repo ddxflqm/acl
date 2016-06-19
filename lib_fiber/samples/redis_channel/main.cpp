@@ -26,7 +26,7 @@ static double stamp_sub(const struct timeval *from, const struct timeval *by)
 #endif
 
 typedef struct {
-	FIBER_CHANNEL *chan;
+	CHANNEL *chan;
 	int   id;
 	bool  busy;
 	acl::string cmd;
@@ -45,7 +45,7 @@ typedef struct {
 	bool success;
 } PKT;
 
-static bool redis_set(FIBER& fiber, FIBER_CHANNEL &chan, PKT& pkt)
+static bool redis_set(FIBER& fiber, CHANNEL &chan, PKT& pkt)
 {
 	acl::redis cmd(&__redis_cluster);
 
@@ -93,7 +93,7 @@ static bool redis_set(FIBER& fiber, FIBER_CHANNEL &chan, PKT& pkt)
 	return true;
 }
 
-static bool redis_get(FIBER& fiber, FIBER_CHANNEL &chan, PKT &pkt)
+static bool redis_get(FIBER& fiber, CHANNEL &chan, PKT &pkt)
 {
 	acl::redis cmd(&__redis_cluster);
 
@@ -130,7 +130,7 @@ static bool redis_get(FIBER& fiber, FIBER_CHANNEL &chan, PKT &pkt)
 	return true;
 }
 
-static bool redis_del(FIBER& fiber, FIBER_CHANNEL &chan, PKT &pkt)
+static bool redis_del(FIBER& fiber, CHANNEL &chan, PKT &pkt)
 {
 	acl::redis cmd(&__redis_cluster);
 
@@ -169,7 +169,7 @@ static bool redis_del(FIBER& fiber, FIBER_CHANNEL &chan, PKT &pkt)
 
 static void fiber_redis_worker(FIBER *fiber, void *ctx)
 {
-	FIBER_CHANNEL *chan = ((MYCHAN *) ctx)->chan;
+	CHANNEL *chan = ((MYCHAN *) ctx)->chan;
 
 	while (true)
 	{
@@ -220,7 +220,7 @@ static void fiber_redis(FIBER *fiber, void *ctx)
 {
 	MYCHANS *mychans = (MYCHANS *) ctx;
 	MYCHAN  *mychan  = &mychans->chans[mychans->off++];
-	FIBER_CHANNEL    *chan    = mychan->chan;
+	CHANNEL    *chan    = mychan->chan;
 	PKT pkt;
 
 	if (mychans->off == mychans->size)

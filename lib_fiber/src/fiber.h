@@ -47,10 +47,10 @@ enum
 
 typedef struct FIBER_ALT FIBER_ALT;
 typedef struct FIBER_ALT_ARRAY FIBER_ALT_ARRAY;
-typedef struct FIBER_CHANNEL FIBER_CHANNEL;
+typedef struct CHANNEL CHANNEL;
 
 struct FIBER_ALT {
-	FIBER_CHANNEL *c;
+	CHANNEL *c;
 	void          *v;
 	unsigned int   op;
 	FIBER         *fiber;
@@ -63,7 +63,7 @@ struct FIBER_ALT_ARRAY {
 	unsigned int m;
 };
 
-struct FIBER_CHANNEL {
+struct CHANNEL {
 	unsigned int    bufsize;
 	unsigned int    elemsize;
 	unsigned char  *buf;

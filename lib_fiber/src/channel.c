@@ -3,11 +3,11 @@
 #include "stdafx.h"
 #include "fiber.h"
 
-FIBER_CHANNEL* channel_create(int elemsize, int bufsize)
+CHANNEL* channel_create(int elemsize, int bufsize)
 {
-	FIBER_CHANNEL *c;
+	CHANNEL *c;
 
-	c = (FIBER_CHANNEL *) acl_mycalloc(1, sizeof(*c) + bufsize * elemsize);
+	c = (CHANNEL *) acl_mycalloc(1, sizeof(*c) + bufsize * elemsize);
 	c->elemsize = elemsize;
 	c->bufsize  = bufsize;
 	c->nbuf     = 0;
@@ -16,7 +16,7 @@ FIBER_CHANNEL* channel_create(int elemsize, int bufsize)
 }
 
 /* bug - work out races */
-void channel_free(FIBER_CHANNEL *c)
+void channel_free(CHANNEL *c)
 {
 	if(c != NULL) {
 		acl_myfree(c->name);
@@ -48,7 +48,7 @@ static void array_del(FIBER_ALT_ARRAY *a, int i)
  */
 #define otherop(op)	(CHANSND + CHANRCV - (op))
 
-static FIBER_ALT_ARRAY* channel_array(FIBER_CHANNEL *c, unsigned int op)
+static FIBER_ALT_ARRAY* channel_array(CHANNEL *c, unsigned int op)
 {
 	switch (op) {
 	case CHANSND:
@@ -63,7 +63,7 @@ static FIBER_ALT_ARRAY* channel_array(FIBER_CHANNEL *c, unsigned int op)
 static int alt_can_exec(FIBER_ALT *a)
 {
 	FIBER_ALT_ARRAY *ar;
-	FIBER_CHANNEL *c;
+	CHANNEL *c;
 
 	if (a->op == CHANNOP)
 		return 0;
@@ -144,7 +144,7 @@ static void amove(void *dst, void *src, unsigned int n)
 static void alt_copy(FIBER_ALT *s, FIBER_ALT *r)
 {
 	FIBER_ALT *t;
-	FIBER_CHANNEL *c;
+	CHANNEL *c;
 	unsigned char *cp;
 
 	/*
@@ -163,7 +163,7 @@ static void alt_copy(FIBER_ALT *s, FIBER_ALT *r)
 	assert(r==NULL || r->op == CHANRCV);
 
 	/*
-	 * FIBER_CHANNEL is empty (or unbuffered) - copy directly.
+	 * CHANNEL is empty (or unbuffered) - copy directly.
 	 */
 	if (s && r && c->nbuf == 0) {
 		amove(r->v, s->v, c->elemsize);
@@ -192,7 +192,7 @@ static void alt_exec(FIBER_ALT *a)
 {
 	FIBER_ALT_ARRAY *ar;
 	FIBER_ALT *other;
-	FIBER_CHANNEL *c;
+	CHANNEL *c;
 	int i;
 
 	c = a->c;
@@ -200,6 +200,7 @@ static void alt_exec(FIBER_ALT *a)
 
 	if (ar && ar->n) {
 		i = rand() % ar->n;
+		printf("...i: %d, n: %d\r\n", i, ar->n);
 		other = ar->a[i];
 		alt_copy(a, other);
 		alt_all_dequeue(other->xalt);
@@ -215,7 +216,7 @@ static void alt_exec(FIBER_ALT *a)
 static int channel_alt(FIBER_ALT *a)
 {
 	int i, j, ncan, n, canblock;
-	FIBER_CHANNEL *c;
+	CHANNEL *c;
 	FIBER *t;
 
 	for (i = 0; a[i].op != CHANEND && a[i].op != CHANNOBLK; i++) {}
@@ -299,7 +300,7 @@ static int channel_alt(FIBER_ALT *a)
 	return a[0].xalt - a;
 }
 
-static int channel_op(FIBER_CHANNEL *c, int op, void *p, int canblock)
+static int channel_op(CHANNEL *c, int op, void *p, int canblock)
 {
 	FIBER_ALT a[2];
 
@@ -313,32 +314,32 @@ static int channel_op(FIBER_CHANNEL *c, int op, void *p, int canblock)
 	return 1;
 }
 
-int channel_send(FIBER_CHANNEL *c, void *v)
+int channel_send(CHANNEL *c, void *v)
 {
 	return channel_op(c, CHANSND, v, 1);
 }
 
-int channel_send_nb(FIBER_CHANNEL *c, void *v)
+int channel_send_nb(CHANNEL *c, void *v)
 {
 	return channel_op(c, CHANSND, v, 0);
 }
 
-int channel_recv(FIBER_CHANNEL *c, void *v)
+int channel_recv(CHANNEL *c, void *v)
 {
 	return channel_op(c, CHANRCV, v, 1);
 }
 
-int channel_recv_nb(FIBER_CHANNEL *c, void *v)
+int channel_recv_nb(CHANNEL *c, void *v)
 {
 	return channel_op(c, CHANRCV, v, 0);
 }
 
-int channel_sendp(FIBER_CHANNEL *c, void *v)
+int channel_sendp(CHANNEL *c, void *v)
 {
 	return channel_op(c, CHANSND, (void *) &v, 1);
 }
 
-void *channel_recvp(FIBER_CHANNEL *c)
+void *channel_recvp(CHANNEL *c)
 {
 	void *v;
 
@@ -346,12 +347,12 @@ void *channel_recvp(FIBER_CHANNEL *c)
 	return v;
 }
 
-int channel_sendp_nb(FIBER_CHANNEL *c, void *v)
+int channel_sendp_nb(CHANNEL *c, void *v)
 {
 	return channel_op(c, CHANSND, (void *) &v, 0);
 }
 
-void *channel_recvp_nb(FIBER_CHANNEL *c)
+void *channel_recvp_nb(CHANNEL *c)
 {
 	void *v;
 
@@ -359,12 +360,12 @@ void *channel_recvp_nb(FIBER_CHANNEL *c)
 	return v;
 }
 
-int channel_sendul(FIBER_CHANNEL *c, ulong val)
+int channel_sendul(CHANNEL *c, ulong val)
 {
 	return channel_op(c, CHANSND, &val, 1);
 }
 
-unsigned long channel_recvul(FIBER_CHANNEL *c)
+unsigned long channel_recvul(CHANNEL *c)
 {
 	unsigned long val;
 
@@ -372,12 +373,12 @@ unsigned long channel_recvul(FIBER_CHANNEL *c)
 	return val;
 }
 
-int channel_sendul_nb(FIBER_CHANNEL *c, ulong val)
+int channel_sendul_nb(CHANNEL *c, ulong val)
 {
 	return channel_op(c, CHANSND, &val, 0);
 }
 
-unsigned long channel_recvul_nb(FIBER_CHANNEL *c)
+unsigned long channel_recvul_nb(CHANNEL *c)
 {
 	unsigned long val;
 

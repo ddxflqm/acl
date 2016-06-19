@@ -39,31 +39,31 @@ void fiber_unlock(FIBER_LOCK *l);
 
 FIBER_RWLOCK *fiber_rwlock_create(void);
 void fiber_rwlock_free(FIBER_RWLOCK *l);
-void fiber_rlock(FIBER_RWLOCK *l);
-int fiber_tryrlock(FIBER_RWLOCK *l);
-void fiber_wlock(FIBER_RWLOCK *l);
-int fiber_trywlock(FIBER_RWLOCK *l);
-void fiber_runlock(FIBER_RWLOCK *l);
-void fiber_wunlock(FIBER_RWLOCK *l);
+void fiber_rwlock_rlock(FIBER_RWLOCK *l);
+int fiber_rwlock_tryrlock(FIBER_RWLOCK *l);
+void fiber_rwlock_wlock(FIBER_RWLOCK *l);
+int fiber_rwlock_trywlock(FIBER_RWLOCK *l);
+void fiber_rwlock_runlock(FIBER_RWLOCK *l);
+void fiber_rwlock_wunlock(FIBER_RWLOCK *l);
 
 /* channel communication */
 
-typedef struct FIBER_CHANNEL FIBER_CHANNEL;
+typedef struct CHANNEL CHANNEL;
 
-FIBER_CHANNEL* channel_create(int elemsize, int bufsize);
-void channel_free(FIBER_CHANNEL *c);
-int channel_send(FIBER_CHANNEL *c, void *v);
-int channel_send_nb(FIBER_CHANNEL *c, void *v);
-int channel_recv(FIBER_CHANNEL *c, void *v);
-int channel_recv_nb(FIBER_CHANNEL *c, void *v);
-int channel_sendp(FIBER_CHANNEL *c, void *v);
-void *channel_recvp(FIBER_CHANNEL *c);
-int channel_sendp_nb(FIBER_CHANNEL *c, void *v);
-void *channel_recvp_nb(FIBER_CHANNEL *c);
-int channel_sendul(FIBER_CHANNEL *c, unsigned long val);
-unsigned long channel_recvul(FIBER_CHANNEL *c);
-int channel_sendul_nb(FIBER_CHANNEL *c, unsigned long val);
-unsigned long channel_recvul_nb(FIBER_CHANNEL *c);
+CHANNEL* channel_create(int elemsize, int bufsize);
+void channel_free(CHANNEL *c);
+int channel_send(CHANNEL *c, void *v);
+int channel_send_nb(CHANNEL *c, void *v);
+int channel_recv(CHANNEL *c, void *v);
+int channel_recv_nb(CHANNEL *c, void *v);
+int channel_sendp(CHANNEL *c, void *v);
+void *channel_recvp(CHANNEL *c);
+int channel_sendp_nb(CHANNEL *c, void *v);
+void *channel_recvp_nb(CHANNEL *c);
+int channel_sendul(CHANNEL *c, unsigned long val);
+unsigned long channel_recvul(CHANNEL *c);
+int channel_sendul_nb(CHANNEL *c, unsigned long val);
+unsigned long channel_recvul_nb(CHANNEL *c);
 
 #ifdef __cplusplus
 }

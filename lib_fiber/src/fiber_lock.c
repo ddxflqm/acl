@@ -108,12 +108,12 @@ static int __rlock(FIBER_RWLOCK *l, int block)
 	return 1;
 }
 
-void fiber_rlock(FIBER_RWLOCK *l)
+void fiber_rwlock_rlock(FIBER_RWLOCK *l)
 {
 	(void) __rlock(l, 1);
 }
 
-int fiber_tryrlock(FIBER_RWLOCK *l)
+int fiber_rwlock_tryrlock(FIBER_RWLOCK *l)
 {
 	return __rlock(l, 0);
 }
@@ -137,17 +137,17 @@ static int __wlock(FIBER_RWLOCK *l, int block)
 	return 1;
 }
 
-void fiber_wlock(FIBER_RWLOCK *l)
+void fiber_rwlock_wlock(FIBER_RWLOCK *l)
 {
 	__wlock(l, 1);
 }
 
-int fiber_trywlock(FIBER_RWLOCK *l)
+int fiber_rwlock_trywlock(FIBER_RWLOCK *l)
 {
 	return __wlock(l, 0);
 }
 
-void fiber_runlock(FIBER_RWLOCK *l)
+void fiber_rwlock_runlock(FIBER_RWLOCK *l)
 {
 	FIBER *fiber;
 
@@ -158,7 +158,7 @@ void fiber_runlock(FIBER_RWLOCK *l)
 	}
 }
 
-void fiber_wunlock(FIBER_RWLOCK *l)
+void fiber_rwlock_wunlock(FIBER_RWLOCK *l)
 {
 	FIBER *fiber;
 	
