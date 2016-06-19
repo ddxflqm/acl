@@ -117,19 +117,22 @@ LIB_PATH_DST = $(OUT_PATH)/lib
 
 BASE_PATH  = .
 INC_PATH_SRC = $(BASE_PATH)/include
-SRC_PATH_SRC = $(BASE_PATH)/src
+SRC_PATH_SRC = $(BASE_PATH)
 
 INC_COMPILE  = -I. -I$(INC_PATH_SRC) -I./src
 CFLAGS += $(INC_COMPILE)
 
 #Project's objs
 SRC = $(wildcard $(SRC_PATH_SRC)/*.c)  \
-	$(wildcard $(SRC_PATH_SRC)/src/*.c)
+	$(wildcard $(SRC_PATH_SRC)/src/*.c) \
+	$(wildcard $(SRC_PATH_SRC)/src/master/*.c) \
+
 OBJ = $(patsubst %.c, $(OBJ_PATH_DST)/%.o, $(notdir $(SRC)))
+
 ###########################################################
 
 LIB_ACL_PATH = ../lib_acl
-CFLAGS += -I $(LIB_ACL_PATH)/include
+CFLAGS += -I $(LIB_ACL_PATH)/include -I../lib_acl/src/master
 
 STATIC_LIBNAME = lib_fiber.a
 SHARED_LIBNAME = lib_fiber.so
@@ -180,6 +183,8 @@ shared: $(OBJ)
 $(OBJ_PATH_DST)/%.o: $(SRC_PATH_SRC)/%.c
 	$(COMPILE) $< -o $@
 $(OBJ_PATH_DST)/%.o: $(SRC_PATH_SRC)/src/%.c
+	$(COMPILE) $< -o $@
+$(OBJ_PATH_DST)/%.o: $(SRC_PATH_SRC)/src/master/%.c
 	$(COMPILE) $< -o $@
 
 clean:

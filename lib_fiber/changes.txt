@@ -1,6 +1,7 @@
 
 8) 2016.6.19
 8.1) feature: 增加了 FIBER 锁功能
+8.2) feature: 增加 fiber_server.c 模块，可由 acl_master 服务器框架控制
 
 7) 2016.6.18
 7.1) feature: 增加了 FIBER_CHANNEL 用于协程间的交互通信

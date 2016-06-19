@@ -65,6 +65,11 @@ unsigned long channel_recvul(CHANNEL *c);
 int channel_sendul_nb(CHANNEL *c, unsigned long val);
 unsigned long channel_recvul_nb(CHANNEL *c);
 
+/* master fibers server */
+
+void fiber_server_main(int argc, char *argv[],
+	void (*service)(FIBER*, ACL_VSTREAM*, void*), void *ctx, int name, ...);
+
 #ifdef __cplusplus
 }
 #endif
