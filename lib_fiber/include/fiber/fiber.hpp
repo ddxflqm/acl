@@ -14,6 +14,7 @@ public:
 
 	int get_id(void) const;
 
+	static int self(void);
 	static void schedule();
 
 protected:

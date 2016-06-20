@@ -266,6 +266,12 @@ int fiber_id(const FIBER *fiber)
 	return fiber->id;
 }
 
+int fiber_self(void)
+{
+	FIBER *curr = fiber_running();
+	return fiber_id(curr);
+}
+
 int fiber_status(const FIBER *fiber)
 {
 	return fiber->status;

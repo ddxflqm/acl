@@ -12,7 +12,7 @@ protected:
 	// @override
 	void run(void)
 	{
-		printf("fiber-%d run\r\n", get_id());
+		printf("fiber-%d-%d running\r\n", get_id(), acl::fiber::self());
 		delete this;
 	}
 };

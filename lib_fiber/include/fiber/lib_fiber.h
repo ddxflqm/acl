@@ -9,6 +9,7 @@ typedef struct FIBER FIBER;
 
 FIBER *fiber_create(void (*fn)(FIBER *, void *), void *arg, size_t size);
 int fiber_id(const FIBER *fiber);
+int fiber_self(void);
 void fiber_set_errno(FIBER *fiber, int errnum);
 int fiber_errno(FIBER *fiber);
 int fiber_status(const FIBER *fiber);
