@@ -47,7 +47,6 @@ enum
 
 typedef struct FIBER_ALT FIBER_ALT;
 typedef struct FIBER_ALT_ARRAY FIBER_ALT_ARRAY;
-typedef struct CHANNEL CHANNEL;
 
 struct FIBER_ALT {
 	CHANNEL *c;
@@ -73,9 +72,6 @@ struct CHANNEL {
 	FIBER_ALT_ARRAY arecv;
 	char           *name;
 };
-
-typedef struct FIBER_LOCK FIBER_LOCK;
-typedef struct FIBER_RWLOCK FIBER_RWLOCK;
 
 struct FIBER_LOCK {
 	FIBER *owner;
