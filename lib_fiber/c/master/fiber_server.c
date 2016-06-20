@@ -55,14 +55,32 @@ static char  *__deny_info = NULL;
 static unsigned      __server_generation;
 static ACL_VSTREAM **__sstreams;
 
-static void server_exit(void)
+static void server_exit(FIBER *fiber, int status)
 {
+	acl_msg_info("%s(%d), %s: fiber = %d, service exit now!",
+		__FILE__, __LINE__, __FUNCTION__, fiber_id(fiber));
+	exit (status);
 }
 
-static void server_abort(FIBER *fiber, void *ctx)
+static void server_abort(FIBER *fiber)
 {
-	(void) fiber;
-	(void) ctx;
+	acl_msg_info("%s(%d), %s: service abort now",
+		__FILE__, __LINE__, __FUNCTION__);
+	server_exit(fiber, 1);
+}
+
+static void master_monitor(FIBER *fiber, void *ctx)
+{
+	ACL_VSTREAM *stat_stream = (ACL_VSTREAM *) ctx;
+	char  buf[8192];
+	int   ret;
+
+	stat_stream->rw_timeout = 0;
+	ret = acl_vstream_read(stat_stream, buf, sizeof(buf));
+	acl_msg_info("%s(%d), %s: disconnect(%d) from acl_master",
+		__FILE__, __LINE__, __FUNCTION__, ret);
+
+	server_exit(fiber, 0);
 }
 
 static void fiber_client(FIBER *fiber acl_unused, void *ctx)
@@ -114,7 +132,7 @@ static void fiber_accept_main(FIBER *fiber acl_unused, void *ctx)
 
 		acl_msg_warn("accept connection: %s(%d, %d), stoping ...",
 			acl_last_serror(), errno, ACL_EAGAIN);
-		server_abort(fiber_running(), sstream);
+		server_abort(fiber_running());
 		return;
 	}
 }
@@ -151,7 +169,7 @@ static ACL_VSTREAM **server_daemon_open(int count, int fdtype)
 		sstreams[i++] = sstream;
 	}
 
-	fiber_create(server_abort, ACL_MASTER_STAT_STREAM, STACK_SIZE);
+	fiber_create(master_monitor, ACL_MASTER_STAT_STREAM, STACK_SIZE);
 
 	acl_close_on_exec(ACL_MASTER_STATUS_FD, ACL_CLOSE_ON_EXEC);
 	acl_close_on_exec(ACL_MASTER_FLOW_READ, ACL_CLOSE_ON_EXEC);
@@ -478,9 +496,6 @@ static void fiber_main(FIBER *fiber acl_unused, void *ctx acl_unused)
 
 	acl_msg_info("%s(%d), %s daemon started, log: %s",
 		myname, __LINE__, __argv[0], acl_var_fibers_log_file);
-
-	/* not reached here */
-	server_exit();
 }
 
 void fiber_server_main(int argc, char *argv[],
