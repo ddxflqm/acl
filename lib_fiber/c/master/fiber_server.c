@@ -157,7 +157,7 @@ static int dispatch_report(ACL_VSTREAM *conn)
 {
 	char buf[256];
 
-	snprintf(buf, sizeof(buf), "count=%d&used=%d&pid=%u&type=%s"
+	snprintf(buf, sizeof(buf), "count=%d&used=%u&pid=%u&type=%s"
 		"&max_threads=%d&curr_threads=%d&busy_threads=%d&qlen=%d\r\n",
 		__client_count, __used_count, (unsigned) getpid(),
 		acl_var_fiber_dispatch_type, 1, 1, 1, 1);
