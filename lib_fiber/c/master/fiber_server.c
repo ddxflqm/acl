@@ -140,13 +140,14 @@ static int dispatch_receive(int dispatch_fd)
 	}
 
 	buf[ret] = 0;
-	if (acl_getsockname(fd, local, sizeof(local)) < 0)
-		local[0] = 0;
-	if (acl_getpeername(fd, remote, sizeof(remote)) < 0)
-		remote[0] = 0;
 
 	cstream = acl_vstream_fdopen(fd, O_RDWR, acl_var_fiber_buf_size,
 		acl_var_fiber_rw_timeout, ACL_VSTREAM_TYPE_SOCK);
+
+	if (acl_getsockname(fd, local, sizeof(local)) == 0)
+		acl_vstream_set_local(cstream, local);
+	if (acl_getpeername(fd, remote, sizeof(remote)) == 0)
+		acl_vstream_set_peer(cstream, remote);
 
 	fiber_create(fiber_client, cstream, acl_var_fiber_stack_size);
 
