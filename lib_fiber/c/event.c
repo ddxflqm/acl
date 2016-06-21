@@ -82,6 +82,37 @@ void event_poll(EVENT *ev, POLL_EVENTS *pe, int timeout)
 	}
 }
 
+static int check_fdtype(int fd)
+{
+	struct stat buf;
+
+	if (fstat(fd, &buf) < 0)
+	{
+		acl_msg_info("fd: %d fstat error", fd);
+		return -1;
+	}
+
+	/*
+	acl_msg_info("fd: %d, S_ISSOCK: %s, S_ISFIFO: %s, S_ISCHR: %s, "
+		"S_ISBLK: %s, S_ISREG: %s", fd,
+		S_ISSOCK(buf.st_mode) ? "yes" : "no",
+		S_ISFIFO(buf.st_mode) ? "yes" : "no",
+		S_ISCHR(buf.st_mode) ? "yes" : "no",
+		S_ISBLK(buf.st_mode) ? "yes" : "no",
+		S_ISREG(buf.st_mode) ? "yes" : "no");
+	*/
+
+	if (S_ISSOCK(buf.st_mode)
+		|| S_ISFIFO(buf.st_mode)
+		|| S_ISCHR(buf.st_mode))
+	{
+		return 0;
+	}
+
+	return -1;
+
+}
+
 int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 {
 	FILE_EVENT *fe;
@@ -127,7 +158,7 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 		fe->mask  = to_mask;
 	} else {
 		if (fe->type == TYPE_NONE) {
-			if (acl_getsocktype(fd) < 0) {
+			if (check_fdtype(fd) < 0) {
 				fe->type = TYPE_NOSOCK;
 				return 0;
 			}
