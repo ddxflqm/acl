@@ -14,7 +14,7 @@ protected:
 	master_fiber();
 	virtual ~master_fiber();
 
-	virtual void on_accept(socket_stream* stream) = 0;
+	virtual void on_accept(socket_stream& stream) = 0;
 
 private:
 	static void service_main(ACL_VSTREAM*, void*);

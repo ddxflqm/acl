@@ -37,12 +37,12 @@ public:
 
 protected:
 	// @override
-	void on_accept(acl::socket_stream* conn)
+	void on_accept(acl::socket_stream& conn)
 	{
-		printf(">>>accept connection: %d<<<\r\n", conn->sock_handle());
-		conn->set_rw_timeout(0);
+		printf(">>>accept connection: %d<<<\r\n", conn.sock_handle());
+		conn.set_rw_timeout(0);
 		acl::memcache_session session("127.0.0.1:11211");
-		http_servlet servlet(conn, &session);
+		http_servlet servlet(&conn, &session);
 		servlet.setLocalCharset("gb2312");
 
 		while (true)
@@ -52,7 +52,7 @@ protected:
 		}
 
 		printf("close one connection: %d, %s\r\n",
-			conn->sock_handle(), acl::last_serror());
+			conn.sock_handle(), acl::last_serror());
 	}
 };
 

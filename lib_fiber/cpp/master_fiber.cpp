@@ -94,18 +94,15 @@ void master_fiber::service_main(ACL_VSTREAM *client, void*)
 {
 	acl_assert(__mf != NULL);
 
-	socket_stream* stream = new socket_stream;
-	if (stream->open(client) == false)
+	socket_stream stream;
+	if (stream.open(client) == false)
 	{
 		logger_error("open stream error(%s)", acl_last_serror());
-		delete stream;
 		return;
 	}
 
-	client->context = stream;
 	__mf->on_accept(stream);
-	stream->unbind();
-	delete stream;
+	stream.unbind();
 }
 
 } // namespace acl
