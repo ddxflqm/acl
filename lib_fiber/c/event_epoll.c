@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include <sys/epoll.h>
+#include "fiber.h"
 #include "event.h"
 #include "event_epoll.h"
 
@@ -52,6 +53,7 @@ static int epoll_event_add(EVENT *ev, int fd, int mask)
 #endif
 
 	if (epoll_ctl(ep->epfd, op, fd, &ee) == -1) {
+		fiber_save_errno();
 		acl_msg_error("%s, %s(%d): epoll_ctl error %s",
 			__FILE__, __FUNCTION__, __LINE__, acl_last_serror());
 		return -1;
@@ -77,16 +79,20 @@ static void epoll_event_del(EVENT *ev, int fd, int delmask)
 		ee.events |= EPOLLOUT;
 
 	if (mask != EVENT_NONE) {
-		if (epoll_ctl(ep->epfd, EPOLL_CTL_MOD, fd, &ee) < 0)
+		if (epoll_ctl(ep->epfd, EPOLL_CTL_MOD, fd, &ee) < 0) {
+			fiber_save_errno();
 			acl_msg_error("%s(%d), epoll_ctl error: %s, fd: %d",
 				__FUNCTION__, __LINE__, acl_last_serror(), fd);
+		}
 	} else {
 		/* Note, Kernel < 2.6.9 requires a non null event pointer
 		 * even for EPOLL_CTL_DEL.
 		 */
-		if (epoll_ctl(ep->epfd, EPOLL_CTL_DEL, fd, &ee) < 0)
+		if (epoll_ctl(ep->epfd, EPOLL_CTL_DEL, fd, &ee) < 0) {
+			fiber_save_errno();
 			acl_msg_error("%s(%d), epoll_ctl error: %s, fd: %d",
 				__FUNCTION__, __LINE__, acl_last_serror(), fd);
+		}
 	}
 }
 

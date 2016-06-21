@@ -209,7 +209,7 @@ static void fiber_io_loop(FIBER *self acl_unused, void *ctx)
 
 		if (__thread_fiber->io_stop) {
 			if (__thread_fiber->io_count > 0)
-				printf("---------waiting io: %d----\r\n",
+				acl_msg_info("---------waiting io: %d-----",
 					(int) __thread_fiber->io_count);
 			break;
 		}
@@ -343,8 +343,13 @@ void fiber_wait_read(int fd)
 {
 	fiber_io_check();
 
-	event_add(__thread_fiber->event,
-		fd, EVENT_READABLE, read_callback, NULL);
+	if (event_add(__thread_fiber->event,
+		fd, EVENT_READABLE, read_callback, NULL) <= 0)
+	{
+		acl_msg_info(">>>%s(%d): fd: %d, not sock<<<",
+			__FUNCTION__, __LINE__, fd);
+		return;
+	}
 
 	__thread_fiber->io_fibers[fd] = fiber_running();
 	__thread_fiber->io_count++;
@@ -365,8 +370,11 @@ void fiber_wait_write(int fd)
 {
 	fiber_io_check();
 
-	event_add(__thread_fiber->event, fd,
-		EVENT_WRITABLE, write_callback, NULL);
+	if (event_add(__thread_fiber->event, fd,
+		EVENT_WRITABLE, write_callback, NULL) <= 0)
+	{
+		return;
+	}
 
 	__thread_fiber->io_fibers[fd] = fiber_running();
 	__thread_fiber->io_count++;
@@ -408,6 +416,7 @@ ssize_t read(int fd, void *buf, size_t count)
 	}
 
 	fiber_wait_read(fd);
+
 	ret = __sys_read(fd, buf, count);
 	if (ret > 0)
 		return ret;

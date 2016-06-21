@@ -3,13 +3,17 @@
 
 #include "fiber/lib_fiber.h"
 
+#define	TYPE_NONE	0
+#define	TYPE_SOCK	1
+#define	TYPE_NOSOCK	2
+
 #define	EVENT_NONE	0
 #define	EVENT_READABLE	1 << 0
 #define	EVENT_WRITABLE	1 << 1
 #define	EVENT_ERROR	1 << 2
 
 typedef struct FILE_EVENT   FILE_EVENT;
-typedef struct POLL_EVENTS   POLL_EVENTS;
+typedef struct POLL_EVENTS  POLL_EVENTS;
 typedef struct FIRED_EVENT  FIRED_EVENT;
 typedef struct DEFER_DELETE DEFER_DELETE;
 typedef struct EVENT EVENT;
@@ -18,6 +22,7 @@ typedef void event_proc(EVENT *ev, int fd, void *ctx, int mask);
 typedef void events_proc(EVENT *ev, POLL_EVENTS *pe);
 
 struct FILE_EVENT {
+	int type;
 	int mask;
 	event_proc  *r_proc;
 	event_proc  *w_proc;

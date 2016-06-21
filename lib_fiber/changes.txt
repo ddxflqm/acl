@@ -1,4 +1,7 @@
 
+9) 2016.6.21
+9.1) feature: 将非 socket 类型的 fd 采用同步模式
+
 8) 2016.6.19
 8.1) feature: 增加了 FIBER 锁功能
 8.2) feature: 增加 fiber_server.c 模块，可由 acl_master 服务器框架控制

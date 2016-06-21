@@ -10,8 +10,10 @@
 #include "fiber.h"
 
 typedef int *(*errno_fn)(void);
+typedef int  (*fcntl_fn)(int, int, ...);
 
 static errno_fn __sys_errno = NULL;
+static fcntl_fn __sys_fcntl = NULL;
 
 typedef struct {
 	ACL_RING queue;
@@ -88,7 +90,7 @@ static void fiber_check(void)
 }
 
 /* see /usr/include/bits/errno.h for __errno_location */
-int *__errno_location (void)
+int *__errno_location(void)
 {
 	if (__thread_fiber == NULL)
 		fiber_check();
@@ -97,6 +99,45 @@ int *__errno_location (void)
 		return &__thread_fiber->running->errnum;
 	else
 		return &__thread_fiber->schedule.errnum;
+}
+
+int fcntl(int fd, int cmd, ...)
+{
+	long arg;
+	struct flock *lock;
+	va_list ap;
+	int ret;
+
+	va_start(ap, cmd);
+
+	switch (cmd) {
+	case F_GETFD:
+	case F_GETFL:
+		ret = __sys_fcntl(fd, cmd);
+		break;
+	case F_SETFD:
+	case F_SETFL:
+		arg = va_arg(ap, long);
+		ret = __sys_fcntl(fd, cmd, arg);
+		break;
+	case F_GETLK:
+	case F_SETLK:
+	case F_SETLKW:
+		lock = va_arg(ap, struct flock*);
+		ret = __sys_fcntl(fd, cmd, lock);
+		break;
+	default:
+		ret = -1;
+		acl_msg_error("%s(%d), %s: unknown cmd: %d, fd: %d",
+			__FILE__, __LINE__, __FUNCTION__, cmd, fd);
+		break;
+	}
+
+	va_end(ap);
+
+	if (ret < 0)
+		fiber_save_errno();
+	return ret;
 }
 
 void fiber_set_errno(FIBER *fiber, int errnum)
@@ -289,6 +330,7 @@ static void fiber_init(void)
 	__called++;
 
 	__sys_errno = (errno_fn) dlsym(RTLD_NEXT, "__errno_location");
+	__sys_fcntl = (fcntl_fn) dlsym(RTLD_NEXT, "fcntl");
 
 	fiber_io_hook();
 	fiber_net_hook();

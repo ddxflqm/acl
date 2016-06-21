@@ -126,6 +126,16 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 		fe->defer = NULL;
 		fe->mask  = to_mask;
 	} else {
+		if (fe->type == TYPE_NONE) {
+			if (acl_getsocktype(fd) < 0) {
+				fe->type = TYPE_NOSOCK;
+				return 0;
+			}
+
+			fe->type = TYPE_SOCK;
+		} else if (fe->type == TYPE_NOSOCK)
+			return 0;
+
 		if (ev->add(ev, fd, mask) == -1) {
 			acl_msg_error("add fd(%d) error: %s",
 				fd, acl_last_serror());
@@ -147,7 +157,7 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 	if (fd > ev->maxfd)
 		ev->maxfd = fd;
 
-	return 0;
+	return 1;
 }
 
 static void __event_del(EVENT *ev, int fd, int mask)
@@ -161,13 +171,14 @@ static void __event_del(EVENT *ev, int fd, int mask)
 	}
 
 	fe          = &ev->events[fd];
+	fe->type    = TYPE_NONE;
 	fe->defer   = NULL;
 	fe->pevents = NULL;
 	fe->pfd     = NULL;
 
 	if (fe->mask == EVENT_NONE)
 	{
-		printf("----mask NONE, fd: %d----\r\n", fd);
+		acl_msg_info("----mask NONE, fd: %d----", fd);
 		return;
 	}
 
@@ -191,6 +202,12 @@ void event_del(EVENT *ev, int fd, int mask)
 {
 	FILE_EVENT *fe;
 
+	fe = &ev->events[fd];
+	if (fe->type == TYPE_NOSOCK) {
+		fe->type = TYPE_NONE;
+		return;
+	}
+
 #ifdef DEL_DELAY
 	if ((mask & EVENT_ERROR) == 0) {
 		ev->defers[ev->ndefer].fd   = fd;
@@ -202,8 +219,6 @@ void event_del(EVENT *ev, int fd, int mask)
 		return;
 	}
 #endif
-
-	fe = &ev->events[fd];
 
 	if (fe->defer != NULL) {
 		int fd2;
