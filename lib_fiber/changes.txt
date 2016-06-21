@@ -1,6 +1,7 @@
 
 9) 2016.6.21
 9.1) feature: 将非 socket 类型的 fd 采用同步模式
+9.2) feature: master_fiber.c 支持 dispatch 方式获得客户端连接
 
 8) 2016.6.19
 8.1) feature: 增加了 FIBER 锁功能
