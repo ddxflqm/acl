@@ -38,7 +38,7 @@ static bool create_master_fiber(file_tmpl& tmpl)
 
 	return tmpl.files_copy(name, tab)
 		&& tmpl.copy_and_replace("Makefile_fiber", "Makefile")
-		&& tmpl.file_copy("tmpl/master/Makefile_fiber.in",
+		&& tmpl.file_copy("tmpl/Makefile_fiber.in",
 			"Makefile.in");
 }
 
