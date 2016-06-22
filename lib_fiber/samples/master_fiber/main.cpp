@@ -39,7 +39,7 @@ protected:
 	// @override
 	void on_accept(acl::socket_stream& conn)
 	{
-		printf(">>>accept connection: %d<<<\r\n", conn.sock_handle());
+		acl_msg_info(">>>accept connection: %d", conn.sock_handle());
 		conn.set_rw_timeout(0);
 		acl::memcache_session session("127.0.0.1:11211");
 		http_servlet servlet(&conn, &session);
@@ -51,8 +51,26 @@ protected:
 				break;
 		}
 
-		printf("close one connection: %d, %s\r\n",
+		acl_msg_info(">>>close one connection: %d, %s",
 			conn.sock_handle(), acl::last_serror());
+	}
+
+	// @override
+	void proc_pre_jail(void)
+	{
+		acl_msg_info(">>>proc_pre_jail<<<");
+	}
+
+	// @override
+	void proc_on_init(void)
+	{
+		acl_msg_info(">>>proc_on_init<<<");
+	}
+
+	// @override
+	void proc_on_exit(void)
+	{
+		acl_msg_info(">>>proc_on_exit<<<");
 	}
 };
 

@@ -344,7 +344,7 @@ void fiber_schedule(void)
 	for (;;) {
 		head = acl_ring_pop_head(&__thread_fiber->queue);
 		if (head == NULL) {
-			printf("------- NO FIBER NOW --------\r\n");
+			acl_msg_info("------- NO FIBER NOW --------");
 			break;
 		}
 

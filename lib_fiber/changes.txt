@@ -1,4 +1,7 @@
 
+10) 2016.6.22
+10.1) feature: fiber_server.c 服务模块支持空闲超时退出及处理连接数达上限退出
+
 9) 2016.6.21
 9.1) feature: 将非 socket 类型的 fd 采用同步模式
 9.2) feature: master_fiber.c 支持 dispatch 方式获得客户端连接
