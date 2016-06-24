@@ -109,12 +109,12 @@ OBJ_PATH_DST = ./debug
 LIB_PATH_DST = ../lib
 DEF_PATH_DST = ./debug
 
-CFLAGS += -I. -I../include -I../../lib_acl/include -I../../lib_acl_cpp/include
+CFLAGS += -I./src -I../c/include  -I./include -I../../lib_acl/include -I../../lib_acl_cpp/include
 
 #Project's objs
-OBJS_DST = $(patsubst %.cpp, $(OBJ_PATH_DST)/%.o, $(notdir $(wildcard *.cpp)))
 
-OBJS_DEF = $(patsubst %.cpp, $(DEF_PATH_DST)/%.inc, $(notdir $(wildcard *.cpp)))
+OBJS_DST = $(patsubst %.cpp, $(OBJ_PATH_DST)/%.o, $(notdir $(wildcard src/*.cpp)))
+OBJS_DEF = $(patsubst %.cpp, $(DEF_PATH_DST)/%.inc, $(notdir $(wildcard src/*.cpp)))
 
 ###########################################################
 .PHONY = static shared clean
@@ -186,10 +186,10 @@ pch: ./acl_stdafx.hpp
 	fi
 
 # src
-$(OBJ_PATH_DST)/%.o: ./%.cpp
+$(OBJ_PATH_DST)/%.o: ./src/%.cpp
 	$(COMPILE_OBJ)
 
-$(DEF_PATH_DST)/%.inc: ./%.cpp
+$(DEF_PATH_DST)/%.inc: ./src/%.cpp
 	$(CREATE_DEF)
 
 clean:

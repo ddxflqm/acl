@@ -114,9 +114,9 @@ endif
 LIB_PATH_DST = ../lib
 OBJ_PATH_DST = ./debug
 
-SRC_PATH_SRC = .
+SRC_PATH_SRC = ./src
 
-INC_COMPILE  = -I. -I../include -I.
+INC_COMPILE  = -I./include -I./src
 CFLAGS += $(INC_COMPILE)
 
 #Project's objs
