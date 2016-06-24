@@ -73,7 +73,7 @@ struct CHANNEL {
 	char           *name;
 };
 
-struct FIBER_LOCK {
+struct FIBER_MUTEX {
 	FIBER *owner;
 	ACL_RING waiting;
 };

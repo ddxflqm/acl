@@ -2,21 +2,21 @@
 #include "fiber/lib_fiber.h"
 #include "fiber.h"
 
-FIBER_LOCK *fiber_lock_create(void)
+FIBER_MUTEX *fiber_mutex_create(void)
 {
-	FIBER_LOCK *l = (FIBER_LOCK *) acl_mymalloc(sizeof(FIBER_LOCK));
+	FIBER_MUTEX *l = (FIBER_MUTEX *) acl_mymalloc(sizeof(FIBER_MUTEX));
 
 	l->owner = NULL;
 	acl_ring_init(&l->waiting);
 	return l;
 }
 
-void fiber_lock_free(FIBER_LOCK *l)
+void fiber_mutex_free(FIBER_MUTEX *l)
 {
 	acl_myfree(l);
 }
 
-static int __lock(FIBER_LOCK *l, int block)
+static int __lock(FIBER_MUTEX *l, int block)
 {
 	FIBER *curr;
 
@@ -40,12 +40,12 @@ static int __lock(FIBER_LOCK *l, int block)
 	return 1;
 }
 
-void fiber_lock(FIBER_LOCK *l)
+void fiber_mutex_lock(FIBER_MUTEX *l)
 {
 	__lock(l, 1);
 }
 
-int fiber_trylock(FIBER_LOCK *l)
+int fiber_mutex_trylock(FIBER_MUTEX *l)
 {
 	return __lock(l, 0);
 }
@@ -56,7 +56,7 @@ int fiber_trylock(FIBER_LOCK *l)
 #define FIRST_FIBER(head) \
 	(acl_ring_succ(head) != (head) ? RING_TO_FIBER(acl_ring_succ(head)) : 0)
 
-void fiber_unlock(FIBER_LOCK *l)
+void fiber_mutex_unlock(FIBER_MUTEX *l)
 {
 	FIBER *ready;
 	
@@ -71,6 +71,8 @@ void fiber_unlock(FIBER_LOCK *l)
 		fiber_ready(ready);
 	}
 }
+
+/*--------------------------------------------------------------------------*/
 
 FIBER_RWLOCK *fiber_rwlock_create(void)
 {

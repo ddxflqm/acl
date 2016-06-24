@@ -123,7 +123,7 @@ void fiber_set_dns(const char* ip, int port);
 /**
  * 协程互斥锁
  */
-typedef struct FIBER_LOCK FIBER_LOCK;
+typedef struct FIBER_MUTEX FIBER_MUTEX;
 
 /**
  * 协程读写锁
@@ -132,35 +132,35 @@ typedef struct FIBER_RWLOCK FIBER_RWLOCK;
 
 /**
  * 创建协程互斥锁
- * @return {FIBER_LOCK*}
+ * @return {FIBER_MUTEX*}
  */
-FIBER_LOCK *fiber_lock_create(void);
+FIBER_MUTEX *fiber_mutex_create(void);
 
 /**
  * 释放协程互斥锁
- * @param l {FIBER_LOCK*} 由 fiber_lock_create 创建的协程互斥锁
+ * @param l {FIBER_MUTEX*} 由 fiber_mutex_create 创建的协程互斥锁
  */
-void fiber_lock_free(FIBER_LOCK *l);
+void fiber_mutex_free(FIBER_MUTEX *l);
 
 /**
  * 对协程互斥锁进行阻塞式加锁，如果加锁成功则返回，否则则阻塞
- * @param l {FIBER_LOCK*} 由 fiber_lock_create 创建的协程互斥锁
+ * @param l {FIBER_MUTEX*} 由 fiber_mutex_create 创建的协程互斥锁
  */
-void fiber_lock(FIBER_LOCK *l);
+void fiber_mutex_lock(FIBER_MUTEX *l);
 
 /**
  * 对协程互斥锁尝试性进行加锁，无论是否成功加锁都会立即返回
- * @param l {FIBER_LOCK*} 由 fiber_lock_create 创建的协程互斥锁
+ * @param l {FIBER_MUTEX*} 由 fiber_mutex_create 创建的协程互斥锁
  * @return {int} 如果加锁成功则返回非 0 值，否则返回 0
  */
-int fiber_trylock(FIBER_LOCK *l);
+int fiber_mutex_trylock(FIBER_MUTEX *l);
 
 /**
  * 加锁成功的协程调用本函数进行解锁，调用本函数的协程必须是该锁的属主，否则
  * 内部会产生断言
- * @param l {FIBER_LOCK*} 由 fiber_lock_create 创建的协程互斥锁
+ * @param l {FIBER_MUTEX*} 由 fiber_mutex_create 创建的协程互斥锁
  */
-void fiber_unlock(FIBER_LOCK *l);
+void fiber_mutex_unlock(FIBER_MUTEX *l);
 
 /**
  * 创建协程读写锁
