@@ -1,10 +1,23 @@
 #include "stdafx.h"
+
+#ifdef HAS_PIPE2
+#define _GNU_SOURCE
+#endif
+
 #include <fcntl.h>
+#include <unistd.h>
+
 #define __USE_GNU
 #include <dlfcn.h>
 #include <sys/stat.h>
 #include "fiber.h"
 
+typedef int     (*pipe_fn)(int pipefd[2]);
+#ifdef HAS_PIPE2
+typedef int     (*pipe2_fn)(int pipefd[2], int flags);
+#endif
+typedef FILE   *(*popen_fn)(const char *, const char *);
+typedef int     (*pclose_fn)(FILE *);
 typedef int     (*close_fn)(int);
 typedef ssize_t (*read_fn)(int, void *, size_t);
 typedef ssize_t (*readv_fn)(int, const struct iovec *, int);
@@ -19,6 +32,12 @@ typedef ssize_t (*sendto_fn)(int, const void *, size_t, int,
 	const struct sockaddr *, socklen_t);
 typedef ssize_t (*sendmsg_fn)(int, const struct msghdr *, int);
 
+static pipe_fn     __sys_pipe     = NULL;
+#ifdef HAS_PIPE2
+static pipe2_fn    __sys_pipe2    = NULL;
+#endif
+static popen_fn    __sys_popen    = NULL;
+static pclose_fn   __sys_pclose   = NULL;
 static close_fn    __sys_close    = NULL;
 static read_fn     __sys_read     = NULL;
 static readv_fn    __sys_readv    = NULL;
@@ -41,6 +60,12 @@ void fiber_hook_io(void)
 
 	__called++;
 
+	__sys_pipe     = (pipe_fn) dlsym(RTLD_NEXT, "pipe");
+#ifdef HAS_PIPE2
+	__sys_pipe2    = (pipe2_fn) dlsym(RTLD_NEXT, "pipe2");
+#endif
+	__sys_popen    = (popen_fn) dlsym(RTLD_NEXT, "popen");
+	__sys_pclose   = (pclose_fn) dlsym(RTLD_NEXT, "pclose");
 	__sys_close    = (close_fn) dlsym(RTLD_NEXT, "close");
 	__sys_read     = (read_fn) dlsym(RTLD_NEXT, "read");
 	__sys_readv    = (readv_fn) dlsym(RTLD_NEXT, "readv");
@@ -53,6 +78,35 @@ void fiber_hook_io(void)
 	__sys_send     = (send_fn) dlsym(RTLD_NEXT, "send");
 	__sys_sendto   = (sendto_fn) dlsym(RTLD_NEXT, "sendto");
 	__sys_sendmsg  = (sendmsg_fn) dlsym(RTLD_NEXT, "sendmsg");
+}
+
+int pipe(int pipefd[2])
+{
+	int ret = __sys_pipe(pipefd);
+
+	if (ret < 0)
+		fiber_save_errno();
+	return ret;
+}
+
+#ifdef HAS_PIPE2
+int pipe2(int pipefd[2], int flags)
+{
+	int ret = __sys_pipe2(pipefd, flags);
+
+	if (ret < 0)
+		fiber_save_errno();
+	return ret;
+}
+#endif
+
+FILE *popen(const char *command, const char *type)
+{
+	FILE *fp = __sys_popen(command, type);
+
+	if (fp == NULL)
+		fiber_save_errno();
+	return fp;
 }
 
 int close(int fd)
