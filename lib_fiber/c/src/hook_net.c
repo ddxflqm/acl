@@ -21,7 +21,7 @@ static listen_fn   __sys_listen   = NULL;
 static accept_fn   __sys_accept   = NULL;
 static connect_fn  __sys_connect  = NULL;
 
-void fiber_net_hook(void)
+void fiber_hook_net(void)
 {
 	static int __called = 0;
 
