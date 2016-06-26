@@ -19,9 +19,12 @@ CHANNEL* channel_create(int elemsize, int bufsize)
 void channel_free(CHANNEL *c)
 {
 	if(c != NULL) {
-		acl_myfree(c->name);
-		acl_myfree(c->arecv.a);
-		acl_myfree(c->asend.a);
+		if (c->name)
+			acl_myfree(c->name);
+		if (c->arecv.a)
+			acl_myfree(c->arecv.a);
+		if (c->asend.a)
+			acl_myfree(c->asend.a);
 		acl_myfree(c);
 	}
 }
@@ -200,7 +203,7 @@ static void alt_exec(FIBER_ALT *a)
 
 	if (ar && ar->n) {
 		i = rand() % ar->n;
-		printf("...i: %d, n: %d\r\n", i, ar->n);
+		printf("%s(%d): i: %d, n: %d\r\n", __FUNCTION__, __LINE__, i, ar->n);
 		other = ar->a[i];
 		alt_copy(a, other);
 		alt_all_dequeue(other->xalt);
