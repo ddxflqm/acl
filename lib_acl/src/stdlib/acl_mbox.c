@@ -8,6 +8,7 @@
 #include "stdlib/acl_ypipe.h"
 #include "stdlib/acl_vstream.h"
 #include "stdlib/acl_iostuff.h"
+#include "stdlib/unix/acl_sane_socketpair.h"
 #include "stdlib/acl_mbox.h"
 
 #endif
@@ -26,9 +27,9 @@ static const char __key[] = "k";
 ACL_MBOX *acl_mbox_create(void)
 {
 	ACL_MBOX *mbox;
-	int  fds[2];
+	ACL_SOCKET fds[2];
 
-	if (acl_duplex_pipe(fds) < 0) {
+	if (acl_sane_socketpair(AF_UNIX, SOCK_STREAM, 0, fds) < 0) {
 		acl_msg_error("%s(%d), %s: acl_duplex_pipe error %s",
 			__FILE__, __LINE__, __FUNCTION__, acl_last_serror());
 		return NULL;

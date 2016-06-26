@@ -24,7 +24,7 @@
 
 /* sane_socketpair - sanitize socketpair() error returns */
 
-int acl_sane_socketpair(int domain, int type, int protocol, int result[2])
+int acl_sane_socketpair(int domain, int type, int protocol, ACL_SOCKET result[2])
 {
 	static int socketpair_ok_errors[] = {
 		EINTR,
@@ -52,5 +52,56 @@ int acl_sane_socketpair(int domain, int type, int protocol, int result[2])
 	}
 	return (ret);
 }
-#endif /* ACL_UNIX*/
 
+#elif defined(ACL_WINDOWS)
+
+int acl_sane_socketpair(int domain, int type, int protocol, ACL_SOCKET result[2])
+{
+	ACL_SOCKET listener = acl_inet_listen("127.0.0.1:0", 1, ACL_BLOCKING);
+	char addr[64];
+
+	(void) domain;
+
+	result[0] = ACL_SOCKET_INVALID;
+	result[1] = ACL_SOCKET_INVALID;
+
+	if (listener  == ACL_SOCKET_INVALID) {
+		acl_msg_error("%s(%d), %s: listen error %s",
+			__FILE__, __LINE__, __FUNCTION__, acl_last_serror());
+		return -1;
+	}
+
+	acl_tcp_set_nodelay(listener);
+	if (acl_getsockname(listener, addr, sizeof(addr)) < 0) {
+		acl_msg_error("%s(%d), %s: getoskname error %s",
+			__FILE__, __LINE__, __FUNCTION__, acl_last_serror());
+		acl_socket_close(listener);
+		return -1;
+	}
+
+	result[0] = acl_inet_connect(addr, ACL_BLOCKING, 0);
+	if (result[0] == ACL_SOCKET_INVALID) {
+		acl_msg_error("%s(%d), %s: connect %s error %s",
+			__FILE__, __LINE__, __FUNCTION__, addr, acl_last_serror());
+		acl_socket_close(listener);
+		return -1;
+	}
+
+	result[1] = acl_inet_accept(listener);
+
+	acl_socket_close(listener);
+
+	if (result[1] == ACL_SOCKET_INVALID) {
+		acl_msg_error("%s(%d), %s: accept error %s",
+			__FILE__, __LINE__, __FUNCTION__, acl_last_serror());
+		acl_socket_close(result[0]);
+		result[0] = ACL_SOCKET_INVALID;
+		return -1;
+	}
+
+	acl_tcp_set_nodelay(result[0]);
+	acl_tcp_set_nodelay(result[1]);
+	return 0;
+}
+
+#endif /* ACL_WINDOWS */

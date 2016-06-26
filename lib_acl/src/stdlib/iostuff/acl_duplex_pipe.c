@@ -9,7 +9,7 @@
 #ifdef ACL_UNIX
 #include <sys/socket.h>
 #include <unistd.h>
-#include "stdlib/unix/acl_sane_socketpair.h"
+#include "stdlib/acl_sane_socketpair.h"
 #endif
 
 #ifdef	ACL_WINDOWS
