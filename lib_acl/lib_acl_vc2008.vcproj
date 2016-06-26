@@ -401,6 +401,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\src\stdlib\acl_mbox.c"
+					>
+				</File>
+				<File
 					RelativePath=".\src\stdlib\acl_meter_time.c"
 					>
 				</File>
@@ -1915,6 +1919,10 @@
 				</File>
 				<File
 					RelativePath=".\include\stdlib\acl_malloc.h"
+					>
+				</File>
+				<File
+					RelativePath=".\include\stdlib\acl_mbox.h"
 					>
 				</File>
 				<File

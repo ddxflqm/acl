@@ -191,6 +191,9 @@
     <ClCompile Include=".\src\stdlib\acl_getopt.c">
       <Filter>Source Files\stdlib</Filter>
     </ClCompile>
+    <ClCompile Include=".\src\stdlib\acl_mbox.c">
+      <Filter>Source Files\stdlib</Filter>
+    </ClCompile>
     <ClCompile Include=".\src\stdlib\acl_meter_time.c">
       <Filter>Source Files\stdlib</Filter>
     </ClCompile>
@@ -1207,6 +1210,9 @@
       <Filter>Header Files\stdlib</Filter>
     </ClInclude>
     <ClInclude Include=".\include\stdlib\acl_malloc.h">
+      <Filter>Header Files\stdlib</Filter>
+    </ClInclude>
+    <ClInclude Include=".\include\stdlib\acl_mbox.h">
       <Filter>Header Files\stdlib</Filter>
     </ClInclude>
     <ClInclude Include=".\include\stdlib\acl_mem_hook.h">

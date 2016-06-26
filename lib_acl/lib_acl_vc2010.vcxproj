@@ -224,6 +224,7 @@ copy $(TargetName).pdb ..\dist\lib\win32\$(TargetName).pdb /Y
     <ClCompile Include=".\src\stdlib\acl_debug.c" />
     <ClCompile Include=".\src\stdlib\acl_file.c" />
     <ClCompile Include=".\src\stdlib\acl_getopt.c" />
+    <ClCompile Include=".\src\stdlib\acl_mbox.c" />
     <ClCompile Include=".\src\stdlib\acl_meter_time.c" />
     <ClCompile Include=".\src\stdlib\acl_msg.c" />
     <ClCompile Include=".\src\stdlib\acl_myflock.c" />
@@ -569,6 +570,7 @@ copy $(TargetName).pdb ..\dist\lib\win32\$(TargetName).pdb /Y
     <ClInclude Include=".\include\stdlib\acl_loadcfg.h" />
     <ClInclude Include=".\include\stdlib\acl_make_dirs.h" />
     <ClInclude Include=".\include\stdlib\acl_malloc.h" />
+    <ClInclude Include=".\include\stdlib\acl_mbox.h" />
     <ClInclude Include=".\include\stdlib\acl_mem_hook.h" />
     <ClInclude Include=".\include\stdlib\acl_mem_slice.h" />
     <ClInclude Include=".\include\stdlib\acl_meter_time.h" />
