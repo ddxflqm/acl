@@ -18,7 +18,8 @@ protected:
 		{
 			acl::string* rs = chan1_.pop();
 			int n = chan2_.pop();
-			printf(">>read: %s, %d\r\n", rs->c_str(), n);
+			if (i < 1000)
+				printf(">>read: %s, %d\r\n", rs->c_str(), n);
 			delete rs;
 		}
 	}
@@ -43,7 +44,8 @@ protected:
 	{
 		for (int i = 0; i < count_; i++)
 		{
-			printf(">>send: %d\r\n", i);
+			if (i < 1000)
+				printf(">>send: %d\r\n", i);
 			acl::string* buf = new acl::string;
 			buf->format("hello-%d", i);
 			chan1_ << buf;

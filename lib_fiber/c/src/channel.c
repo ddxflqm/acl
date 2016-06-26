@@ -203,7 +203,7 @@ static void alt_exec(FIBER_ALT *a)
 
 	if (ar && ar->n) {
 		i = rand() % ar->n;
-		printf("%s(%d): i: %d, n: %d\r\n", __FUNCTION__, __LINE__, i, ar->n);
+		//printf("%s(%d): i: %d, n: %d\r\n", __FUNCTION__, __LINE__, i, ar->n);
 		other = ar->a[i];
 		alt_copy(a, other);
 		alt_all_dequeue(other->xalt);
