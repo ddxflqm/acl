@@ -20,7 +20,7 @@
 /* Utility library. */
 
 #include "stdlib/acl_msg.h"
-#include "stdlib/unix/acl_sane_socketpair.h"
+#include "stdlib/acl_sys_patch.h"
 
 /* sane_socketpair - sanitize socketpair() error returns */
 

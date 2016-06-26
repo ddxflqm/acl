@@ -193,6 +193,9 @@ ACL_API acl_int64 acl_file_size(const char *filename);
  */
 ACL_API acl_int64 acl_file_fsize(ACL_FILE_HANDLE fh, ACL_VSTREAM *fp, void *arg);
 
+ACL_API int acl_sane_socketpair(int domain, int type, int protocol,
+		ACL_SOCKET result[2]);
+
 # ifdef	__cplusplus
 }
 # endif

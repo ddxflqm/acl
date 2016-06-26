@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "../acl_define.h"
+#include "acl_define.h"
 
  /* External interface. */
 

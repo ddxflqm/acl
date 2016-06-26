@@ -8,7 +8,7 @@
 #include "stdlib/acl_ypipe.h"
 #include "stdlib/acl_vstream.h"
 #include "stdlib/acl_iostuff.h"
-#include "stdlib/unix/acl_sane_socketpair.h"
+#include "stdlib/acl_sys_patch.h"
 #include "stdlib/acl_mbox.h"
 
 #endif
