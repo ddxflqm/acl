@@ -9,14 +9,23 @@
 static long long int __oper_count = 2;
 static int __fibers_max = 2;
 static int __fibers_cur = 2;
+static char __dummy[256];
+static int  __use_dummy = 0;
 
 static void *thread_main(void *ctx)
 {
 	ACL_MBOX *mbox = (ACL_MBOX *) ctx;
+	char *ptr;
 	int   i;
 
+	snprintf(__dummy, sizeof(__dummy), "hello world");
+
 	for (i = 0; i < __oper_count; i++) {
-		char *ptr = acl_mystrdup("hello world!");
+		if (__use_dummy)
+			ptr = __dummy;
+		else
+			ptr = acl_mystrdup("hello world!");
+
 		if (acl_mbox_send(mbox, ptr) < 0) {
 			printf("send error!\r\n");
 			break;
@@ -55,7 +64,8 @@ static void fiber_main(FIBER *fiber acl_unused, void *ctx)
 			break;
 		if (i < 10)
 			printf("--- read in: %s ---\r\n", ptr);
-		acl_myfree(ptr);
+		if (ptr != __dummy)
+			acl_myfree(ptr);
 	}
 
 	gettimeofday(&end, NULL);
@@ -82,14 +92,14 @@ static void fiber_main(FIBER *fiber acl_unused, void *ctx)
 
 static void usage(const char *procname)
 {
-	printf("usage: %s -h [help] -c nfibers -n count\r\n", procname);
+	printf("usage: %s -h [help] -c nfibers -n count -s [use static buffer]\r\n", procname);
 }
 
 int main(int argc, char *argv[])
 {
 	int   ch, i;
 
-	while ((ch = getopt(argc, argv, "hc:n:")) > 0) {
+	while ((ch = getopt(argc, argv, "hc:n:s")) > 0) {
 		switch (ch) {
 		case 'h':
 			usage(argv[0]);
@@ -99,6 +109,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'n':
 			__oper_count = atoi(optarg);
+			break;
+		case 's':
+			__use_dummy = 1;
 			break;
 		default:
 			break;
