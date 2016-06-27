@@ -3,14 +3,20 @@
 
 static long long int __max = 100000000;
 static char __dummy[256];
+static int  __use_dummy = 0;
 
 static void *thread_producer(void *arg)
 {
 	ACL_MBOX *mbox = (ACL_MBOX *) arg;
 	long long int i, n = __max;
+	char *ptr;
 
 	for (i = 0; i < n; i++) {
-		char *ptr = acl_mystrdup("hello world!");
+		if (__use_dummy)
+			ptr = __dummy;
+		else
+			ptr = acl_mystrdup("hello world!");
+
 		if (acl_mbox_send(mbox, ptr) < 0) {
 			printf(">>send error\r\n");
 			break;
@@ -55,7 +61,7 @@ static void free_msg(void *ctx)
 
 static void usage(const char *procname)
 {
-	printf("usage: %s -h [help] -n max\r\n", procname);
+	printf("usage: %s -h [help] -n max -s [use static buffer]\r\n", procname);
 }
 
 int main(int argc, char *argv[])
@@ -65,13 +71,16 @@ int main(int argc, char *argv[])
 	ACL_MBOX *mbox = acl_mbox_create();
 	int   ch;
 
-	while ((ch = getopt(argc, argv, "hn:")) > 0) {
+	while ((ch = getopt(argc, argv, "hn:s")) > 0) {
 		switch (ch) {
 		case 'h':
 			usage(argv[0]);
 			return 0;
 		case 'n':
 			__max = atoi(optarg);
+			break;
+		case 's':
+			__use_dummy = 1;
 			break;
 		default:
 			break;
