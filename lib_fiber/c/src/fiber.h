@@ -57,7 +57,7 @@ typedef struct FIBER_ALT FIBER_ALT;
 typedef struct FIBER_ALT_ARRAY FIBER_ALT_ARRAY;
 
 struct FIBER_ALT {
-	CHANNEL *c;
+	CHANNEL       *c;
 	void          *v;
 	unsigned int   op;
 	FIBER         *fiber;
@@ -82,7 +82,7 @@ struct CHANNEL {
 };
 
 struct FIBER_MUTEX {
-	FIBER *owner;
+	FIBER   *owner;
 	ACL_RING waiting;
 };
 
