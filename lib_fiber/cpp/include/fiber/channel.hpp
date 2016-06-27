@@ -22,22 +22,20 @@ public:
 		channel_free(chan_);
 	}
 
-	channel& operator << (T t)
+	channel& operator << (T& t)
 	{
 		return put(t);
 	}
 
-	channel& put(T t)
+	channel& put(T& t)
 	{
 		channel_send(chan_, &t);
 		return *this;
 	}
 
-	T pop(void)
+	void pop(T& t)
 	{
-		T t;
 		channel_recv(chan_, &t);
-		return t;
 	}
 
 private:

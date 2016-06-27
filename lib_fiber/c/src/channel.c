@@ -116,11 +116,11 @@ static void alt_dequeue(FIBER_ALT *a)
 	abort();
 }
 
-static void alt_all_dequeue(FIBER_ALT *a)
+static void alt_all_dequeue(FIBER_ALT a[])
 {
 	int i;
 
-	for ( i = 0; a[i].op != CHANEND && a[i].op != CHANNOBLK; i++) {
+	for (i = 0; a[i].op != CHANEND && a[i].op != CHANNOBLK; i++) {
 		if (a[i].op != CHANNOP)
 			alt_dequeue(&a[i]);
 	}
@@ -146,7 +146,6 @@ static void amove(void *dst, void *src, unsigned int n)
  */
 static void alt_copy(FIBER_ALT *s, FIBER_ALT *r)
 {
-	FIBER_ALT *t;
 	CHANNEL *c;
 	unsigned char *cp;
 
@@ -155,15 +154,19 @@ static void alt_copy(FIBER_ALT *s, FIBER_ALT *r)
 	 */
 	if (s == NULL && r == NULL)
 		return;
+
 	assert(s != NULL);
 	c = s->c;
+
 	if (s->op == CHANRCV) {
-		t = s;
+		FIBER_ALT *t = s;
+
 		s = r;
 		r = t;
 	}
-	assert(s==NULL || s->op == CHANSND);
-	assert(r==NULL || r->op == CHANRCV);
+
+	assert(s == NULL || s->op == CHANSND);
+	assert(r == NULL || r->op == CHANRCV);
 
 	/*
 	 * CHANNEL is empty (or unbuffered) - copy directly.
@@ -177,7 +180,7 @@ static void alt_copy(FIBER_ALT *s, FIBER_ALT *r)
 	 * Otherwise it's always okay to receive and then send.
 	 */
 	if (r) {
-		cp = c->buf + c->off*c->elemsize;
+		cp = c->buf + c->off * c->elemsize;
 		amove(r->v, cp, c->elemsize);
 		--c->nbuf;
 		if (++c->off == c->bufsize)
@@ -203,7 +206,6 @@ static void alt_exec(FIBER_ALT *a)
 
 	if (ar && ar->n) {
 		i = rand() % ar->n;
-		//printf("%s(%d): i: %d, n: %d\r\n", __FUNCTION__, __LINE__, i, ar->n);
 		other = ar->a[i];
 		alt_copy(a, other);
 		alt_all_dequeue(other->xalt);
@@ -216,7 +218,7 @@ static void alt_exec(FIBER_ALT *a)
 
 #define dbgalt 0
 
-static int channel_alt(FIBER_ALT *a)
+static int channel_alt(FIBER_ALT a[])
 {
 	int i, j, ncan, n, canblock;
 	CHANNEL *c;

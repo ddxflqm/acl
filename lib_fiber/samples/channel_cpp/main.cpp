@@ -2,12 +2,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+struct A {
+	char buf[256];
+};
+
 class fiber_consumer : public acl::fiber
 {
 public:
-	fiber_consumer(acl::channel<acl::string*>& chan1,
-		acl::channel<int>& chan2, int n)
-		: chan1_(chan1), chan2_(chan2), count_(n) {}
+	fiber_consumer(int n,
+		acl::channel<int>& chan1,
+		acl::channel<A>& chan2,
+		acl::channel<acl::string*>& chan3)
+		: count_(n), chan1_(chan1), chan2_(chan2), chan3_(chan3) {}
 	~fiber_consumer(void) {}
 
 protected:
@@ -16,26 +22,37 @@ protected:
 	{
 		for (int i = 0; i < count_; i++)
 		{
-			acl::string* rs = chan1_.pop();
-			int n = chan2_.pop();
+			int n;
+			chan1_.pop(n);
+
+			A a;
+			chan2_.pop(a);
+
+			acl::string* s;
+			chan3_.pop(s);
+
 			if (i < 1000)
-				printf(">>read: %s, %d\r\n", rs->c_str(), n);
-			delete rs;
+				printf(">>read: n = %d, a = %s, s = %s\r\n",
+					n, a.buf, s->c_str());
+			delete s;
 		}
 	}
 
 private:
-	acl::channel<acl::string*>& chan1_;
-	acl::channel<int>& chan2_;
 	int count_;
+	acl::channel<int>& chan1_;
+	acl::channel<A>& chan2_;
+	acl::channel<acl::string*>& chan3_;
 };
 
 class fiber_producer : public acl::fiber
 {
 public:
-	fiber_producer(acl::channel<acl::string*>& chan1,
-		acl::channel<int>& chan2, int n)
-		: chan1_(chan1), chan2_(chan2), count_(n) {}
+	fiber_producer(int n,
+		acl::channel<int>& chan1,
+		acl::channel<A>& chan2,
+		acl::channel<acl::string*>& chan3)
+		: count_(n), chan1_(chan1), chan2_(chan2), chan3_(chan3) {}
 	~fiber_producer(void) {}
 
 protected:
@@ -46,17 +63,24 @@ protected:
 		{
 			if (i < 1000)
 				printf(">>send: %d\r\n", i);
-			acl::string* buf = new acl::string;
-			buf->format("hello-%d", i);
-			chan1_ << buf;
-			chan2_ << i;
+
+			chan1_ << i;
+
+			A a;
+			snprintf(a.buf, sizeof(a.buf), "A-%d", i);
+			chan2_ << a;
+
+			acl::string* s = new acl::string;
+			s->format("string-%d", i);
+			chan3_ << s;
 		}
 	}
 
 private:
-	acl::channel<acl::string*>& chan1_;
-	acl::channel<int>& chan2_;
 	int count_;
+	acl::channel<int>& chan1_;
+	acl::channel<A>& chan2_;
+	acl::channel<acl::string*>& chan3_;
 };
 
 static void usage(const char* procname)
@@ -86,13 +110,14 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	acl::channel<acl::string*> chan1;
-	acl::channel<int> chan2;
+	acl::channel<int> chan1;
+	acl::channel<A> chan2;
+	acl::channel<acl::string*> chan3;
 
-	fiber_consumer consumer(chan1, chan2, n);
+	fiber_consumer consumer(n, chan1, chan2, chan3);
 	consumer.start();
 
-	fiber_producer producer(chan1, chan2, n);
+	fiber_producer producer(n, chan1, chan2, chan3);
 	producer.start();
 
 	acl::fiber::schedule();
