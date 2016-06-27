@@ -4,8 +4,9 @@
 #include <string.h>
 #include <unistd.h>
 #include "fiber/lib_fiber.h"
+#include "stamp.h"
 
-static int __oper_count = 2;
+static long long int __oper_count = 2;
 static int __fibers_max = 2;
 static int __fibers_cur = 2;
 
@@ -37,10 +38,14 @@ static void fiber_main(FIBER *fiber acl_unused, void *ctx)
 	acl_pthread_attr_t attr;
 	acl_pthread_t tid;
 	int  i;
+	struct timeval begin, end;
+	double spent;
 
 	acl_pthread_attr_init(&attr);
 	acl_pthread_attr_setdetachstate(&attr, ACL_PTHREAD_CREATE_DETACHED);
 	acl_pthread_create(&tid, &attr, thread_main, mbox);
+
+	gettimeofday(&begin, NULL);
 
 	for (i = 0; i < __oper_count; i++) {
 		char *ptr = (char *) acl_mbox_read(mbox, 0, NULL);
@@ -51,9 +56,14 @@ static void fiber_main(FIBER *fiber acl_unused, void *ctx)
 		acl_myfree(ptr);
 	}
 
-	printf(">>>nsend: %d / %d, nread: %d / %d\r\n",
+	gettimeofday(&end, NULL);
+	spent = stamp_sub(&end, &begin);
+
+	printf(">>>nsend: %d / %lld, nread: %d / %lld\r\n",
 		(int) acl_mbox_nsend(mbox), __oper_count,
 		(int) acl_mbox_nread(mbox), __oper_count);
+	printf("total: %lld, spend: %.2f, speed: %.2f\r\n", __oper_count,
+		spent, (__oper_count * 1000) / (spent > 0 ? spent : 1));
 
 	acl_mbox_free(mbox, free_msg);
 
@@ -69,7 +79,7 @@ static void fiber_main(FIBER *fiber acl_unused, void *ctx)
 
 static void usage(const char *procname)
 {
-	printf("usage: %s -h [help] -c nfibers\r\n", procname);
+	printf("usage: %s -h [help] -c nfibers -n count\r\n", procname);
 }
 
 int main(int argc, char *argv[])
