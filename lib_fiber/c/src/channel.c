@@ -70,6 +70,7 @@ static int alt_can_exec(FIBER_ALT *a)
 
 	if (a->op == CHANNOP)
 		return 0;
+
 	c = a->c;
 	if (c->bufsize == 0) {
 		ar = channel_array(c, otherop(a->op));
