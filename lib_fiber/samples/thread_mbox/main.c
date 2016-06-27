@@ -23,12 +23,14 @@ static void *thread_main(void *ctx)
 		}
 	}
 
+	printf("----- send over: %lld -----\r\n", __oper_count);
+
 	return NULL;
 }
 
 static void free_msg(void *msg)
 {
-	printf("---free one ---\r\n");
+	printf("---fiber-%d: free one ---\r\n", fiber_self());
 	acl_myfree(msg);
 }
 
@@ -52,7 +54,7 @@ static void fiber_main(FIBER *fiber acl_unused, void *ctx)
 		if (ptr == NULL)
 			break;
 		if (i < 10)
-			printf("read in: %s\r\n", ptr);
+			printf("--- read in: %s ---\r\n", ptr);
 		acl_myfree(ptr);
 	}
 
@@ -65,6 +67,7 @@ static void fiber_main(FIBER *fiber acl_unused, void *ctx)
 	printf("total: %lld, spend: %.2f, speed: %.2f\r\n", __oper_count,
 		spent, (__oper_count * 1000) / (spent > 0 ? spent : 1));
 
+	fiber_sleep(2);
 	acl_mbox_free(mbox, free_msg);
 
 	if (--__fibers_cur == 0) {
