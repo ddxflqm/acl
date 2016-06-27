@@ -1,13 +1,13 @@
 #include "lib_acl.h"
 #include <time.h>
 
-static int  __max = 100000000;
+static long long int __max = 100000000;
 static char __dummy[256];
 
 static void *thread_producer(void *arg)
 {
 	ACL_MBOX *mbox = (ACL_MBOX *) arg;
-	int   i, n = __max;
+	long long int i, n = __max;
 
 	for (i = 0; i < n; i++) {
 		char *ptr = acl_mystrdup("hello world!");
@@ -23,7 +23,7 @@ static void *thread_producer(void *arg)
 static void *thread_consumer(void *arg)
 {
 	ACL_MBOX *mbox = (ACL_MBOX *) arg;
-	int   i, n = 0;
+	long long int i, n = 0;
 
 	for (i = 0; i < __max; i++) {
 		char *ptr = (char*) acl_mbox_read(mbox, 0, NULL);
@@ -32,12 +32,13 @@ static void *thread_consumer(void *arg)
 			if (ptr != __dummy)
 				acl_myfree(ptr);
 		} else {
-			printf("ptr NULL, i: %d\r\n", i);
+			printf("ptr NULL, i: %lld\r\n", i);
 			break;
 		}
 	}
 
-	printf("i: %d, n: %d, io send: %d, io read: %d\r\n",
+	printf("hit ratio: %.2f %%, i: %lld, n: %lld, io send: %d, io read: %d\r\n",
+		(double) (n - acl_mbox_nsend(mbox)) * 100 / (n > 0 ? n : 1),
 		i, n, (int) acl_mbox_nsend(mbox), (int) acl_mbox_nread(mbox));
 	return NULL;
 }

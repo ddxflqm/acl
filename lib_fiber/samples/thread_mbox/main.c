@@ -61,13 +61,13 @@ static void fiber_main(FIBER *fiber acl_unused, void *ctx)
 	gettimeofday(&end, NULL);
 	spent = stamp_sub(&end, &begin);
 
-	printf(">>>nsend: %d / %lld, nread: %d / %lld\r\n",
+	printf(">>>hit ratio: %.2f %%, nsend: %d / %lld, nread: %d / %lld\r\n",
+		(double) (__oper_count - acl_mbox_nsend(mbox)) * 100 / __oper_count,
 		(int) acl_mbox_nsend(mbox), __oper_count,
 		(int) acl_mbox_nread(mbox), __oper_count);
 	printf("total: %lld, spend: %.2f, speed: %.2f\r\n", __oper_count,
 		spent, (__oper_count * 1000) / (spent > 0 ? spent : 1));
 
-	fiber_sleep(2);
 	acl_mbox_free(mbox, free_msg);
 
 	if (--__fibers_cur == 0) {
