@@ -29,6 +29,8 @@ static void *thread_consumer(void *arg)
 		char *ptr = (char*) acl_mbox_read(mbox, 0, NULL);
 		if (ptr != NULL) {
 			n++;
+			if (i < 10)
+				printf(">>read: %s\r\n", ptr);
 			if (ptr != __dummy)
 				acl_myfree(ptr);
 		} else {
