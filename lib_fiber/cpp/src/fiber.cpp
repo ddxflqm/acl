@@ -40,4 +40,9 @@ void fiber::schedule(void)
 	fiber_schedule();
 }
 
+void fiber::stop(void)
+{
+	fiber_io_stop();
+}
+
 } // namespace acl

@@ -33,7 +33,12 @@ public:
 	/**
 	 * 启动协程运行的调度过程
 	 */
-	static void schedule();
+	static void schedule(void);
+
+	/**
+	 *  停止协程调度过程
+	 */
+	static void stop(void);
 
 protected:
 	/**
