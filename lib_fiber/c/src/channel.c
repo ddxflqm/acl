@@ -101,10 +101,9 @@ static void alt_dequeue(FIBER_ALT *a)
 	unsigned int i;
 
 	ar = channel_array(a->c, a->op);
-	if (ar == NULL){
-		fprintf(stderr, "bad use of altdequeue op=%d\n", a->op);
-		abort();
-	}
+	if (ar == NULL)
+		acl_msg_fatal("%s(%d), %s: bad use of altdequeue op=%d",
+			__FILE__, __LINE__, __FUNCTION__, a->op);
 
 	for (i = 0; i < ar->n; i++) {
 		if (ar->a[i] == a) {
@@ -113,8 +112,8 @@ static void alt_dequeue(FIBER_ALT *a)
 		}
 	}
 
-	fprintf(stderr, "cannot find self in altdq\n");
-	abort();
+	acl_msg_fatal("%s(%d), %s: cannot find self in altdq",
+		__FILE__, __LINE__, __FUNCTION__);
 }
 
 static void alt_all_dequeue(FIBER_ALT a[])
@@ -245,9 +244,8 @@ static int channel_alt(FIBER_ALT a[])
 	for (i = 0; i < n; i++) {
 		c = a[i].c;
 
-		if (dbgalt)
-			printf(" %c:", "esrnb"[a[i].op]);
 		if (dbgalt) {
+			printf(" %c:", "esrnb"[a[i].op]);
 			if (c->name)
 				printf("%s", c->name);
 			else
