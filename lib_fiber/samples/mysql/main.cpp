@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 	acl::acl_cpp_init();
 	acl::log::stdout_open(true);
 
-	while ((ch = getopt(argc, argv, "hc:n:f:u:p:C:R:")) > 0)
+	while ((ch = getopt(argc, argv, "hc:n:f:u:o:p:C:R:")) > 0)
 	{
 		switch (ch)
 		{
