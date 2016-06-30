@@ -52,7 +52,7 @@ private:
 		acl::query query;
 		query.create_sql("insert into group_tbl(group_name, uvip_tbl,"
 			" update_date) values(:group, :test, :date)")
-			.set_format("group", "group:%d", n)
+			.set_format("group", "group:%d:%d", get_id(), n)
 			.set_parameter("test", "test")
 			.set_date("date", time(NULL), "%Y-%m-%d");
 		if (db.exec_update(query) == false)
@@ -70,7 +70,7 @@ private:
 		query.create_sql("select * from group_tbl"
 			" where group_name=:group"
 			" and uvip_tbl=:test")
-			.set_format("group", "group:%d", n)
+			.set_format("group", "group:%d:%d", get_id(), n)
 			.set_format("test", "test");
 		if (db.exec_select(query) == false)
 		{
