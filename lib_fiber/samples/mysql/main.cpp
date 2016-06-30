@@ -110,6 +110,8 @@ static void usage(const char* procname)
 		" -n oper_count\r\n"
 		" -o db_oper[insert|get]\r\n"
 		" -f mysqlclient_path\r\n"
+		" -C conn_timeout\r\n"
+		" -R rw_timeout\r\n"
 		" -u dbuser\r\n"
 		" -p dbpass\r\n",
 		procname);
@@ -117,7 +119,7 @@ static void usage(const char* procname)
 
 int main(int argc, char *argv[])
 {
-	int  ch, count = 10;
+	int  ch, count = 10, conn_timeout = 10, rw_timeout = 10;
 	acl::string mysql_path("../../lib/libmysqlclient_r.so");
 	acl::string dbaddr("127.0.0.1:3306"), dbname("acl_db");
 	acl::string dbuser("root"), dbpass(""), oper("get");
@@ -125,7 +127,7 @@ int main(int argc, char *argv[])
 	acl::acl_cpp_init();
 	acl::log::stdout_open(true);
 
-	while ((ch = getopt(argc, argv, "hc:n:f:u:p:")) > 0)
+	while ((ch = getopt(argc, argv, "hc:n:f:u:p:C:R:")) > 0)
 	{
 		switch (ch)
 		{
@@ -150,6 +152,12 @@ int main(int argc, char *argv[])
 		case 'o':
 			oper = optarg;
 			break;
+		case 'C':
+			conn_timeout = atoi(optarg);
+			break;
+		case 'R':
+			rw_timeout = atoi(optarg);
+			break;
 		default:
 			break;
 		}
@@ -162,8 +170,8 @@ int main(int argc, char *argv[])
 	dbconf.set_dbuser(dbuser)
 		.set_dbpass(dbpass)
 		.set_dblimit(__max_fibers)
-		.set_conn_timeout(1)
-		.set_rw_timeout(1);
+		.set_conn_timeout(conn_timeout)
+		.set_rw_timeout(rw_timeout);
 
 	acl::mysql_pool dbpool(dbconf);
 
