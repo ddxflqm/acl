@@ -93,6 +93,9 @@ struct FIBER_RWLOCK {
 	ACL_RING wwaiting;
 };
 
+/* in fiber.c */
+extern __thread int acl_var_hook_sys_api;
+
 /* in fiber_schedule.c */
 FIBER *fiber_running(void);
 void fiber_save_errno(void);
