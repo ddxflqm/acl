@@ -194,12 +194,12 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
 
 	fiber_io_check();
 
-	event     = fiber_io_event();
+	event   = fiber_io_event();
 
-	pe.fds    = fds;
-	pe.nfds   = nfds;
-	pe.curr   = fiber_running();
-	pe.proc   = poll_callback;
+	pe.fds  = fds;
+	pe.nfds = nfds;
+	pe.curr = fiber_running();
+	pe.proc = poll_callback;
 
 	SET_TIME(last);
 
@@ -224,7 +224,7 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 	fd_set *exceptfds, struct timeval *timeout)
 {
 	struct pollfd *fds;
-	int fd, timo;
+	int fd, timo, n, nready = 0;
 
 	if (!acl_var_hook_sys_api)
 		return __sys_select(nfds, readfds, writefds,
@@ -233,17 +233,17 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 	fds = (struct pollfd *) acl_mycalloc(nfds + 1, sizeof(struct pollfd));
 
 	for (fd = 0; fd < nfds; fd++) {
-		if (FD_ISSET(fd, readfds)) {
+		if (readfds && FD_ISSET(fd, readfds)) {
 			fds[fd].fd = fd;
 			fds[fd].events |= POLLIN;
 		}
 
-		if (FD_ISSET(fd, writefds)) {
+		if (writefds && FD_ISSET(fd, writefds)) {
 			fds[fd].fd = fd;
 			fds[fd].events |= POLLOUT;
 		}
 
-		if (FD_ISSET(fd, exceptfds)) {
+		if (exceptfds && FD_ISSET(fd, exceptfds)) {
 			fds[fd].fd = fd;
 			fds[fd].events |= POLLERR | POLLHUP;
 		}
@@ -254,11 +254,36 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 	else
 		timo = -1;
 
-	nfds = poll(fds, nfds, timo);
+	n = poll(fds, nfds, timo);
+
+	if (readfds)
+		FD_ZERO(readfds);
+	if (writefds)
+		FD_ZERO(writefds);
+	if (exceptfds)
+		FD_ZERO(exceptfds);
+
+	for (fd = 0; fd < nfds && nready < n; fd++) {
+		if (fds[fd].fd < 0 || fds[fd].fd != fd)
+			continue;
+
+		if (readfds && (fds[fd].revents & POLLIN)) {
+			FD_SET(fd, readfds);
+			nready++;
+		}
+		if (writefds && (fds[fd].revents & POLLOUT)) {
+			FD_SET(fd, writefds);
+			nready++;
+		}
+		if (exceptfds && (fds[fd].revents & (POLLERR | POLLHUP))) {
+			FD_SET(fd, exceptfds);
+			nready++;
+		}
+	}
 
 	acl_myfree(fds);
 
-	return nfds;
+	return nready;
 }
 
 struct hostent *gethostbyname(const char *name)
