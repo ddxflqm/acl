@@ -115,9 +115,9 @@ void fiber_io_inc(void);
 EVENT *fiber_io_event(void);
 
 /* in hook_io.c */
-void fiber_hook_io(void);
+void hook_io(void);
 
 /* in fiber_net.c */
-void fiber_hook_net(void);
+void hook_net(void);
 
 #endif

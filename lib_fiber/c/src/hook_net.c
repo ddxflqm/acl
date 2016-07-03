@@ -32,7 +32,7 @@ static poll_fn       __sys_poll     = NULL;
 static select_fn     __sys_select   = NULL;
 static gethostbyname_r_fn __sys_gethostbyname_r = NULL;
 
-void fiber_hook_net(void)
+void hook_net(void)
 {
 	static int __called = 0;
 
@@ -48,8 +48,8 @@ void fiber_hook_net(void)
 	__sys_accept     = (accept_fn) dlsym(RTLD_NEXT, "accept");
 	__sys_connect    = (connect_fn) dlsym(RTLD_NEXT, "connect");
 
-	__sys_poll     = (poll_fn) dlsym(RTLD_NEXT, "poll");
-	__sys_select   = (select_fn) dlsym(RTLD_NEXT, "select");
+	__sys_poll       = (poll_fn) dlsym(RTLD_NEXT, "poll");
+	__sys_select     = (select_fn) dlsym(RTLD_NEXT, "select");
 	__sys_gethostbyname_r = (gethostbyname_r_fn) dlsym(RTLD_NEXT,
 			"gethostbyname_r");
 }

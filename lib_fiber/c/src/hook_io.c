@@ -51,7 +51,7 @@ static send_fn     __sys_send     = NULL;
 static sendto_fn   __sys_sendto   = NULL;
 static sendmsg_fn  __sys_sendmsg  = NULL;
 
-void fiber_hook_io(void)
+void hook_io(void)
 {
 	static int __called = 0;
 

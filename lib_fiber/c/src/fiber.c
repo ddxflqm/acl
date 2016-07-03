@@ -7,6 +7,7 @@
 #endif
 
 #include "fiber/lib_fiber.h"
+#include "event_epoll.h"  /* just for hook_epoll */
 #include "fiber.h"
 
 typedef int *(*errno_fn)(void);
@@ -355,8 +356,9 @@ static void fiber_init(void)
 	__sys_errno = (errno_fn) dlsym(RTLD_NEXT, "__errno_location");
 	__sys_fcntl = (fcntl_fn) dlsym(RTLD_NEXT, "fcntl");
 
-	fiber_hook_io();
-	fiber_hook_net();
+	hook_io();
+	hook_net();
+	hook_epoll();
 }
 
 void fiber_schedule(void)
