@@ -3,6 +3,7 @@
 #include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/epoll.h>
 #define __USE_GNU
 #include <dlfcn.h>
 #include "fiber/lib_fiber.h"
@@ -21,6 +22,9 @@ typedef int (*select_fn)(int, fd_set *, fd_set *, fd_set *, struct timeval *);
 typedef int (*gethostbyname_r_fn)(const char *, struct hostent *, char *,
 	size_t, struct hostent **, int *);
 
+typedef int (*epoll_wait_fn)(int, struct epoll_event *,int, int);
+typedef int (*epoll_ctl_fn)(int, int, int, struct epoll_event *);
+
 static socket_fn     __sys_socket   = NULL;
 static socketpair_fn __sys_socketpair = NULL;
 static bind_fn       __sys_bind     = NULL;
@@ -31,6 +35,9 @@ static connect_fn    __sys_connect  = NULL;
 static poll_fn       __sys_poll     = NULL;
 static select_fn     __sys_select   = NULL;
 static gethostbyname_r_fn __sys_gethostbyname_r = NULL;
+
+static epoll_wait_fn __sys_epoll_wait = NULL;
+static epoll_ctl_fn  __sys_epoll_ctl  = NULL;
 
 void hook_net(void)
 {
@@ -52,6 +59,8 @@ void hook_net(void)
 	__sys_select     = (select_fn) dlsym(RTLD_NEXT, "select");
 	__sys_gethostbyname_r = (gethostbyname_r_fn) dlsym(RTLD_NEXT,
 			"gethostbyname_r");
+	__sys_epoll_wait = (epoll_wait_fn) dlsym(RTLD_NEXT, "epoll_wait");
+	__sys_epoll_ctl  = (epoll_ctl_fn) dlsym(RTLD_NEXT, "epoll_ctl");
 }
 
 int socket(int domain, int type, int protocol)
@@ -285,6 +294,35 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 
 	return nready;
 }
+
+#if 0
+
+static void epoll_callback(EVENT *ev, EPOLL_EVENTS *ee)
+{
+}
+
+int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
+{
+	EVENT *event;
+	int    mask = 0;
+
+	if (op & EPOLLIN)
+		mask |= EVENT_READABLE;
+	if (op & EPOLLOUT)
+		mask |= EVENT_WRITABLE;
+
+	fiber_io_check();
+
+	event = fiber_io_event();
+	return event_add(event, fd, mask, epoll_callback, NULL);
+}
+
+int epoll_wait(int epfd, struct epoll_event *events,
+	int maxevents, int timeout)
+{
+}
+
+#endif
 
 struct hostent *gethostbyname(const char *name)
 {
