@@ -48,7 +48,7 @@ static int http_demo(ACL_VSTREAM *cstream, const char* res, size_t len)
 	return 0;
 }
 
-static void echo_client(FIBER *fiber acl_unused, void *ctx)
+static void echo_client(ACL_FIBER *fiber acl_unused, void *ctx)
 {
 	ACL_VSTREAM *cstream = (ACL_VSTREAM *) ctx;
 	ACL_EVENT *event = (ACL_EVENT *) cstream->context;
@@ -70,7 +70,7 @@ static void echo_client(FIBER *fiber acl_unused, void *ctx)
 	acl_event_enable_read(event, cstream, 120, client_callback, NULL);
 }
 
-static void http_server(FIBER *, void *ctx)
+static void http_server(ACL_FIBER *, void *ctx)
 {
 	ACL_VSTREAM *cstream = (ACL_VSTREAM *) ctx;
 	ACL_EVENT *event = (ACL_EVENT *) cstream->context;
@@ -96,9 +96,9 @@ static void client_callback(int type acl_unused, ACL_EVENT *event,
 	acl_event_disable_readwrite(event, cstream);
 
 	if (__real_http)
-		fiber_create(http_server, cstream, 32000);
+		acl_fiber_create(http_server, cstream, 32000);
 	else
-		fiber_create(echo_client, cstream, 16000);
+		acl_fiber_create(echo_client, cstream, 16000);
 }
 
 static void listen_callback(int type acl_unused, ACL_EVENT *event,
@@ -117,7 +117,7 @@ static void listen_callback(int type acl_unused, ACL_EVENT *event,
 	acl_event_enable_read(event, cstream, 120, client_callback, NULL);
 }
 
-static void fiber_event(FIBER *fiber acl_unused, void *ctx)
+static void fiber_event(ACL_FIBER *fiber acl_unused, void *ctx)
 {
 	ACL_VSTREAM *sstream = (ACL_VSTREAM *) ctx;
 	ACL_EVENT *event = acl_event_new(ACL_EVENT_POLL, 0, 1, 0);
@@ -130,7 +130,7 @@ static void fiber_event(FIBER *fiber acl_unused, void *ctx)
 	acl_vstream_close(sstream);
 	acl_event_free(event);
 
-	fiber_io_stop();
+	acl_fiber_io_stop();
 }
 
 static void usage(const char *procname)
@@ -174,10 +174,10 @@ int main(int argc, char *argv[])
 	printf("listen %s ok\r\n", addr);
 
 	printf("%s: call fiber_creater\r\n", __FUNCTION__);
-	fiber_create(fiber_event, sstream, STACK_SIZE);
+	acl_fiber_create(fiber_event, sstream, STACK_SIZE);
 
 	printf("call fiber_schedule\r\n");
-	fiber_schedule();
+	acl_fiber_schedule();
 
 	return 0;
 }

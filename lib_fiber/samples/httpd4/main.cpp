@@ -111,7 +111,7 @@ static void listen_callback(int type acl_unused, ACL_EVENT *event,
 	acl_event_enable_read(event, cstream, 120, client_callback, NULL);
 }
 
-static void fiber_event(FIBER *fiber acl_unused, void *ctx)
+static void fiber_event(ACL_FIBER *fiber acl_unused, void *ctx)
 {
 	ACL_VSTREAM *sstream = (ACL_VSTREAM *) ctx;
 	ACL_EVENT *event = acl_event_new(ACL_EVENT_POLL, 0, 1, 0);
@@ -124,7 +124,7 @@ static void fiber_event(FIBER *fiber acl_unused, void *ctx)
 	acl_vstream_close(sstream);
 	acl_event_free(event);
 
-	fiber_io_stop();
+	acl_fiber_io_stop();
 }
 
 static void usage(const char *procname)
@@ -168,10 +168,10 @@ int main(int argc, char *argv[])
 	printf("listen %s ok\r\n", addr);
 
 	printf("%s: call fiber_creater\r\n", __FUNCTION__);
-	fiber_create(fiber_event, sstream, STACK_SIZE);
+	acl_fiber_create(fiber_event, sstream, STACK_SIZE);
 
 	printf("call fiber_schedule\r\n");
-	fiber_schedule();
+	acl_fiber_schedule();
 
 	return 0;
 }

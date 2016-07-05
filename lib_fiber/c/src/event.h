@@ -38,7 +38,7 @@ struct POLL_EVENTS {
 	struct pollfd *fds;
 	int    nfds;
 	int    nready;
-	FIBER *curr;
+	ACL_FIBER *curr;
 	events_proc *proc;
 };
 

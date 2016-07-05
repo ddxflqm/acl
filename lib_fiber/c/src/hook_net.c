@@ -183,7 +183,7 @@ static void poll_callback(EVENT *ev, POLL_EVENTS *pe)
 		fiber_io_dec();
 	}
 
-	fiber_ready(pe->curr);
+	acl_fiber_ready(pe->curr);
 }
 
 #define SET_TIME(x) do { \
@@ -216,7 +216,7 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
 		event_poll(event, &pe, timeout);
 
 		fiber_io_inc();
-		fiber_switch();
+		acl_fiber_switch();
 
 		if (pe.nready != 0)
 			break;
@@ -337,7 +337,7 @@ struct hostent *gethostbyname(const char *name)
 static char dns_ip[128] = "8.8.8.8";
 static int dns_port = 53;
 
-void fiber_set_dns(const char* ip, int port)
+void acl_fiber_set_dns(const char* ip, int port)
 {
 	snprintf(dns_ip, sizeof(dns_ip), "%s", ip);
 	dns_port = port;

@@ -6,7 +6,7 @@
 
 static  int  __nfibers = 0;
 
-static void select_sleep(FIBER *fiber, void *ctx acl_unused)
+static void select_sleep(ACL_FIBER *fiber, void *ctx acl_unused)
 {
 	int  in = 0, fd = dup(in), n;
 	fd_set rset;
@@ -28,10 +28,11 @@ static void select_sleep(FIBER *fiber, void *ctx acl_unused)
 		}
 
 		if (n == 0)
-			printf("fiber-%d: select wakeup\r\n", fiber_id(fiber));
+			printf("fiber-%d: select wakeup\r\n",
+				acl_fiber_id(fiber));
 		else
 			printf("fiber-%d: fd = %d read ready: %d\r\n",
-				fiber_id(fiber), fd, n);
+				acl_fiber_id(fiber), fd, n);
 
 		if (FD_ISSET(fd, &rset)) {
 			char buf[256];
@@ -40,27 +41,28 @@ static void select_sleep(FIBER *fiber, void *ctx acl_unused)
 			if (n < 0) {
 				if (errno != EWOULDBLOCK) {
 					printf("fiber-%d: error %s\r\n",
-						fiber_id(fiber),
+						acl_fiber_id(fiber),
 						acl_last_serror());
 					break;
 				}
-				printf("fiber-%d: %s\r\n", fiber_id(fiber),
+				printf("fiber-%d: %s\r\n", acl_fiber_id(fiber),
 					acl_last_serror());
 				continue;
 			} else if (n == 0) {
-				printf("fiber-%d: read over\r\n", fiber_id(fiber));
+				printf("fiber-%d: read over\r\n",
+					acl_fiber_id(fiber));
 				break;
 			}
 
 			buf[n] = 0;
-			printf("fiber-%d: %s", fiber_id(fiber), buf);
+			printf("fiber-%d: %s", acl_fiber_id(fiber), buf);
 			fflush(stdout);
 		}
 	}
 
-	printf(">>>fiber-%d exit\r\n", fiber_id(fiber));
+	printf(">>>fiber-%d exit\r\n", acl_fiber_id(fiber));
 	if (--__nfibers == 0)
-		fiber_io_stop();
+		acl_fiber_io_stop();
 }
 
 static void usage(const char *procname)
@@ -93,9 +95,9 @@ int main(int argc, char *argv[])
 	}
 
 	for (i = 0; i < __nfibers; i++)
-		fiber_create(select_sleep, &n, 32768);
+		acl_fiber_create(select_sleep, &n, 32768);
 
-	fiber_schedule();
+	acl_fiber_schedule();
 
 	return 0;
 }
