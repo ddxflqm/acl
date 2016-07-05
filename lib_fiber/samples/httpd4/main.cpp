@@ -20,8 +20,6 @@ static int http_demo(ACL_VSTREAM *cstream, const char* res, size_t len)
 	char  buf[8192];
 	int   ret;
 
-	cstream->rw_timeout = __rw_timeout;
-
 	while (1) {
 		ret = acl_vstream_gets_nonl(cstream, buf, sizeof(buf) - 1);
 		if (ret == ACL_VSTREAM_EOF) {
@@ -109,6 +107,7 @@ static void listen_callback(int type acl_unused, ACL_EVENT *event,
 
 	printf(">>>accept one, fd: %d\r\n", ACL_VSTREAM_SOCK(cstream));
 
+	cstream->rw_timeout = __rw_timeout;
 	acl_event_enable_read(event, cstream, 120, client_callback, NULL);
 }
 
