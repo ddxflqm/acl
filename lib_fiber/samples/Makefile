@@ -24,6 +24,9 @@ all:
 	@(cd thread_mbox; make)
 	@(cd fiber_cpp; make)
 	@(cd channel_cpp; make)
+	@(cd https_client; make)
+	@(cd https_server; make)
+	@(cd mysql; make)
 
 cl clean:
 	@(cd dns; make clean)
@@ -32,7 +35,7 @@ cl clean:
 	@(cd httpd; make clean)
 	@(cd httpd2; make clean)
 	@(cd httpd3; make clean)
-	@(cd httpd3; make clean)
+	@(cd httpd4; make clean)
 	@(cd client; make clean)
 	@(cd server; make clean)
 	@(cd sleep; make clean)
@@ -50,3 +53,6 @@ cl clean:
 	@(cd thread_mbox; make clean)
 	@(cd fiber_cpp; make clean)
 	@(cd channel_cpp; make clean)
+	@(cd https_client; make clean)
+	@(cd https_server; make clean)
+	@(cd mysql; make clean)
