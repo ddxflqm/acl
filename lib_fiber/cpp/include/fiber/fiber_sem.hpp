@@ -18,4 +18,21 @@ private:
 	ACL_FIBER_SEM* sem_;
 };
 
+class fiber_sem_guard
+{
+public:
+	fiber_sem_guard(fiber_sem& sem) : sem_(sem)
+	{
+		(void) sem_.wait();
+	}
+
+	~fiber_sem_guard(void)
+	{
+		sem_.post();
+	}
+
+private:
+	fiber_sem& sem_;
+};
+
 } // namespace acl

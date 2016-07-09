@@ -1,24 +1,6 @@
 #include "stdafx.h"
 #include "stamp.h"
 
-class fiber_sem_guard
-{
-public:
-	fiber_sem_guard(acl::fiber_sem& sem)
-		: sem_(sem)
-	{
-		sem_.wait();
-	}
-
-	~fiber_sem_guard(void)
-	{
-		sem_.post();
-	}
-
-private:
-	acl::fiber_sem& sem_;
-};
-
 class redis_oper
 {
 public:
@@ -49,7 +31,7 @@ public:
 			key.format("key-%d-%d", acl_fiber_self(), i);
 			val.format("val-%d-%d", acl_fiber_self(), i);
 
-			fiber_sem_guard guard(sem_);
+			acl::fiber_sem_guard guard(sem_);
 
 			if (cmd.set(key, val) == false) {
 				printf("fiber-%d: set error: %s, key: %s\r\n",
@@ -85,7 +67,7 @@ public:
 		for (i = 0; i < count; i++) {
 			key.format("key-%d-%d", acl_fiber_self(), i);
 
-			fiber_sem_guard guard(sem_);
+			acl::fiber_sem_guard guard(sem_);
 
 			if (cmd.get(key, val) == false) {
 				printf("fiber-%d: get error: %s, key: %s\r\n",
@@ -119,7 +101,7 @@ public:
 		for (i = 0; i < count; i++) {
 			key.format("key-%d-%d", acl_fiber_self(), i);
 
-			fiber_sem_guard guard(sem_);
+			acl::fiber_sem_guard guard(sem_);
 			if (cmd.del_one(key) < 0) {
 				printf("fiber-%d: del error: %s, key: %s\r\n",
 					acl_fiber_self(), cmd.result_error(),
