@@ -13,7 +13,7 @@
 EVENT *event_create(int size)
 {
 	int i;
-	EVENT *ev = event_epoll_create(size);
+	EVENT *ev   = event_epoll_create(size);
 
 	ev->events  = (FILE_EVENT *) acl_mycalloc(size, sizeof(FILE_EVENT));
 	ev->defers  = (DEFER_DELETE *) acl_mycalloc(size, sizeof(FILE_EVENT));
@@ -34,6 +34,16 @@ EVENT *event_create(int size)
 	}
 
 	return ev;
+}
+
+const char *event_name(EVENT *ev)
+{
+	return ev->name();
+}
+
+int event_handle(EVENT *ev)
+{
+	return ev->handle(ev);
 }
 
 /* Return the current set size. */

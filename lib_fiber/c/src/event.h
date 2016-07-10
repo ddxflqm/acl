@@ -65,6 +65,7 @@ struct EVENT {
 	ACL_RING_ITER iter;
 
 	const char *(*name)(void);
+	int  (*handle)(EVENT *);
 	int  (*loop)(EVENT *, struct timeval *);
 	int  (*add)(EVENT *, int, int);
 	void (*del)(EVENT *, int, int);
@@ -72,6 +73,8 @@ struct EVENT {
 };
 
 EVENT *event_create(int size);
+const char *event_name(EVENT *ev);
+int  event_handle(EVENT *ev);
 int  event_size(EVENT *ev);
 void event_free(EVENT *ev);
 int  event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx);

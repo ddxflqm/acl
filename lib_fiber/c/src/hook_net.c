@@ -22,6 +22,7 @@ typedef int (*select_fn)(int, fd_set *, fd_set *, fd_set *, struct timeval *);
 typedef int (*gethostbyname_r_fn)(const char *, struct hostent *, char *,
 	size_t, struct hostent **, int *);
 
+typedef int (*epoll_create_fn)(int);
 typedef int (*epoll_wait_fn)(int, struct epoll_event *,int, int);
 typedef int (*epoll_ctl_fn)(int, int, int, struct epoll_event *);
 
@@ -36,8 +37,9 @@ static poll_fn       __sys_poll     = NULL;
 static select_fn     __sys_select   = NULL;
 static gethostbyname_r_fn __sys_gethostbyname_r = NULL;
 
-static epoll_wait_fn __sys_epoll_wait = NULL;
-static epoll_ctl_fn  __sys_epoll_ctl  = NULL;
+static epoll_create_fn __sys_epoll_create = NULL;
+static epoll_wait_fn   __sys_epoll_wait   = NULL;
+static epoll_ctl_fn    __sys_epoll_ctl    = NULL;
 
 void hook_net(void)
 {
@@ -59,8 +61,10 @@ void hook_net(void)
 	__sys_select     = (select_fn) dlsym(RTLD_NEXT, "select");
 	__sys_gethostbyname_r = (gethostbyname_r_fn) dlsym(RTLD_NEXT,
 			"gethostbyname_r");
-	__sys_epoll_wait = (epoll_wait_fn) dlsym(RTLD_NEXT, "epoll_wait");
-	__sys_epoll_ctl  = (epoll_ctl_fn) dlsym(RTLD_NEXT, "epoll_ctl");
+
+	__sys_epoll_create = (epoll_create_fn) dlsym(RTLD_NEXT, "epoll_create");
+	__sys_epoll_wait   = (epoll_wait_fn) dlsym(RTLD_NEXT, "epoll_wait");
+	__sys_epoll_ctl    = (epoll_ctl_fn) dlsym(RTLD_NEXT, "epoll_ctl");
 }
 
 int socket(int domain, int type, int protocol)
@@ -297,29 +301,67 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 
 #if 0
 
+int epoll_create(int size acl_unused)
+{
+	EVENT *ev;
+
+	fiber_io_check();
+	ev = fiber_io_event();
+	if (ev == NULL) {
+		acl_msg_error("%s(%d), %s: create_event failed %s",
+			__FILE__, __LINE__, __FUNCTION__, acl_last_serror());
+		return -1;
+	}
+
+	return event_handle(ev);
+}
+
 static void epoll_callback(EVENT *ev, EPOLL_EVENTS *ee)
 {
 }
 
 int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
 {
-	EVENT *event;
+	EVENT *ev;
 	int    mask = 0;
+
+	fiber_io_check();
+
+	ev = fiber_io_event();
+	if (ev == NULL) {
+		acl_msg_error("%s(%d), %s: EVENT NULL",
+			__FILE__, __LINE__, __FUNCTION__);
+		return -1;
+	} else if (event_handle(ev) != epfd) {
+		acl_msg_error("%s(%d), %s: invalid epfd: %d != %d",
+			__FILE__, __LINE__, __FILE__, epfd, event_handle(ev));
+		return -1;
+	}
 
 	if (op & EPOLLIN)
 		mask |= EVENT_READABLE;
 	if (op & EPOLLOUT)
 		mask |= EVENT_WRITABLE;
 
-	fiber_io_check();
-
-	event = fiber_io_event();
-	return event_add(event, fd, mask, epoll_callback, NULL);
+	return event_add(ev, fd, mask, epoll_callback, NULL);
 }
 
 int epoll_wait(int epfd, struct epoll_event *events,
 	int maxevents, int timeout)
 {
+	EVENT *ev;
+
+	fiber_io_check();
+	ev = fiber_io_event();
+	if (ev == NULL) {
+		acl_msg_error("%s(%d), %s: EVENT NULL",
+			__FILE__, __LINE__, __FUNCTION__);
+		return -1;
+	}
+
+	acl_fiber_switch();
+
+	return ;
 }
 
 #endif
