@@ -301,9 +301,108 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 
 #if 0
 
-int epoll_create(int size acl_unused)
+typedef struct {
+	int  fd;
+	int  op;
+	int  mask;
+} FD_CTX;
+
+typedef struct {
+	FD_CTX *fds;
+	size_t  nfds;
+	size_t  size;
+} EPOLL_FDS;
+
+static void epfd_create(EPOLL_FDS *ef)
+{
+	int  maxfd = acl_open_limit(), i;
+
+	if (maxfd <= 0)
+		acl_msg_fatal("%s(%d), %s: acl_open_limit error %s",
+			__FILE__, __LINE__, __FUNCTION__, acl_last_serror());
+	++maxfd;
+	ef->fds  = (int *) acl_mymalloc((maxfd * sizeof(FD_CTX));
+	ef->nfds = 0;
+	ef->size = maxfd;
+
+	for (i = 0; i < maxfd; i++)
+		ef->fds[i].fd = -1;
+}
+
+static void epfd_reset(EPOLL_FDS *ef)
+{
+	int i;
+
+	ef->nfds = 0;
+	for (i = 0; i < ef->size; i++)
+		ef->fds[i].fd = -1;
+}
+
+static EPOLL_FDS *__main_epfds = NULL;
+static __thread EPOLL_FDS *__epfds = NULL;
+static __thread int __nepfds;
+
+static acl_pthread_key_t  __once_key;
+static acl_pthread_once_t __once_control = ACL_PTHREAD_ONCE_INIT;
+
+static void thread_free(void *ctx)
+{
+	int  i;
+	EPOLL_FDS *epfds = (EPOLL_FDS *) ctx;
+
+	if (__epfds == NULL)
+		return;
+
+	if (__epfds == __main_epfds)
+		__main_epfds = NULL;
+
+	for (i = 0; i < __nepfds; i++)
+		acl_myfree(__epfds[i].fds);
+	acl_myfree(__epfds);
+	__epfds = NULL;
+}
+
+static void main_thread_free(void)
+{
+	if (__main_epfds) {
+		thread_free(__main_epfds);
+		__main_epfds = NULL;
+	}
+}
+
+static void thread_init(void)
+{
+	acl_assert(acl_pthread_key_create(&__once_key, thread_free) == 0);
+}
+
+static void check_epfds(void)
+{ 
+	int i;
+
+	if (__epfds != NULL)
+		return;
+
+	__nepfds = acl_open_limit();
+	if (__nepfds <= 0)
+		acl_msg_fatal("%s(%d), %s: acl_open_limit error %s",
+			__FILE__, __LINE__, __FUNCTION__, acl_last_serror());
+
+	__nepfds++;
+	__epfds = (EPOLL_FDS *) acl_mycalloc(__nepfds, sizeof(EPOLL_FDS));
+	for (i = 0; i < __nepfds; i++)
+		epfd_create(&__epfds[i]);
+
+	if ((unsigned long) acl_pthread_self() == acl_main_thread_self()) {
+		__main_epfds = __epfds;
+		atexit(main_thread_free);
+	} else if (acl_pthread_setspecific(__once_key, __epfds) != 0)
+		acl_msg_fatal("acl_pthread_setspecific error!");
+}
+
+int epoll_create(int size)
 {
 	EVENT *ev;
+	int epfd;
 
 	fiber_io_check();
 	ev = fiber_io_event();
@@ -313,10 +412,28 @@ int epoll_create(int size acl_unused)
 		return -1;
 	}
 
-	return event_handle(ev);
+	epfd = event_handle(ev);
+	if (epfd < 0) {
+		acl_msg_error("%s(%d), %s: invalid event_handle %d",
+			__FILE__, __LINE__, __FUNCTION__, epfd);
+		return epfd;
+	}
+
+	epfd = dup(epfd);
+	if (epfd < 0)
+		acl_msg_error("%s(%d), %s: dup epfd %d error %s",
+			__FILE__, __LINE__, __FUNCTION__, acl_last_serror());
+
+	check_epfds();
+	if (epfd >= __nepfds)
+		acl_msg_fatal("%s(%d), %s: epfd: %d >= __nepfds: %d",
+			__FILE__, __LINE__, __FUNCTION__, epfd, __nepfds);
+
+	epfd_reset(&__epfds[epfd]);
+	return epfd;
 }
 
-static void epoll_callback(EVENT *ev, EPOLL_EVENTS *ee)
+static void epoll_callback(EVENT *ev, EPOLL_FDS *fds)
 {
 }
 
@@ -325,16 +442,26 @@ int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
 	EVENT *ev;
 	int    mask = 0;
 
-	fiber_io_check();
+	if (epfd < 0) {
+		acl_msg_error("%s(%d), %s: invalid epfd %d",
+			__FILE__, __LINE__, __FUNCTION__, epfd);
+		return -1;
+	}
+
+	if (__epfds == NULL) {
+		acl_msg_error("%s(%d), %s: call epoll_create first",
+			__FILE__, __LINE__, __FUNCTION__);
+		return -1;
+	} else if (epfd >= __nepfds) {
+		acl_msg_error("%s(%d), %s: too large epfd %d >= __nepfds %d",
+			__FILE__, __LINE__, __FUNCTION__, epfd, __nepfds);
+		return -1;
+	}
 
 	ev = fiber_io_event();
 	if (ev == NULL) {
 		acl_msg_error("%s(%d), %s: EVENT NULL",
 			__FILE__, __LINE__, __FUNCTION__);
-		return -1;
-	} else if (event_handle(ev) != epfd) {
-		acl_msg_error("%s(%d), %s: invalid epfd: %d != %d",
-			__FILE__, __LINE__, __FILE__, epfd, event_handle(ev));
 		return -1;
 	}
 
@@ -343,7 +470,11 @@ int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
 	if (op & EPOLLOUT)
 		mask |= EVENT_WRITABLE;
 
-	return event_add(ev, fd, mask, epoll_callback, NULL);
+	__epfds[epfd].fds[fd].fd   = fd;
+	__epfds[epfd].fds[fd].op   = op;
+	__epfds[epfd].fds[fd].mask = mask;
+
+	return event_add(ev, fd, mask, epoll_callback, &__epfds[epfd]);
 }
 
 int epoll_wait(int epfd, struct epoll_event *events,

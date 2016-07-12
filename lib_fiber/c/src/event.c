@@ -116,7 +116,6 @@ static int check_fdtype(int fd)
 		return 0;
 
 	return -1;
-
 }
 
 int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
