@@ -147,7 +147,7 @@ static int epoll_event_loop(EVENT *ev, struct timeval *tv)
 				mask |= EVENT_WRITABLE;
 		}
 
-		ev->fired[j].fd = e->data.fd;
+		ev->fired[j].fd   = e->data.fd;
 		ev->fired[j].mask = mask;
 	}
 

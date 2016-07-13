@@ -115,6 +115,7 @@ static void fiber_event(ACL_FIBER *fiber acl_unused, void *ctx)
 {
 	ACL_VSTREAM *sstream = (ACL_VSTREAM *) ctx;
 	ACL_EVENT *event = acl_event_new(ACL_EVENT_POLL, 0, 1, 0);
+	//ACL_EVENT *event = acl_event_new(ACL_EVENT_KERNEL, 0, 1, 0);
 
 	acl_event_enable_listen(event, sstream, 0, listen_callback, NULL);
 
