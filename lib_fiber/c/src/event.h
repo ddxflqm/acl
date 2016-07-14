@@ -63,7 +63,8 @@ struct EPOLL_EVENT {
 	ACL_FIBER  *fiber;
 	epoll_proc *proc;
 	size_t      nfds;
-	EPOLL_CTX  *fds;
+	EPOLL_CTX **fds;
+	int         epfd;
 
 	struct epoll_event *events;
 	int maxevents;

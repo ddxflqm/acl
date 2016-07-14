@@ -120,12 +120,32 @@ int listen(int sockfd, int backlog)
 
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {
-	int   clifd;
+	int    clifd;
+	EVENT *ev;
+
+	if (sockfd < 0) {
+		acl_msg_error("%s: invalid sockfd %d", __FUNCTION__, sockfd);
+		return -1;
+	}
 
 	if (!acl_var_hook_sys_api)
 		return __sys_accept(sockfd, addr, addrlen);
 
+	ev = fiber_io_event();
+	if (ev && event_readable(ev, sockfd)) {
+		event_clear_readable(ev, sockfd);
+
+		clifd = __sys_accept(sockfd, addr, addrlen);
+		if (clifd > 0)
+			return clifd;
+		fiber_save_errno();
+		return clifd;
+	}
+
 	fiber_wait_read(sockfd);
+	if (ev)
+		event_clear_readable(ev, sockfd);
+
 	clifd = __sys_accept(sockfd, addr, addrlen);
 
 	if (clifd >= 0) {
@@ -332,39 +352,35 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 
 /****************************************************************************/
 
-static void epfd_create(EPOLL_EVENT *ee)
+static EPOLL_EVENT *epfd_alloc(int epfd)
 {
+	EPOLL_EVENT *ee = acl_mymalloc(sizeof(EPOLL_EVENT));
 	int  maxfd = acl_open_limit(0), i;
 
 	if (maxfd <= 0)
 		acl_msg_fatal("%s(%d), %s: acl_open_limit error %s",
 			__FILE__, __LINE__, __FUNCTION__, acl_last_serror());
 	++maxfd;
-	ee->fds  = (EPOLL_CTX *) acl_mymalloc(maxfd * sizeof(EPOLL_CTX));
+	ee->fds  = (EPOLL_CTX **) acl_mymalloc(maxfd * sizeof(EPOLL_CTX *));
 	ee->nfds = maxfd;
+	ee->epfd = dup(epfd);
 
 	for (i = 0; i < maxfd; i++)
-		ee->fds[i].fd = -1;
+		ee->fds[i] = NULL;
+
+	return ee;
 }
 
-static void epfd_reset(EPOLL_EVENT *ee)
-{
-	size_t i;
-
-	for (i = 0; i < ee->nfds; i++)
-		ee->fds[i].fd = -1;
-}
-
-static EPOLL_EVENT *__main_epfds = NULL;
-static __thread EPOLL_EVENT *__epfds = NULL;
-static __thread int __nepfds;
+static ACL_ARRAY *__main_epfds = NULL;
+static __thread ACL_ARRAY *__epfds = NULL;
 
 static acl_pthread_key_t  __once_key;
 static acl_pthread_once_t __once_control = ACL_PTHREAD_ONCE_INIT;
 
 static void thread_free(void *ctx acl_unused)
 {
-	int  i;
+	size_t j;
+	ACL_ITER iter;
 
 	if (__epfds == NULL)
 		return;
@@ -372,9 +388,18 @@ static void thread_free(void *ctx acl_unused)
 	if (__epfds == __main_epfds)
 		__main_epfds = NULL;
 
-	for (i = 0; i < __nepfds; i++)
-		acl_myfree(__epfds[i].fds);
-	acl_myfree(__epfds);
+	acl_foreach(iter, __epfds) {
+		EPOLL_EVENT *ee = (EPOLL_EVENT *) iter.data;
+
+		for (j = 0; j < ee->nfds; j++) {
+			if (ee->fds[j] != NULL)
+				acl_myfree(ee->fds[j]);
+		}
+		acl_myfree(ee->fds);
+		acl_myfree(ee);
+	}
+
+	acl_array_free(__epfds, NULL);
 	__epfds = NULL;
 }
 
@@ -391,39 +416,51 @@ static void thread_init(void)
 	acl_assert(acl_pthread_key_create(&__once_key, thread_free) == 0);
 }
 
-static void check_epfds(void)
+static EPOLL_EVENT *epoll_event_create(int epfd)
 { 
-	int i;
+	EPOLL_EVENT *ee;
 
-	if (__epfds != NULL)
-		return;
+	if (__epfds == NULL) {
+		acl_assert(!acl_pthread_once(&__once_control, thread_init));
 
-	acl_assert(acl_pthread_once(&__once_control, thread_init) == 0);
-
-	__nepfds = acl_open_limit(0);
-	if (__nepfds <= 0)
-		acl_msg_fatal("%s(%d), %s: acl_open_limit error %s",
-			__FILE__, __LINE__, __FUNCTION__, acl_last_serror());
-
-	__nepfds++;
-	__epfds = (EPOLL_EVENT *) acl_mycalloc(__nepfds, sizeof(EPOLL_EVENT));
-	printf("---%s--%d, ne: %d---\r\n", __FUNCTION__, __LINE__,
-			__nepfds);
-	for (i = 0; i < __nepfds; i++)
-	{
-		printf("---%s--%d, i: %d---\r\n", __FUNCTION__, __LINE__, i);
-		epfd_create(&__epfds[i]);
+		__epfds = acl_array_create(5);
+		if ((unsigned long) acl_pthread_self() ==
+			acl_main_thread_self())
+		{
+			__main_epfds = __epfds;
+			atexit(main_thread_free);
+		} else if (acl_pthread_setspecific(__once_key, __epfds) != 0)
+			acl_msg_fatal("acl_pthread_setspecific error!");
 	}
 
-	if ((unsigned long) acl_pthread_self() == acl_main_thread_self()) {
-		__main_epfds = __epfds;
-		atexit(main_thread_free);
-	} else if (acl_pthread_setspecific(__once_key, __epfds) != 0)
-		acl_msg_fatal("acl_pthread_setspecific error!");
+	ee = epfd_alloc(epfd);
+	acl_array_append(__epfds, ee);
+
+	return ee;
+}
+
+static EPOLL_EVENT *epoll_event_find(int epfd)
+{
+	ACL_ITER iter;
+
+	if (__epfds == NULL) {
+		acl_msg_error("%s(%d), %s: __epfds NULL",
+			__FILE__, __LINE__, __FUNCTION__);
+		return NULL;
+	}
+
+	acl_foreach(iter, __epfds) {
+		EPOLL_EVENT *ee = (EPOLL_EVENT *) iter.data;
+		if (ee->epfd == epfd)
+			return ee;
+	}
+
+	return NULL;
 }
 
 int epoll_create(int size acl_unused)
 {
+	EPOLL_EVENT *ee;
 	EVENT *ev;
 	int epfd;
 
@@ -442,26 +479,14 @@ int epoll_create(int size acl_unused)
 		return epfd;
 	}
 
-	epfd = dup(epfd);
-	if (epfd < 0)
-		acl_msg_error("%s(%d), %s: dup epfd %d error %s", __FILE__,
-			__LINE__, __FUNCTION__, epfd, acl_last_serror());
-
-	check_epfds();
-	if (epfd >= __nepfds)
-		acl_msg_fatal("%s(%d), %s: epfd: %d >= __nepfds: %d",
-			__FILE__, __LINE__, __FUNCTION__, epfd, __nepfds);
-
-	epfd_reset(&__epfds[epfd]);
-	return epfd;
+	ee = epoll_event_create(epfd);
+	return ee->epfd;
 }
 
 static void epfd_callback(EVENT *ev acl_unused, int fd, void *ctx, int mask)
 {
 	int  n;
 	EPOLL_EVENT *ee = (EPOLL_EVENT *) ctx;
-
-	printf("epfd_callback called!\r\n");
 
 	for (; ee->nevents < ee->maxevents;) {
 		n = 0;
@@ -475,38 +500,36 @@ static void epfd_callback(EVENT *ev acl_unused, int fd, void *ctx, int mask)
 			n++;
 		}
 
-		if (n == 0) /* xxx */
+		if (n == 0) { /* xxx */
+			acl_msg_error("%s(%d), %s: invalid mask: %d",
+				__FILE__, __LINE__, __FUNCTION__, mask);
 			continue;
+		}
 
-		memcpy(&ee->events[ee->nevents].data, &ee->fds[fd].data,
-			sizeof(ee->fds[fd].data));
+		acl_assert(ee->fds[fd] != NULL);
+		memcpy(&ee->events[ee->nevents].data, &ee->fds[fd]->data,
+			sizeof(ee->fds[fd]->data));
 
 		ee->nevents++;
 
 		fiber_io_dec();
+		return;
 	}
+
+	acl_msg_error("%s(%d), %s: too large nevents %d >= %d",
+		__FILE__, __LINE__, __FUNCTION__, ee->nevents, ee->maxevents);
 }
 
 int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
 {
+	EPOLL_EVENT *ee;
 	EVENT *ev;
 	int    mask = 0;
 
-	printf("---%s--%d---\r\n", __FUNCTION__, __LINE__);
-
-	if (epfd < 0) {
-		acl_msg_error("%s(%d), %s: invalid epfd %d",
+	ee = epoll_event_find(epfd);
+	if (ee == NULL) {
+		acl_msg_error("%s(%d), %s: not exist epfd: %d",
 			__FILE__, __LINE__, __FUNCTION__, epfd);
-		return -1;
-	}
-
-	if (__epfds == NULL) {
-		acl_msg_error("%s(%d), %s: call epoll_create first",
-			__FILE__, __LINE__, __FUNCTION__);
-		return -1;
-	} else if (epfd >= __nepfds) {
-		acl_msg_error("%s(%d), %s: too large epfd %d >= __nepfds %d",
-			__FILE__, __LINE__, __FUNCTION__, epfd, __nepfds);
 		return -1;
 	}
 
@@ -522,28 +545,29 @@ int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
 	if (event->events & EPOLLOUT)
 		mask |= EVENT_WRITABLE;
 
-	if (op == EPOLL_CTL_ADD && op == EPOLL_CTL_MOD) {
-		EPOLL_EVENT *ee = &__epfds[epfd];
-
-		ee->fds[fd].fd    = fd;
-		ee->fds[fd].op    = op;
-		ee->fds[fd].mask  = mask;
-		ee->fds[fd].rmask = EVENT_NONE;
-		memcpy(&ee->fds[fd].data, &event->data, sizeof(event->data));
+	if (op == EPOLL_CTL_ADD || op == EPOLL_CTL_MOD) {
+		if (ee->fds[fd] == NULL)
+			ee->fds[fd] = (EPOLL_CTX *)
+				acl_mymalloc(sizeof(EPOLL_CTX));
+		ee->fds[fd]->fd    = fd;
+		ee->fds[fd]->op    = op;
+		ee->fds[fd]->mask  = mask;
+		ee->fds[fd]->rmask = EVENT_NONE;
+		memcpy(&ee->fds[fd]->data, &event->data, sizeof(event->data));
 
 		ev->events[fd].ee    = ee;
-		ev->events[fd].v.epx = &ee->fds[fd];
+		ev->events[fd].v.epx = ee->fds[fd];
 
 		return event_add(ev, fd, mask, epfd_callback, ee);
 	} else if (op == EPOLL_CTL_DEL) {
-		EPOLL_EVENT *ee = &__epfds[epfd];
-
 		event_del(ev, fd, mask);
-		ee->fds[fd].fd    = -1;
-		ee->fds[fd].op    = 0;
-		ee->fds[fd].mask  = EVENT_NONE;
-		ee->fds[fd].rmask = EVENT_NONE;
-		memset(&ee->fds[fd].data, 0, sizeof(ee->fds[fd].data));
+		if (ee->fds[fd] != NULL) {
+			ee->fds[fd]->fd    = -1;
+			ee->fds[fd]->op    = 0;
+			ee->fds[fd]->mask  = EVENT_NONE;
+			ee->fds[fd]->rmask = EVENT_NONE;
+			memset(&ee->fds[fd]->data, 0, sizeof(ee->fds[fd]->data));
+		}
 
 		return 0;
 	} else {
@@ -582,23 +606,13 @@ int epoll_wait(int epfd, struct epoll_event *events,
 		return -1;
 	}
 
-	if (epfd < 0) {
-		acl_msg_error("%s(%d), %s: invalid epfd %d",
+	ee = epoll_event_find(epfd);
+	if (ee == NULL) {
+		acl_msg_error("%s(%d), %s: not exist epfd %d",
 			__FILE__, __LINE__, __FUNCTION__, epfd);
 		return -1;
 	}
 
-	if (__epfds == NULL) {
-		acl_msg_error("%s(%d), %s: call epoll_create first",
-			__FILE__, __LINE__, __FUNCTION__);
-		return -1;
-	} else if (epfd >= __nepfds) {
-		acl_msg_error("%s(%d), %s: too large epfd %d >= __nepfds %d",
-			__FILE__, __LINE__, __FUNCTION__, epfd, __nepfds);
-		return -1;
-	}
-
-	ee            = &__epfds[epfd];
 	ee->events    = events;
 	ee->maxevents = maxevents;
 	ee->fiber     = fiber_running();
