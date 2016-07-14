@@ -516,8 +516,10 @@ static void epfd_callback(EVENT *ev acl_unused, int fd, void *ctx, int mask)
 		return;
 	}
 
+#if 0
 	acl_msg_error("%s(%d), %s: too large nevents %d >= %d",
 		__FILE__, __LINE__, __FUNCTION__, ee->nevents, ee->maxevents);
+#endif
 }
 
 int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
