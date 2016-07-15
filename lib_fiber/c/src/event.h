@@ -95,7 +95,7 @@ struct EVENT {
 	int  (*handle)(EVENT *);
 	int  (*loop)(EVENT *, struct timeval *);
 	int  (*add)(EVENT *, int, int);
-	void (*del)(EVENT *, int, int);
+	int  (*del)(EVENT *, int, int);
 	void (*free)(EVENT *);
 };
 

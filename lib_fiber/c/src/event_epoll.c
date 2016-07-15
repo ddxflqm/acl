@@ -86,7 +86,7 @@ static int epoll_event_add(EVENT *ev, int fd, int mask)
 	return 0;
 }
 
-static void epoll_event_del(EVENT *ev, int fd, int delmask)
+static int epoll_event_del(EVENT *ev, int fd, int delmask)
 {
 	EVENT_EPOLL *ep = (EVENT_EPOLL *) ev;
 	struct epoll_event ee;
@@ -107,7 +107,9 @@ static void epoll_event_del(EVENT *ev, int fd, int delmask)
 			fiber_save_errno();
 			acl_msg_error("%s(%d), epoll_ctl error: %s, fd: %d",
 				__FUNCTION__, __LINE__, acl_last_serror(), fd);
+			return -1;
 		}
+		return 0;
 	} else {
 		/* Note, Kernel < 2.6.9 requires a non null event pointer
 		 * even for EPOLL_CTL_DEL.
@@ -116,7 +118,9 @@ static void epoll_event_del(EVENT *ev, int fd, int delmask)
 			fiber_save_errno();
 			acl_msg_error("%s(%d), epoll_ctl error: %s, fd: %d",
 				__FUNCTION__, __LINE__, acl_last_serror(), fd);
+			return -1;
 		}
+		return 1;
 	}
 }
 

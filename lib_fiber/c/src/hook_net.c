@@ -223,8 +223,10 @@ static void pollfd_callback(EVENT *ev, int fd, void *ctx, int mask)
 		n++;
 	}
 
-	if (n > 0)
+	if (n > 0) {
+		acl_assert(pe);
 		pe->nready++;
+	}
 }
 
 static void event_poll_set(EVENT *ev, POLL_EVENT *pe, int timeout)
@@ -514,6 +516,8 @@ static void epfd_callback(EVENT *ev acl_unused, int fd, void *ctx, int mask)
 	EPOLL_CTX  *epx = (EPOLL_CTX *) ctx;
 	EPOLL_EVENT *ee = epx->ee;
 
+	acl_assert(ee);
+
 	for (; ee->nready < ee->maxevents;) {
 		int n = 0;
 
@@ -542,7 +546,7 @@ static void epfd_callback(EVENT *ev acl_unused, int fd, void *ctx, int mask)
 		return;
 	}
 
-#if 1
+#if 0
 	acl_msg_error("%s(%d), %s: too large nready %d >= %d",
 		__FILE__, __LINE__, __FUNCTION__, ee->nready, ee->maxevents);
 #endif

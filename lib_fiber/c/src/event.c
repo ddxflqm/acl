@@ -159,7 +159,6 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 	if (mask & EVENT_WRITABLE)
 		fe->w_proc = proc;
 
-	fe->pe  = NULL;
 	fe->ctx = ctx;
 
 	if (fd > ev->maxfd)
@@ -178,18 +177,20 @@ static void __event_del(EVENT *ev, int fd, int mask)
 		return;
 	}
 
-	fe             = &ev->events[fd];
-	fe->type       = TYPE_NONE;
-	fe->defer      = NULL;
-	fe->pe         = NULL;
-	fe->mask_fired = EVENT_NONE;
+	fe = &ev->events[fd];
 
 	if (fe->mask == EVENT_NONE) {
 		acl_msg_info("----mask NONE, fd: %d----", fd);
 		return;
 	}
 
-	ev->del(ev, fd, mask);
+	if (ev->del(ev, fd, mask) == 1) {
+		fe->mask_fired = EVENT_NONE;
+		fe->type       = TYPE_NONE;
+		fe->defer      = NULL;
+		fe->pe         = NULL;
+	}
+
 	fe->mask = fe->mask & (~mask);
 
 	if (fd == ev->maxfd && fe->mask == EVENT_NONE) {
