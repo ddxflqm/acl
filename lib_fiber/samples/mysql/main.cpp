@@ -164,6 +164,8 @@ protected:
 
 		delete this;
 
+		printf("----__cur_fibers: %d----\r\n", __cur_fibers);
+
 		if (--__cur_fibers == 0)
 		{
 			printf("All fibers Over\r\n");
