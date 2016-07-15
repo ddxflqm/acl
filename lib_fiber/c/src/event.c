@@ -159,10 +159,8 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 	if (mask & EVENT_WRITABLE)
 		fe->w_proc = proc;
 
-	/* fe->v.pfd   = NULL; */
-	fe->pe    = NULL;
-	fe->ee    = NULL;
-	fe->v.ctx = ctx;
+	fe->pe  = NULL;
+	fe->ctx = ctx;
 
 	if (fd > ev->maxfd)
 		ev->maxfd = fd;
@@ -184,8 +182,6 @@ static void __event_del(EVENT *ev, int fd, int mask)
 	fe->type       = TYPE_NONE;
 	fe->defer      = NULL;
 	fe->pe         = NULL;
-	fe->ee         = NULL;
-	fe->v.pfd      = NULL;
 	fe->mask_fired = EVENT_NONE;
 
 	if (fe->mask == EVENT_NONE) {
@@ -214,6 +210,7 @@ void event_del(EVENT *ev, int fd, int mask)
 	FILE_EVENT *fe;
 
 	fe = &ev->events[fd];
+
 	if (fe->type == TYPE_NOSOCK) {
 		fe->type = TYPE_NONE;
 		return;
@@ -314,43 +311,6 @@ int event_process(EVENT *ev, int left)
 		fe             = &ev->events[fd];
 		fe->mask_fired = mask;
 
-		if (fe->pe != NULL) {
-			if (fe->mask & mask & EVENT_READABLE) {
-				fe->v.pfd->revents |= POLLIN;
-				fe->pe->nready++;
-				rfired = 1;
-			} else
-				rfired = 0;
-
-			if (fe->mask & mask & EVENT_WRITABLE) {
-				fe->v.pfd->revents |= POLLOUT;
-				if (!rfired)
-					fe->pe->nready++;
-			}
-
-			continue;
-		}
-
-#if 1
-		if (fe->ee != NULL) {
-			if (fe->mask & mask & EVENT_READABLE) {
-				fe->v.epx->rmask |= EVENT_READABLE;
-				rfired = 1;
-				fe->r_proc(ev, fd, fe->v.epx, mask);
-			} else
-				rfired = 0;
-
-			if (fe->mask & mask & EVENT_WRITABLE) {
-				fe->v.epx->rmask |= EVENT_WRITABLE;
-				if (!rfired || fe->w_proc != fe->r_proc) {
-					fe->w_proc(ev, fd, fe->v.epx, mask);
-				}
-			}
-
-			continue;
-		}
-#endif
-
 		/* note the fe->mask & mask & ... code: maybe an already
 		 * processed event removed an element that fired and we
 		 * still didn't processed, so we check if the event is
@@ -358,13 +318,13 @@ int event_process(EVENT *ev, int left)
 		 */
 		if (fe->mask & mask & EVENT_READABLE) {
 			rfired = 1;
-			fe->r_proc(ev, fd, fe->v.ctx, mask);
+			fe->r_proc(ev, fd, fe->ctx, mask);
 		} else
 			rfired = 0;
 
 		if (fe->mask & mask & EVENT_WRITABLE) {
 			if (!rfired || fe->w_proc != fe->r_proc)
-				fe->w_proc(ev, fd, fe->v.ctx, mask);
+				fe->w_proc(ev, fd, fe->ctx, mask);
 		}
 
 		processed++;

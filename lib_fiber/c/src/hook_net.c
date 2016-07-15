@@ -196,27 +196,36 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 
 /****************************************************************************/
 
-static void poll_callback(EVENT *ev, POLL_EVENT *pe)
-{
-	int i;
-
-	for (i = 0; i < pe->nfds; i++) {
-		if (pe->fds[i].events & POLLIN)
-			event_del(ev, pe->fds[i].fd, EVENT_READABLE);
-		if (pe->fds[i].events & POLLOUT)
-			event_del(ev, pe->fds[i].fd, EVENT_WRITABLE);
-
-		fiber_io_dec();
-	}
-
-	acl_fiber_ready(pe->fiber);
-}
-
 #define SET_TIME(x) do { \
 	struct timeval tv; \
 	gettimeofday(&tv, NULL); \
 	(x) = ((acl_int64) tv.tv_sec) * 1000 + ((acl_int64) tv.tv_usec)/ 1000; \
 } while (0)
+
+/****************************************************************************/
+
+static void pollfd_callback(EVENT *ev, int fd, void *ctx, int mask)
+{
+	FILE_EVENT *fe = &ev->events[fd];
+	POLL_EVENT *pe = fe->pe;
+	struct pollfd *pfd = (struct pollfd *) ctx;
+	int n = 0;
+
+	if (mask & EVENT_READABLE) {
+		event_del(ev, fd, EVENT_READABLE);
+		pfd->revents |= POLLIN;
+		n++;
+	}
+
+	if (mask & EVENT_WRITABLE) {
+		event_del(ev, fd, EVENT_WRITABLE);
+		pfd->revents |= POLLOUT;
+		n++;
+	}
+
+	if (n > 0)
+		pe->nready++;
+}
 
 static void event_poll_set(EVENT *ev, POLL_EVENT *pe, int timeout)
 {
@@ -227,15 +236,15 @@ static void event_poll_set(EVENT *ev, POLL_EVENT *pe, int timeout)
 
 	for (i = 0; i < pe->nfds; i++) {
 		if (pe->fds[i].events & POLLIN) {
-			event_add(ev, pe->fds[i].fd, EVENT_READABLE, NULL, NULL);
-			ev->events[pe->fds[i].fd].pe    = pe;
-			ev->events[pe->fds[i].fd].v.pfd = &pe->fds[i];
+			event_add(ev, pe->fds[i].fd, EVENT_READABLE,
+				pollfd_callback, &pe->fds[i]);
+			ev->events[pe->fds[i].fd].pe = pe;
 		}
 
 		if (pe->fds[i].events & POLLOUT) {
-			event_add(ev, pe->fds[i].fd, EVENT_WRITABLE, NULL, NULL);
-			ev->events[pe->fds[i].fd].pe    = pe;
-			ev->events[pe->fds[i].fd].v.pfd = &pe->fds[i];
+			event_add(ev, pe->fds[i].fd, EVENT_WRITABLE,
+				pollfd_callback, &pe->fds[i]);
+			ev->events[pe->fds[i].fd].pe = pe;
 		}
 
 		pe->fds[i].revents = 0;
@@ -245,6 +254,11 @@ static void event_poll_set(EVENT *ev, POLL_EVENT *pe, int timeout)
 		if (ev->timeout < 0 || timeout < ev->timeout)
 			ev->timeout = timeout;
 	}
+}
+
+static void poll_callback(EVENT *ev acl_unused, POLL_EVENT *pe)
+{
+	acl_fiber_ready(pe->fiber);
 }
 
 int poll(struct pollfd *fds, nfds_t nfds, int timeout)
@@ -264,7 +278,6 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
 	pe.nfds   = nfds;
 	pe.fiber  = fiber_running();
 	pe.proc   = poll_callback;
-	pe.nready = 0;
 
 	SET_TIME(begin);
 
@@ -352,10 +365,10 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 
 /****************************************************************************/
 
-static EPOLL_EVENT *epfd_alloc(int epfd)
+static EPOLL_EVENT *epfd_alloc(void)
 {
 	EPOLL_EVENT *ee = acl_mymalloc(sizeof(EPOLL_EVENT));
-	int  maxfd = acl_open_limit(0), i;
+	int  maxfd = acl_open_limit(0);
 
 	if (maxfd <= 0)
 		acl_msg_fatal("%s(%d), %s: acl_open_limit error %s",
@@ -363,10 +376,6 @@ static EPOLL_EVENT *epfd_alloc(int epfd)
 	++maxfd;
 	ee->fds  = (EPOLL_CTX **) acl_mymalloc(maxfd * sizeof(EPOLL_CTX *));
 	ee->nfds = maxfd;
-	ee->epfd = dup(epfd);
-
-	for (i = 0; i < maxfd; i++)
-		ee->fds[i] = NULL;
 
 	return ee;
 }
@@ -418,7 +427,9 @@ static void thread_init(void)
 
 static EPOLL_EVENT *epoll_event_create(int epfd)
 { 
-	EPOLL_EVENT *ee;
+	EPOLL_EVENT *ee = NULL;
+	ACL_ITER iter;
+	size_t i;
 
 	if (__epfds == NULL) {
 		acl_assert(!acl_pthread_once(&__once_control, thread_init));
@@ -433,8 +444,23 @@ static EPOLL_EVENT *epoll_event_create(int epfd)
 			acl_msg_fatal("acl_pthread_setspecific error!");
 	}
 
-	ee = epfd_alloc(epfd);
-	acl_array_append(__epfds, ee);
+	acl_foreach(iter, __epfds) {
+		EPOLL_EVENT *e = (EPOLL_EVENT *) iter.data;
+		if (e->epfd == epfd) {
+			ee = e;
+			break;
+		}
+	}
+
+	if (ee == NULL) {
+		ee = epfd_alloc();
+		acl_array_append(__epfds, ee);
+	}
+
+	ee->epfd = dup(epfd);
+
+	for (i = 0; i < ee->nfds; i++)
+		ee->fds[i] = NULL;
 
 	return ee;
 }
@@ -485,18 +511,19 @@ int epoll_create(int size acl_unused)
 
 static void epfd_callback(EVENT *ev acl_unused, int fd, void *ctx, int mask)
 {
-	int  n;
-	EPOLL_EVENT *ee = (EPOLL_EVENT *) ctx;
+	EPOLL_CTX  *epx = (EPOLL_CTX *) ctx;
+	EPOLL_EVENT *ee = epx->ee;
 
-	for (; ee->nevents < ee->maxevents;) {
-		n = 0;
+	for (; ee->nready < ee->maxevents;) {
+		int n = 0;
+
 		if (mask & EVENT_READABLE) {
-			ee->events[ee->nevents].events = EPOLLIN;
+			ee->events[ee->nready].events = EPOLLIN;
 			n++;
 		}
 
 		if (mask & EVENT_WRITABLE) {
-			ee->events[ee->nevents].events = EPOLLOUT;
+			ee->events[ee->nready].events = EPOLLOUT;
 			n++;
 		}
 
@@ -506,19 +533,18 @@ static void epfd_callback(EVENT *ev acl_unused, int fd, void *ctx, int mask)
 			continue;
 		}
 
-		acl_assert(ee->fds[fd] != NULL);
-		memcpy(&ee->events[ee->nevents].data, &ee->fds[fd]->data,
+		memcpy(&ee->events[ee->nready].data, &ee->fds[fd]->data,
 			sizeof(ee->fds[fd]->data));
 
-		ee->nevents++;
+		ee->nready++;
 
 		fiber_io_dec();
 		return;
 	}
 
-#if 0
-	acl_msg_error("%s(%d), %s: too large nevents %d >= %d",
-		__FILE__, __LINE__, __FUNCTION__, ee->nevents, ee->maxevents);
+#if 1
+	acl_msg_error("%s(%d), %s: too large nready %d >= %d",
+		__FILE__, __LINE__, __FUNCTION__, ee->nready, ee->maxevents);
 #endif
 }
 
@@ -555,14 +581,18 @@ int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
 		ee->fds[fd]->op    = op;
 		ee->fds[fd]->mask  = mask;
 		ee->fds[fd]->rmask = EVENT_NONE;
+		ee->fds[fd]->ee    = ee;
 		memcpy(&ee->fds[fd]->data, &event->data, sizeof(event->data));
 
-		ev->events[fd].ee    = ee;
-		ev->events[fd].v.epx = ee->fds[fd];
+		if (event_add(ev, fd, mask, epfd_callback, ee->fds[fd]) < 0) {
+			acl_msg_error("%s(%d), %s: event_add error, fd: %d",
+				__FILE__, __LINE__, __FUNCTION__, fd);
+			return -1;
+		}
 
-		return event_add(ev, fd, mask, epfd_callback, ee);
+		return 0;
 	} else if (op == EPOLL_CTL_DEL) {
-		event_del(ev, fd, mask);
+		event_del(ev, fd, EVENT_READABLE | EVENT_WRITABLE);
 		if (ee->fds[fd] != NULL) {
 			ee->fds[fd]->fd    = -1;
 			ee->fds[fd]->op    = 0;
@@ -573,8 +603,8 @@ int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
 
 		return 0;
 	} else {
-		acl_msg_error("%s(%d), %s: invalid op %d",
-			__FILE__, __LINE__, __FUNCTION__, op);
+		acl_msg_error("%s(%d), %s: invalid op %d, fd %d",
+			__FILE__, __LINE__, __FUNCTION__, op, fd);
 		return -1;
 	}
 }
@@ -587,6 +617,7 @@ static void epoll_callback(EVENT *ev acl_unused, EPOLL_EVENT *ee)
 static void event_epoll_set(EVENT *ev, EPOLL_EVENT *ee, int timeout)
 {
 	acl_ring_prepend(&ev->epoll_list, &ee->me);
+	ee->nready = 0;
 
 	if (timeout > 0) {
 		if (ev->timeout < 0 || timeout < ev->timeout)
@@ -619,7 +650,6 @@ int epoll_wait(int epfd, struct epoll_event *events,
 	ee->maxevents = maxevents;
 	ee->fiber     = fiber_running();
 	ee->proc      = epoll_callback;
-	ee->nevents   = 0;
 
 	SET_TIME(begin);
 
@@ -628,7 +658,7 @@ int epoll_wait(int epfd, struct epoll_event *events,
 		fiber_io_inc();
 		acl_fiber_switch();
 
-		if (ee->nevents != 0)
+		if (ee->nready != 0)
 			break;
 
 		SET_TIME(now);
@@ -636,7 +666,7 @@ int epoll_wait(int epfd, struct epoll_event *events,
 			break;
 	}
 
-	return ee->nevents;
+	return ee->nready;
 }
 
 /****************************************************************************/

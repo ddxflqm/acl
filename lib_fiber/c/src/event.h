@@ -14,6 +14,7 @@
 #define	EVENT_ERROR	(unsigned) 1 << 2
 
 typedef struct FILE_EVENT   FILE_EVENT;
+typedef struct POLL_CTX     POLL_CTX;
 typedef struct POLL_EVENT   POLL_EVENT;
 typedef struct EPOLL_CTX    EPOLL_CTX;
 typedef struct EPOLL_EVENT  EPOLL_EVENT;
@@ -29,15 +30,10 @@ struct FILE_EVENT {
 	int type;
 	int mask;
 	int mask_fired;
-	event_proc  *r_proc;
-	event_proc  *w_proc;
-	POLL_EVENT  *pe;
-	EPOLL_EVENT *ee;
-	union {
-		struct pollfd *pfd;
-		struct EPOLL_CTX *epx;
-		void  *ctx;
-	} v;
+	event_proc   *r_proc;
+	event_proc   *w_proc;
+	POLL_EVENT   *pe;
+	void         *ctx;
 	DEFER_DELETE *defer;
 };
 
@@ -55,6 +51,7 @@ struct EPOLL_CTX {
 	int  op;
 	int  mask;
 	int  rmask;
+	EPOLL_EVENT *ee;
 	epoll_data_t data;
 };
 
@@ -68,7 +65,7 @@ struct EPOLL_EVENT {
 
 	struct epoll_event *events;
 	int maxevents;
-	int nevents;
+	int nready;
 };
 
 struct FIRED_EVENT {
@@ -85,11 +82,11 @@ struct DEFER_DELETE {
 struct EVENT {
 	int   setsize;
 	int   maxfd;
+	int   ndefer;
+	int   timeout;
 	FILE_EVENT   *events;
 	FIRED_EVENT  *fired;
 	DEFER_DELETE *defers;
-	int   ndefer;
-	int   timeout;
 	ACL_RING poll_list;
 	ACL_RING epoll_list;
 	ACL_RING_ITER iter;
