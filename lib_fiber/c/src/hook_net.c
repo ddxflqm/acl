@@ -182,7 +182,6 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 	fiber_wait_write(sockfd);
 
 	ret = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, (char *) &err, &len);
-
 	if (ret == 0 && err == 0)
 		return 0;
 
@@ -212,16 +211,18 @@ static void pollfd_callback(EVENT *ev, int fd, void *ctx, int mask)
 	int n = 0;
 
 	if (mask & EVENT_READABLE) {
-		event_del(ev, fd, EVENT_READABLE);
 		pfd->revents |= POLLIN;
 		n++;
 	}
+	if (pfd->events & POLLIN)
+		event_del(ev, fd, EVENT_READABLE);
 
 	if (mask & EVENT_WRITABLE) {
-		event_del(ev, fd, EVENT_WRITABLE);
 		pfd->revents |= POLLOUT;
 		n++;
 	}
+	if (pfd->events & POLLOUT)
+		event_del(ev, fd, EVENT_WRITABLE);
 
 	if (n > 0) {
 		acl_assert(pe);
