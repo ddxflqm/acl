@@ -56,3 +56,5 @@ cl clean:
 	@(cd https_client; make clean)
 	@(cd https_server; make clean)
 	@(cd mysql; make clean)
+
+rebuild rb: clean all
