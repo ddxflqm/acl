@@ -390,7 +390,7 @@ void acl_fiber_schedule(void)
 			break;
 
 		fiber = ACL_RING_TO_APPL(head, ACL_FIBER, me);
-		fiber_free (fiber);
+		fiber_free(fiber);
 	}
 }
 
