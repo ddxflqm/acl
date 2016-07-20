@@ -13,6 +13,7 @@ static int  __server_port = 9001;
 static int __total_clients         = 0;
 static int __total_error_clients   = 0;
 
+static int __fiber_delay  = 10; 
 static int __max_fibers   = 100;
 static int __left_fibers  = 100;
 
@@ -37,7 +38,8 @@ static void fiber_connect(ACL_FIBER *fiber acl_unused, void *ctx acl_unused)
 
 	assert(fd >= 0);
 
-	acl_fiber_delay(10);
+	if (__fiber_delay > 0)
+		acl_fiber_delay(__fiber_delay);
 
 	memset(&sa, 0, sizeof(sa));
 	sa.sin_family = AF_INET;
@@ -80,6 +82,7 @@ static void usage(const char *procname)
 	printf("usage: %s -h [help]\r\n"
 		" -s server_ip\r\n"
 		" -p server_port\r\n"
+		" -d fiber_delay_ms\r\n"
 		" -c max_fibers\r\n", procname);
 }
 
@@ -92,7 +95,7 @@ int main(int argc, char *argv[])
 
 	snprintf(__server_ip, sizeof(__server_ip), "%s", "127.0.0.1");
 
-	while ((ch = getopt(argc, argv, "hc:s:p:")) > 0) {
+	while ((ch = getopt(argc, argv, "hc:s:p:d:")) > 0) {
 		switch (ch) {
 		case 'h':
 			usage(argv[0]);
@@ -106,6 +109,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'p':
 			__server_port = atoi(optarg);
+			break;
+		case 'd':
+			__fiber_delay = atoi(optarg);
 			break;
 		default:
 			break;

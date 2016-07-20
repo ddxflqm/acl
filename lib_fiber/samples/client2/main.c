@@ -15,6 +15,7 @@ static long long int __total_count = 0;
 static int __total_clients         = 0;
 static int __total_error_clients   = 0;
 
+static int __fiber_delay  = 0;
 static int __conn_timeout = 0;
 static int __rw_timeout   = 0;
 static int __max_loop     = 10000;
@@ -70,6 +71,9 @@ static void fiber_connect(ACL_FIBER *fiber acl_unused, void *ctx acl_unused)
 	sa.sin_port   = htons(__server_port);
 	sa.sin_addr.s_addr = inet_addr(__server_ip);
 
+	if (__fiber_delay > 0)
+		acl_fiber_delay(__fiber_delay);
+
 	if (connect(fd, (const struct sockaddr *) &sa, len) < 0) {
 		close(fd);
 
@@ -123,6 +127,7 @@ static void usage(const char *procname)
 		" -r rw_timeout\r\n"
 		" -c max_fibers\r\n"
 		" -S [if using single IO, dafault: no]\r\n"
+		" -d fiber_delay_ms\r\n"
 		" -n max_loop\r\n", procname);
 }
 
@@ -135,7 +140,7 @@ int main(int argc, char *argv[])
 
 	snprintf(__server_ip, sizeof(__server_ip), "%s", "127.0.0.1");
 
-	while ((ch = getopt(argc, argv, "hc:n:s:p:t:r:S")) > 0) {
+	while ((ch = getopt(argc, argv, "hc:n:s:p:t:r:Sd:")) > 0) {
 		switch (ch) {
 		case 'h':
 			usage(argv[0]);
@@ -161,6 +166,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'S':
 			__read_data = 0;
+			break;
+		case 'd':
+			__fiber_delay = atoi(optarg);
 			break;
 		default:
 			break;
