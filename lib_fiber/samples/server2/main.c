@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <poll.h>
 #include "lib_acl.h"
 #include "fiber/lib_fiber.h"
 
@@ -15,6 +16,29 @@ static int  __listen_qlen = 64;
 static int  __rw_timeout = 0;
 static int  __echo_data  = 1;
 
+static int check_read(int fd, int timeout)
+{
+	struct pollfd pfd;
+	int n;
+
+	memset(&pfd, 0, sizeof(struct pollfd));
+	pfd.fd = fd;
+	pfd.events = POLLIN;
+
+	n = poll(&pfd, 1, timeout);
+	if (n < 0) {
+		printf("poll error: %s\r\n", strerror(errno));
+		return -1;
+	}
+
+	if (n == 0)
+		return 0;
+	if (pfd.revents & POLLIN)
+		return 1;
+	else
+		return 0;
+}
+
 static void echo_client(ACL_FIBER *fiber acl_unused, void *ctx)
 {
 	int  *cfd = (int *) ctx;
@@ -22,7 +46,14 @@ static void echo_client(ACL_FIBER *fiber acl_unused, void *ctx)
 	int   ret;
 
 	printf("client fiber-%d: fd: %d\r\n", acl_fiber_self(), *cfd);
+
 	while (1) {
+		ret = check_read(*cfd, 10000);
+		if (ret < 0)
+			break;
+		if (ret == 0)
+			continue;
+
 		ret = read(*cfd, buf, sizeof(buf));
 		if (ret <= 0) {
 			if (errno == EINTR)

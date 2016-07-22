@@ -1,4 +1,7 @@
 
+13) 2016.7.22
+13.1) bugfix & performance: poll/epoll_wait API 的超时值设置的不对
+
 12) 2016.7.14
 12.1) feature: hook_net.c 增加了 epoll 的 hook 支持
 
