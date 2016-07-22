@@ -48,11 +48,13 @@ static void echo_client(ACL_FIBER *fiber acl_unused, void *ctx)
 	printf("client fiber-%d: fd: %d\r\n", acl_fiber_self(), *cfd);
 
 	while (1) {
-		ret = check_read(*cfd, 10000);
-		if (ret < 0)
-			break;
-		if (ret == 0)
-			continue;
+		if (__rw_timeout > 0) {
+			ret = check_read(*cfd, 10000);
+			if (ret < 0)
+				break;
+			if (ret == 0)
+				continue;
+		}
 
 		ret = read(*cfd, buf, sizeof(buf));
 		if (ret <= 0) {
