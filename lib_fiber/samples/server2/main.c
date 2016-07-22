@@ -15,6 +15,7 @@ static int  __listen_port = 9001;
 static int  __listen_qlen = 64;
 static int  __rw_timeout = 0;
 static int  __echo_data  = 1;
+static int  __stack_size = 32000;
 
 static int check_read(int fd, int timeout)
 {
@@ -134,7 +135,7 @@ static void fiber_accept(ACL_FIBER *fiber acl_unused, void *ctx acl_unused)
 
 		__nconnect++;
 		printf("accept one, fd: %d\r\n", cfd);
-		acl_fiber_create(echo_client, fd, 32768);
+		acl_fiber_create(echo_client, fd, __stack_size);
 	}
 
 	close(lfd);
@@ -148,6 +149,7 @@ static void usage(const char *procname)
 		"  -p listen_port\r\n"
 		"  -r rw_timeout\r\n"
 		"  -q listen_queue\r\n"
+		"  -z stack_size\r\n"
 		"  -S [if using single IO, default: no]\r\n", procname);
 }
 
@@ -157,7 +159,7 @@ int main(int argc, char *argv[])
 
 	snprintf(__listen_ip, sizeof(__listen_ip), "%s", "127.0.0.1");
 
-	while ((ch = getopt(argc, argv, "hs:p:r:q:S")) > 0) {
+	while ((ch = getopt(argc, argv, "hs:p:r:q:Sz:")) > 0) {
 		switch (ch) {
 		case 'h':
 			usage(argv[0]);
@@ -176,6 +178,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'S':
 			__echo_data = 0;
+			break;
+		case 'z':
+			__stack_size = atoi(optarg);
 			break;
 		default:
 			break;
