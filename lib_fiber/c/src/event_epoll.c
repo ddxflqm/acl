@@ -62,7 +62,10 @@ static int epoll_event_add(EVENT *ev, int fd, int mask)
 	ee.data.ptr = NULL;
 	ee.data.fd  = fd;
 
+#if 0
 	mask |= ev->events[fd].mask; /* Merge old events */
+#endif
+
 	if (mask & EVENT_READABLE)
 		ee.events |= EPOLLIN;
 	if (mask & EVENT_WRITABLE)
