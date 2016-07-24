@@ -75,18 +75,27 @@ static int check_fdtype(int fd)
 		return -1;
 	}
 
-	/*
-	acl_msg_info("fd: %d, S_ISSOCK: %s, S_ISFIFO: %s, S_ISCHR: %s, "
-		"S_ISBLK: %s, S_ISREG: %s", fd,
-		S_ISSOCK(s.st_mode) ? "yes" : "no",
-		S_ISFIFO(s.st_mode) ? "yes" : "no",
-		S_ISCHR(s.st_mode) ? "yes" : "no",
-		S_ISBLK(s.st_mode) ? "yes" : "no",
-		S_ISREG(s.st_mode) ? "yes" : "no");
-	*/
-
 	if (S_ISSOCK(s.st_mode) || S_ISFIFO(s.st_mode) || S_ISCHR(s.st_mode))
 		return 0;
+
+	/*
+	if (S_ISLNK(s.st_mode))
+		acl_msg_info("fd %d S_ISLNK", fd);
+	else if (S_ISREG(s.st_mode))
+		acl_msg_info("fd %d S_ISREG", fd);
+	else if (S_ISDIR(s.st_mode))
+		acl_msg_info("fd %d S_ISDIR", fd);
+	else if (S_ISCHR(s.st_mode))
+		acl_msg_info("fd %d S_ISCHR", fd);
+	else if (S_ISBLK(s.st_mode))
+		acl_msg_info("fd %d S_ISBLK", fd);
+	else if (S_ISFIFO(s.st_mode))
+		acl_msg_info("fd %d S_ISFIFO", fd);
+	else if (S_ISSOCK(s.st_mode))
+		acl_msg_info("fd %d S_ISSOCK", fd);
+	else
+		acl_msg_info("fd: %d, unknoiwn st_mode: %d", fd, s.st_mode);
+	*/
 
 	return -1;
 }

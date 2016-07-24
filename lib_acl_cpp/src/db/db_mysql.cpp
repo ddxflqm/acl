@@ -584,18 +584,29 @@ bool db_mysql::dbopen(const char* charset /* = NULL */)
 		db_unix, dbflags_) == NULL)
 	{
 		logger_error("connect mysql error(%s), db_host=%s, db_port=%d,"
-			" db_unix=%s, db_name=%s, db_user=%s, db_pass=%s",
+			" db_unix=%s, db_name=%s, db_user=%s, db_pass=%s,"
+			" dbflags=%ld",
 			__mysql_error(conn_),
 			db_host ? db_host : "null", db_port,
 			db_unix ? db_unix : "null",
 			dbname_ ? dbname_ : "null",
 			dbuser_ ? dbuser_ : "null",
-			dbpass_ ? dbpass_ : "null");
+			dbpass_ ? dbpass_ : "null", dbflags_);
 
 		__mysql_close(conn_);
 		conn_ = NULL;
 		return false;
 	}
+#if 0
+	logger("connect mysql ok(%s), db_host=%s, db_port=%d, "
+		"db_unix=%s, db_name=%s, db_user=%s, db_pass=%s, dbflags=%ld",
+		__mysql_error(conn_),
+		db_host ? db_host : "null", db_port,
+		db_unix ? db_unix : "null",
+		dbname_ ? dbname_ : "null",
+		dbuser_ ? dbuser_ : "null",
+		dbpass_ ? dbpass_ : "null", dbflags_);
+#endif
 
 	if (charset != NULL && *charset != 0)
 		charset_ = charset;

@@ -168,6 +168,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 
 	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
 
+	errno = 0;
 	int ret = __sys_connect(sockfd, addr, addrlen);
 	if (ret >= 0) {
 		acl_tcp_nodelay(sockfd, 1);
@@ -176,7 +177,11 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 
 	fiber_save_errno();
 
-	if (errno != EINPROGRESS)
+	acl_msg_info("%s(%d), %s: connect error: %s, %d, fd: %d",
+		__FILE__, __LINE__, __FUNCTION__,
+		acl_last_serror(), errno, sockfd);
+
+	if (errno != EINPROGRESS && errno != EAGAIN)
 		return -1;
 
 	fiber_wait_write(sockfd);
@@ -211,23 +216,26 @@ static void pollfd_callback(EVENT *ev, int fd, void *ctx, int mask)
 	int n = 0;
 
 	if (mask & EVENT_READABLE) {
+		if (pfd->events & POLLIN)
+			event_del(ev, fd, EVENT_READABLE);
 		pfd->revents |= POLLIN;
-		n++;
+		n = 1;
 	}
-	if (pfd->events & POLLIN)
-		event_del(ev, fd, EVENT_READABLE);
 
 	if (mask & EVENT_WRITABLE) {
+		if (pfd->events & POLLOUT)
+			event_del(ev, fd, EVENT_WRITABLE);
 		pfd->revents |= POLLOUT;
-		n++;
+		n |= 1 << 1;
 	}
-	if (pfd->events & POLLOUT)
-		event_del(ev, fd, EVENT_WRITABLE);
 
 	if (n > 0) {
 		acl_assert(pe);
+		printf(">>>nready: %d, fd: %d, n: %d\r\n", pe->nready, fd, n);
 		pe->nready++;
 	}
+	else
+		printf(">>>2-nready: %d, fd: %d, n: %d\r\n", pe->nready, fd, n);
 }
 
 static void event_poll_set(EVENT *ev, POLL_EVENT *pe, int timeout)
@@ -282,21 +290,35 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
 	SET_TIME(begin);
 
 	while (1) {
+		errno = 0;
 		event_poll_set(ev, &pe, timeout);
 		fiber_io_inc();
 		acl_fiber_switch();
 
 		ev->timeout = -1;
-		if (pe.nready != 0)
+		if (pe.nready != 0) {
 			break;
+		}
+		if (timeout <= 0) {
+			printf("--2-fd: %d---\r\n", fds[0].fd);
+			break;
+		}
 
 		SET_TIME(now);
+
 		if (now - begin >= timeout)
+		{
+			printf("--------timeout fd: %d now - begin: %lld, timeut: %d-----\n", fds[0].fd, now - begin, timeout);
 			break;
+		}
 
 		timeout -= now - begin;
 	}
 
+	printf("---fd: %d--nready: %d-%d-%d, errno: %d, timeout: %d\r\n",
+		fds[0].fd, pe.nready, fds[0].revents, fds[0].events, errno, timeout);
+//	if (timeout == 10000)
+//		sleep(1);
 	return pe.nready;
 }
 

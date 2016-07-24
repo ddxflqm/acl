@@ -122,6 +122,7 @@ int close(int fd)
 {
 	int ret;
 
+	printf("----close fd: %d----\r\n", fd);
 	if (fd < 0) {
 		acl_msg_error("%s: invalid fd: %d", __FUNCTION__, fd);
 		return -1;
@@ -162,6 +163,7 @@ ssize_t read(int fd, void *buf, size_t count)
 		event_clear_readable(ev, fd);
 
 		ret = __sys_read(fd, buf, count);
+	printf("----%s-%d, fd: %d, ret: %ld---\r\n", __FUNCTION__, __LINE__, fd, ret);
 		if (ret > 0)
 			return ret;
 		fiber_save_errno();
@@ -173,6 +175,7 @@ ssize_t read(int fd, void *buf, size_t count)
 		event_clear_readable(ev, fd);
 
 	ret = __sys_read(fd, buf, count);
+	printf("----%s-%d, fd: %d, ret: %ld---\r\n", __FUNCTION__, __LINE__, fd, ret);
 	if (ret > 0)
 		return ret;
 	fiber_save_errno();
