@@ -177,9 +177,9 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 
 	fiber_save_errno();
 
-	acl_msg_info("%s(%d), %s: connect error: %s, %d, fd: %d",
+	acl_msg_info("%s(%d), %s: connect error: %s, errno: %d, %d, %d, %d, fd: %d",
 		__FILE__, __LINE__, __FUNCTION__,
-		acl_last_serror(), errno, sockfd);
+		acl_last_serror(), errno, EISCONN, EWOULDBLOCK, EAGAIN, sockfd);
 
 	if (errno != EINPROGRESS && errno != EAGAIN)
 		return -1;
@@ -227,15 +227,13 @@ static void pollfd_callback(EVENT *ev, int fd, void *ctx, int mask)
 			event_del(ev, fd, EVENT_WRITABLE);
 		pfd->revents |= POLLOUT;
 		n |= 1 << 1;
+		assert(0);
 	}
 
 	if (n > 0) {
 		acl_assert(pe);
-		printf(">>>nready: %d, fd: %d, n: %d\r\n", pe->nready, fd, n);
 		pe->nready++;
 	}
-	else
-		printf(">>>2-nready: %d, fd: %d, n: %d\r\n", pe->nready, fd, n);
 }
 
 static void event_poll_set(EVENT *ev, POLL_EVENT *pe, int timeout)
@@ -296,29 +294,17 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
 		acl_fiber_switch();
 
 		ev->timeout = -1;
-		if (pe.nready != 0) {
+		if (pe.nready != 0 || timeout <= 0)
 			break;
-		}
-		if (timeout <= 0) {
-			printf("--2-fd: %d---\r\n", fds[0].fd);
-			break;
-		}
 
 		SET_TIME(now);
 
 		if (now - begin >= timeout)
-		{
-			printf("--------timeout fd: %d now - begin: %lld, timeut: %d-----\n", fds[0].fd, now - begin, timeout);
 			break;
-		}
 
 		timeout -= now - begin;
 	}
 
-	printf("---fd: %d--nready: %d-%d-%d, errno: %d, timeout: %d\r\n",
-		fds[0].fd, pe.nready, fds[0].revents, fds[0].events, errno, timeout);
-//	if (timeout == 10000)
-//		sleep(1);
 	return pe.nready;
 }
 

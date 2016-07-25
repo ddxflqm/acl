@@ -153,7 +153,7 @@ protected:
 	// @override
 	void run(void)
 	{
-		printf("fiber-%d-%d running\r\n", get_id(), acl::fiber::self());
+//		printf("fiber-%d-%d running\r\n", get_id(), acl::fiber::self());
 
 		mysql_oper dboper(dbp_, id_);
 

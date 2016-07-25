@@ -190,17 +190,17 @@ static void __event_del(EVENT *ev, int fd, int mask)
 
 	if (fe->mask == EVENT_NONE) {
 		acl_msg_info("----mask NONE, fd: %d----", fd);
-		return;
-	}
-
-	if (ev->del(ev, fd, mask) == 1) {
+		fe->mask_fired = EVENT_NONE;
+		fe->defer      = NULL;
+		fe->pe         = NULL;
+	} else if (ev->del(ev, fd, mask) == 1) {
 		fe->mask_fired = EVENT_NONE;
 		fe->type       = TYPE_NONE;
 		fe->defer      = NULL;
 		fe->pe         = NULL;
-	}
-
-	fe->mask = fe->mask & (~mask);
+		fe->mask = fe->mask & (~mask);
+	} else
+		fe->mask = fe->mask & (~mask);
 
 	if (fd == ev->maxfd && fe->mask == EVENT_NONE) {
 		/* Update the max fd */
@@ -227,7 +227,7 @@ void event_del(EVENT *ev, int fd, int mask)
 	}
 
 #ifdef DEL_DELAY
-	if ((mask & EVENT_ERROR) == 0) {
+	if ((mask & EVENT_ERROR) == 0 && (mask & EVENT_WRITABLE) == 0) {
 		ev->defers[ev->ndefer].fd   = fd;
 		ev->defers[ev->ndefer].mask = mask;
 		ev->defers[ev->ndefer].pos  = ev->ndefer;
