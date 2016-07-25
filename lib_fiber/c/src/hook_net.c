@@ -227,7 +227,6 @@ static void pollfd_callback(EVENT *ev, int fd, void *ctx, int mask)
 			event_del(ev, fd, EVENT_WRITABLE);
 		pfd->revents |= POLLOUT;
 		n |= 1 << 1;
-		assert(0);
 	}
 
 	if (n > 0) {
