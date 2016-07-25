@@ -211,10 +211,9 @@ ssize_t read(int fd, void *buf, size_t count)
 		return ret;
 	}
 
+	fiber_wait_read(fd);
 	if (ev)
 		event_clear_readable(ev, fd);
-
-	fiber_wait_read(fd);
 
 	ret = __sys_read(fd, buf, count);
 	if (ret > 0)
