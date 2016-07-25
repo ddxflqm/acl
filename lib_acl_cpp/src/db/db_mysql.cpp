@@ -460,8 +460,10 @@ static void thread_free_dummy(void* ctx)
 	if ((unsigned long) acl_pthread_self() != acl_main_thread_self())
 		acl_myfree(ctx);
 
+#if defined(ACL_CPP_DLL) || defined(HAS_MYSQL_DLL)
 	if (__mysql_thread_end)
 		__mysql_thread_end();
+#endif
 }
 
 static int* __main_dummy = NULL;
@@ -473,8 +475,10 @@ static void main_free_dummy(void)
 		__main_dummy = NULL;
 	}
 
+#if defined(ACL_CPP_DLL) || defined(HAS_MYSQL_DLL)
 	if (__mysql_thread_end)
 		__mysql_thread_end();
+#endif
 }
 
 static acl_pthread_once_t __thread_once_control = ACL_PTHREAD_ONCE_INIT;
