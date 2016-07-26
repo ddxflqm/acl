@@ -177,9 +177,11 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 
 	fiber_save_errno();
 
+	/*
 	acl_msg_info("%s(%d), %s: connect error: %s, errno: %d, %d, %d, %d, fd: %d",
 		__FILE__, __LINE__, __FUNCTION__,
 		acl_last_serror(), errno, EISCONN, EWOULDBLOCK, EAGAIN, sockfd);
+	*/
 
 	if (errno != EINPROGRESS && errno != EAGAIN)
 		return -1;
@@ -264,6 +266,7 @@ static void event_poll_set(EVENT *ev, POLL_EVENT *pe, int timeout)
 
 static void poll_callback(EVENT *ev acl_unused, POLL_EVENT *pe)
 {
+	fiber_io_dec();
 	acl_fiber_ready(pe->fiber);
 }
 
