@@ -201,9 +201,9 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 /****************************************************************************/
 
 #define SET_TIME(x) do { \
-	struct timeval tv; \
-	gettimeofday(&tv, NULL); \
-	(x) = ((acl_int64) tv.tv_sec) * 1000 + ((acl_int64) tv.tv_usec)/ 1000; \
+    struct timeval tv; \
+    gettimeofday(&tv, NULL); \
+    (x) = ((acl_int64) tv.tv_sec) * 1000 + ((acl_int64) tv.tv_usec)/ 1000; \
 } while (0)
 
 /****************************************************************************/
