@@ -138,6 +138,7 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 		clifd = __sys_accept(sockfd, addr, addrlen);
 		if (clifd > 0)
 			return clifd;
+
 		fiber_save_errno();
 		return clifd;
 	}
@@ -168,7 +169,6 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 
 	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
 
-	errno = 0;
 	int ret = __sys_connect(sockfd, addr, addrlen);
 	if (ret >= 0) {
 		acl_tcp_nodelay(sockfd, 1);
@@ -177,20 +177,57 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 
 	fiber_save_errno();
 
-	/*
-	acl_msg_info("%s(%d), %s: connect error: %s, errno: %d, %d, %d, %d, fd: %d",
-		__FILE__, __LINE__, __FUNCTION__,
-		acl_last_serror(), errno, EISCONN, EWOULDBLOCK, EAGAIN, sockfd);
-	*/
+	if (errno != EINPROGRESS) {
+		if (errno == ECONNREFUSED)
+			acl_msg_error("%s(%d), %s: connect ECONNREFUSED",
+				__FILE__, __LINE__, __FUNCTION__);
+		else if (errno == ECONNRESET)
+			acl_msg_error("%s(%d), %s: connect ECONNRESET",
+				__FILE__, __LINE__, __FUNCTION__);
+		else if (errno == ENETDOWN)
+			acl_msg_error("%s(%d), %s: connect ENETDOWN",
+				__FILE__, __LINE__, __FUNCTION__);
+		else if (errno == ENETUNREACH)
+			acl_msg_error("%s(%d), %s: connect ENETUNREACH",
+				__FILE__, __LINE__, __FUNCTION__);
+		else if (errno == EHOSTDOWN)
+			acl_msg_error("%s(%d), %s: connect EHOSTDOWN",
+				__FILE__, __LINE__, __FUNCTION__);
+		else if (errno == EHOSTUNREACH)
+			acl_msg_error("%s(%d), %s: connect EHOSTUNREACH",
+				__FILE__, __LINE__, __FUNCTION__);
+#ifdef	ACL_LINUX
+		/* Linux returns EAGAIN instead of ECONNREFUSED
+		 * for unix sockets if listen queue is full -- see nginx
+		 */
+		else if (errno == EAGAIN)
+			acl_msg_error("%s(%d), %s: connect EAGAIN",
+				__FILE__, __LINE__, __FUNCTION__);
+#endif
+		else
+			acl_msg_error("%s(%d), %s: connect errno=%d, %s",
+				__FILE__, __LINE__, __FUNCTION__, errno,
+				acl_last_serror());
 
-	if (errno != EINPROGRESS && errno != EAGAIN)
 		return -1;
+	}
 
 	fiber_wait_write(sockfd);
 
 	ret = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, (char *) &err, &len);
 	if (ret == 0 && err == 0)
-		return 0;
+	{
+		char peer[256];
+		len = sizeof(peer);
+		if (acl_getpeername(sockfd, peer, len) == 0)
+			return 0;
+
+		fiber_save_errno();
+		acl_msg_error("%s(%d), %s: getpeername error %s, fd: %d",
+			__FILE__, __LINE__, __FUNCTION__,
+			acl_last_serror(), sockfd);
+		return -1;
+	}
 
 	acl_set_error(err);
 
@@ -361,10 +398,12 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 			FD_SET(fd, readfds);
 			nready++;
 		}
+
 		if (writefds && (fds[fd].revents & POLLOUT)) {
 			FD_SET(fd, writefds);
 			nready++;
 		}
+
 		if (exceptfds && (fds[fd].revents & (POLLERR | POLLHUP))) {
 			FD_SET(fd, exceptfds);
 			nready++;

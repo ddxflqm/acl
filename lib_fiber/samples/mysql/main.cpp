@@ -40,8 +40,6 @@ public:
 			if (db == NULL)
 			{
 				printf("peek db connection error i: %d\r\n", i);
-				sleep(1000);
-				exit (1);
 				break;
 			}
 
@@ -156,6 +154,7 @@ protected:
 	void run(void)
 	{
 //		printf("fiber-%d-%d running\r\n", get_id(), acl::fiber::self());
+		acl_fiber_delay(10);
 
 		mysql_oper dboper(dbp_, id_);
 
@@ -168,7 +167,7 @@ protected:
 
 		delete this;
 
-		//printf("----__cur_fibers: %d----\r\n", __cur_fibers);
+		printf("----__cur_fibers: %d----\r\n", __cur_fibers);
 
 		if (--__cur_fibers == 0)
 		{
