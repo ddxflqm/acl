@@ -1,4 +1,8 @@
 
+15) 2016.7.28
+15.1) bugfix: hook_net.c 中的 poll/epoll_wait 对于超时的计数有误，会导致超时
+时间提前
+
 14) 2016.7.26
 14.1) feature: hook_net.c 中的 connect 函数增加了出错处理
 

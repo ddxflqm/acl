@@ -327,21 +327,18 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
 	SET_TIME(begin);
 
 	while (1) {
-		errno = 0;
 		event_poll_set(ev, &pe, timeout);
 		fiber_io_inc();
 		acl_fiber_switch();
 
 		ev->timeout = -1;
-		if (pe.nready != 0 || timeout <= 0)
+		if (pe.nready != 0 || timeout == 0)
 			break;
 
 		SET_TIME(now);
 
-		if (now - begin >= timeout)
+		if (timeout > 0 && (now - begin >= timeout))
 			break;
-
-		timeout -= now - begin;
 	}
 
 	return pe.nready;
@@ -711,14 +708,13 @@ int epoll_wait(int epfd, struct epoll_event *events,
 		acl_fiber_switch();
 
 		ev->timeout = -1;
-		if (ee->nready != 0)
+		if (ee->nready != 0 || timeout == 0)
 			break;
 
 		SET_TIME(now);
-		if (now - begin >= timeout)
-			break;
 
-		timeout -= now - begin;
+		if (timeout > 0 && (now - begin >= timeout))
+			break;
 	}
 
 	return ee->nready;

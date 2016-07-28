@@ -215,6 +215,7 @@ ssize_t read(int fd, void *buf, size_t count)
 		event_clear_readable(ev, fd);
 
 	ret = __sys_read(fd, buf, count);
+	//printf("---read ret: %ld----\r\n", ret);
 	if (ret > 0)
 		return ret;
 
