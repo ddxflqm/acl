@@ -250,9 +250,9 @@ bool http_servlet::xmlToJson(acl::xml& xml, acl::json& json)
 		if (addr == NULL || *addr == 0)
 			continue;
 
-		const char* load = (*child)["load"];
-		if (load == NULL || *load == 0)
+		if ((ptr = (*child)["load"]) == NULL || *ptr == 0)
 			continue;
+		double load = atof(ptr);
 
 		acl::json_node& node = json.create_node();
 		a.add_child(node);
@@ -264,7 +264,7 @@ bool http_servlet::xmlToJson(acl::xml& xml, acl::json& json)
 			.add_number("max_threads", max_threads)
 			.add_number("curr_threads", curr_threads)
 			.add_number("busy_threads", busy_threads)
-			.add_text("load", load);
+			.add_double("load", load);
 	}
 
 	return true;
