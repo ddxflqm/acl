@@ -132,6 +132,13 @@ int close(int fd)
 
 	fiber_io_close(fd);
 
+	/* when the fd was closed by epoll_event_close normally, the fd
+	 * must be a epoll fd which was created by epoll_create function
+	 * hooked in hook_net.c
+	 */
+	if (epoll_event_close(fd) == 0)
+		return 0;
+
 	ret = __sys_close(fd);
 	if (ret == 0)
 		return ret;

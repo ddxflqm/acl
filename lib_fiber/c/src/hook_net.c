@@ -10,6 +10,7 @@
 #include "event.h"
 #include "fiber.h"
 
+typedef int (*close_fn)(int);
 typedef int (*socket_fn)(int, int, int);
 typedef int (*socketpair_fn)(int, int, int, int sv[2]);
 typedef int (*bind_fn)(int, const struct sockaddr *, socklen_t);
@@ -26,6 +27,7 @@ typedef int (*epoll_create_fn)(int);
 typedef int (*epoll_wait_fn)(int, struct epoll_event *,int, int);
 typedef int (*epoll_ctl_fn)(int, int, int, struct epoll_event *);
 
+static close_fn      __sys_close    = NULL;
 static socket_fn     __sys_socket   = NULL;
 static socketpair_fn __sys_socketpair = NULL;
 static bind_fn       __sys_bind     = NULL;
@@ -50,6 +52,7 @@ void hook_net(void)
 
 	__called++;
 
+	__sys_close      = (close_fn) dlsym(RTLD_NEXT, "close");
 	__sys_socket     = (socket_fn) dlsym(RTLD_NEXT, "socket");
 	__sys_socketpair = (socketpair_fn) dlsym(RTLD_NEXT, "socketpair");
 	__sys_bind       = (bind_fn) dlsym(RTLD_NEXT, "bind");
@@ -453,9 +456,11 @@ static void thread_free(void *ctx acl_unused)
 			if (ee->fds[j] != NULL)
 				acl_myfree(ee->fds[j]);
 		}
+
+		if (ee->epfd >= 0 && __sys_close(ee->epfd) < 0)
+			fiber_save_errno();
+
 		acl_myfree(ee->fds);
-		if (ee->epfd > 0)
-			close(ee->epfd);
 		acl_myfree(ee);
 	}
 
@@ -479,9 +484,9 @@ static void thread_init(void)
 static EPOLL_EVENT *epoll_event_create(int epfd)
 { 
 	EPOLL_EVENT *ee = NULL;
-	ACL_ITER iter;
 	size_t i;
 
+	/* using thread specific to store the epoll handles for each thread*/
 	if (__epfds == NULL) {
 		acl_assert(!acl_pthread_once(&__once_control, thread_init));
 
@@ -495,19 +500,13 @@ static EPOLL_EVENT *epoll_event_create(int epfd)
 			acl_msg_fatal("acl_pthread_setspecific error!");
 	}
 
-	acl_foreach(iter, __epfds) {
-		EPOLL_EVENT *e = (EPOLL_EVENT *) iter.data;
-		if (e->epfd == epfd) {
-			ee = e;
-			break;
-		}
-	}
+	ee = epfd_alloc();
+	acl_array_append(__epfds, ee);
 
-	if (ee == NULL) {
-		ee = epfd_alloc();
-		acl_array_append(__epfds, ee);
-	}
-
+	/* duplicate the current thread's epoll fd, so we can assosiate the
+	 * connection handles with one epoll fd for the current thread, and
+	 * use one epoll fd for each thread to handle all fds
+	 */
 	ee->epfd = dup(epfd);
 
 	for (i = 0; i < ee->nfds; i++)
@@ -535,6 +534,40 @@ static EPOLL_EVENT *epoll_event_find(int epfd)
 	return NULL;
 }
 
+int epoll_event_close(int epfd)
+{
+	ACL_ITER iter;
+	EPOLL_EVENT *ee = NULL;
+	int pos = -1;
+	size_t i;
+
+	if (__epfds == NULL || epfd < 0)
+		return -1;
+
+	acl_foreach(iter, __epfds) {
+		EPOLL_EVENT *e = (EPOLL_EVENT *) iter.data;
+		if (e->epfd == epfd) {
+			ee = e;
+			pos = iter.i;
+			break;
+		}
+	}
+
+	if (ee == NULL)
+		return -1;
+
+	for (i = 0; i < ee->nfds; i++) {
+		if (ee->fds[i] != NULL)
+			acl_myfree(ee->fds[i]);
+	}
+
+	acl_myfree(ee->fds);
+	acl_myfree(ee);
+	acl_array_delete(__epfds, pos, NULL);
+
+	return __sys_close(epfd);
+}
+
 int epoll_create(int size acl_unused)
 {
 	EPOLL_EVENT *ee;
@@ -549,6 +582,7 @@ int epoll_create(int size acl_unused)
 		return -1;
 	}
 
+	/* get the current thread's epoll fd */
 	epfd = event_handle(ev);
 	if (epfd < 0) {
 		acl_msg_error("%s(%d), %s: invalid event_handle %d",
