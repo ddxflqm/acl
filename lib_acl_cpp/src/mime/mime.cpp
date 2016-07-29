@@ -630,8 +630,10 @@ static MIME_NODE* body_node(MIME_STATE* pMime, bool htmlFirst,
 		return get_text_plain(pMime->root, is_html);
 }
 
-//#define EQ2(x, y) (((x) == NULL && (y) == NULL)  \
-//	|| ((x) != NULL && (y) != NULL && !strcasecmp((x), (y))))
+#if 0
+#define EQ2(x, y) (((x) == NULL && (y) == NULL)  \
+	|| ((x) != NULL && (y) != NULL && !strcasecmp((x), (y))))
+#endif
 
 mime_body* mime::get_body_node(bool htmlFirst,
 	bool enableDecode /* = true */,

@@ -126,7 +126,7 @@ public:
 	 * @param off {off_t} 调用者希望给邮件体结点附加的相对偏移量
 	 * @return {mime_body*} 若未找到 plain 格式的正文内容则返回 NULL
 	 */
-	mime_body* get_plain_body( bool enableDecode = true,
+	mime_body* get_plain_body(bool enableDecode = true,
 		const char* toCharset = "gb2312", off_t off = 0);
 
 	/**
@@ -136,7 +136,7 @@ public:
 	 * @param off {off_t} 调用者希望给邮件体结点附加的相对偏移量
 	 * @return {mime_body*} 若未找到 html 格式的正文内容则返回 NULL
 	 */
-	mime_body* get_html_body( bool enableDecode = true,
+	mime_body* get_html_body(bool enableDecode = true,
 		const char* toCharset = "gb2312", off_t off = 0);
 
 	/**
