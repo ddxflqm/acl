@@ -454,6 +454,8 @@ static void thread_free(void *ctx acl_unused)
 				acl_myfree(ee->fds[j]);
 		}
 		acl_myfree(ee->fds);
+		if (ee->epfd > 0)
+			close(ee->epfd);
 		acl_myfree(ee);
 	}
 
