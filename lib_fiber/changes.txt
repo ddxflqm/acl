@@ -1,5 +1,5 @@
 
-16) 2016.8.5
+16) 2016.8.4
 16.1) bugfix: hook_net.c 中的 gethostbyname_r 在解析域名时的地址所用字节序有误
 --- found by 陈晓勇
 
