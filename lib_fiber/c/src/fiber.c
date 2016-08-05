@@ -28,9 +28,6 @@ typedef struct {
 	size_t         idgen;
 	int            count;
 	int            switched;
-#ifdef	USE_DBUF
-	ACL_DBUF_POOL *dbuf;
-#endif
 } FIBER_TLS;
 
 static FIBER_TLS *__main_fiber = NULL;
@@ -50,10 +47,6 @@ static void thread_free(void *ctx)
 
 	if (__thread_fiber == NULL)
 		return;
-
-#ifdef	USE_DBUF
-	acl_dbuf_pool_destroy(tf->dbuf);
-#endif
 
 	if (tf->fibers)
 		acl_myfree(tf->fibers);
@@ -92,9 +85,6 @@ static void fiber_check(void)
 	__thread_fiber->size   = 0;
 	__thread_fiber->idgen  = 0;
 	__thread_fiber->count  = 0;
-#ifdef	USE_DBUF
-	__thread_fiber->dbuf   = acl_dbuf_pool_create(640000);
-#endif
 
 	acl_ring_init(&__thread_fiber->ready);
 	acl_ring_init(&__thread_fiber->dead);
@@ -273,12 +263,8 @@ static void fiber_start(unsigned int x, unsigned int y)
 
 static void fiber_free(FIBER_TLS *tls, ACL_FIBER *fiber)
 {
-#ifdef	USE_DBUF
-	acl_dbuf_pool_free(tls->dbuf, fiber);
-#else
 	(void) tls;
 	acl_myfree(fiber);
-#endif
 }
 
 static ACL_FIBER *fiber_alloc(void (*fn)(ACL_FIBER *, void *),
@@ -306,20 +292,10 @@ static ACL_FIBER *fiber_alloc(void (*fn)(ACL_FIBER *, void *),
 
 	head = acl_ring_pop_head(&__thread_fiber->dead);
 	if (head == NULL)
-#ifdef	USE_DBUF
-		fiber = (ACL_FIBER *) acl_dbuf_pool_calloc(
-			__thread_fiber->dbuf, sizeof(ACL_FIBER) + size);
-#else
 		fiber = (ACL_FIBER *) acl_mycalloc(1, sizeof(ACL_FIBER) + size);
-#endif
 	else if ((fiber = ACL_RING_TO_APPL(head, ACL_FIBER, me))->size < size) {
 		fiber_free(__thread_fiber, fiber);
-#ifdef	USE_DBUF
-		fiber = (ACL_FIBER *) acl_dbuf_pool_calloc(
-			__thread_fiber->dbuf, sizeof(ACL_FIBER) + size);
-#else
 		fiber = (ACL_FIBER *) acl_mycalloc(1, sizeof(ACL_FIBER) + size);
-#endif
 	} else
 		size = fiber->size;
 
