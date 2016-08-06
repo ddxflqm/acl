@@ -302,7 +302,6 @@ static ACL_FIBER *fiber_alloc(void (*fn)(ACL_FIBER *, void *),
 	fiber->errnum = 0;
 	fiber->fn     = fn;
 	fiber->arg    = arg;
-	fiber->stack  = fiber->buf;
 	fiber->size   = size;
 	fiber->id     = ++__thread_fiber->idgen;
 
@@ -313,7 +312,7 @@ static ACL_FIBER *fiber_alloc(void (*fn)(ACL_FIBER *, void *),
 		acl_msg_fatal("%s(%d), %s: getcontext error: %s",
 			__FILE__, __LINE__, __FUNCTION__, acl_last_serror());
 
-	fiber->uctx.uc_stack.ss_sp   = fiber->stack + 8;
+	fiber->uctx.uc_stack.ss_sp   = fiber->buff + 8;
 	fiber->uctx.uc_stack.ss_size = fiber->size - 64;
 	fiber->uctx.uc_link = &__thread_fiber->schedule.uctx;
 

@@ -35,10 +35,9 @@ struct ACL_FIBER {
 	ucontext_t     uctx;
 	void         (*fn)(ACL_FIBER *, void *);
 	void          *arg;
-	char          *stack;
-	size_t         size;
 	void         (*timer_fn)(ACL_FIBER *, void *);
-	char           buf[1];
+	size_t         size;
+	char           buff[1];
 };
 
 /*
