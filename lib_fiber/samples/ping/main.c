@@ -58,7 +58,7 @@ static void fiber_ping(ACL_FIBER *fiber acl_unused, void *arg)
 
 static void usage(const char* progname)
 {
-	printf("usage: %s [-h help] [-n npkt] [dest1 dest2...]\r\n", progname);
+	printf("usage: %s -h help -z stack_size -n npkt dest1 dest2...\r\n", progname);
 	printf("example: %s -n 10 www.sina.com.cn www.qq.com\r\n", progname);
 }
 
@@ -71,12 +71,12 @@ static void on_sigint(int signo acl_unused)
 int main(int argc, char* argv[])
 {
 	char  ch;
-	int   i;
+	int   i, stack_size = 16000;
 
 	signal(SIGINT, on_sigint);  /* 用户按下 ctr + c 时中断 PING 程序 */
 	acl_msg_stdout_enable(1);  /* 允许 acl_msg_xxx 记录的信息输出至屏幕 */
 
-	while ((ch = getopt(argc, argv, "hn:")) > 0) {
+	while ((ch = getopt(argc, argv, "hn:z:")) > 0) {
 		switch (ch) {
 		case 'n':
 			__npkt = atoi(optarg);
@@ -84,6 +84,9 @@ int main(int argc, char* argv[])
 		case 'h':
 			usage(argv[0]);
 			return 0;
+		case 'z':
+			stack_size = atoi(optarg);
+			break;
 		default:
 			break;
 		}
@@ -101,7 +104,7 @@ int main(int argc, char* argv[])
 	__nfibers = argc - optind;
 
 	for (i = optind; i < argc; i++)
-		acl_fiber_create(fiber_ping, argv[i], 32000);
+		acl_fiber_create(fiber_ping, argv[i], stack_size);
 
 	acl_fiber_schedule();
 
