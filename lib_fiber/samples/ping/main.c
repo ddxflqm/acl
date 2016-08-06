@@ -58,8 +58,7 @@ static void fiber_ping(ACL_FIBER *fiber acl_unused, void *arg)
 
 static void usage(const char* progname)
 {
-	printf("usage: %s [-h help] [-n npkt] [\"dest1 dest2 dest3...\"]\r\n",
-		progname);
+	printf("usage: %s [-h help] [-n npkt] [dest1 dest2...]\r\n", progname);
 	printf("example: %s -n 10 www.sina.com.cn www.qq.com\r\n", progname);
 }
 
