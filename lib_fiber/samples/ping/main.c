@@ -6,6 +6,7 @@
 static int __nfibers = 0;
 static int __npkt = 10;
 static int __delay_seconds = 1;  /* 发送 ping 包的时间间隔（秒）*/
+static int __benchmark = 0;
 
 static void display_res(ICMP_CHAT *chat)
 {
@@ -58,7 +59,12 @@ static void fiber_ping(ACL_FIBER *fiber acl_unused, void *arg)
 
 static void usage(const char* progname)
 {
-	printf("usage: %s -h help -d delay -z stack_size -n npkt dest1 dest2...\r\n", progname);
+	printf("usage: %s -h help\r\n"
+		" -d delay\r\n"
+		" -z stack_size\r\n"
+		" -b benchmark [if > 0 dest will be ignored]\r\n"
+		" -n npkt dest1 dest2...\r\n", progname);
+
 	printf("example: %s -n 10 www.sina.com.cn www.qq.com\r\n", progname);
 }
 
@@ -76,7 +82,7 @@ int main(int argc, char* argv[])
 	signal(SIGINT, on_sigint);  /* 用户按下 ctr + c 时中断 PING 程序 */
 	acl_msg_stdout_enable(1);  /* 允许 acl_msg_xxx 记录的信息输出至屏幕 */
 
-	while ((ch = getopt(argc, argv, "hn:d:z:")) > 0) {
+	while ((ch = getopt(argc, argv, "hn:d:z:b:")) > 0) {
 		switch (ch) {
 		case 'n':
 			__npkt = atoi(optarg);
@@ -90,24 +96,36 @@ int main(int argc, char* argv[])
 		case 'd':
 			__delay_seconds = atoi(optarg);
 			break;
+		case 'b':
+			__benchmark = atoi(optarg);
+			break;
 		default:
 			break;
 		}
 	}
 
-	if (optind == argc) {
-		usage(argv[0]);
-		return 0;
-	}
-
 	if (__npkt <= 0)
 		__npkt = 10;
 
-	/* 记录要启动的协程的总数 */
-	__nfibers = argc - optind;
+	if (__benchmark > 0) {
+		static char *localhost = "127.0.0.1";
 
-	for (i = optind; i < argc; i++)
-		acl_fiber_create(fiber_ping, argv[i], stack_size);
+		__nfibers = __benchmark;
+
+		for (i = 0; i < __benchmark; i++)
+			acl_fiber_create(fiber_ping, localhost, stack_size);
+	} else {
+		if (optind == argc) {
+			usage(argv[0]);
+			return 0;
+		}
+
+		/* 记录要启动的协程的总数 */
+		__nfibers = argc - optind;
+
+		for (i = optind; i < argc; i++)
+			acl_fiber_create(fiber_ping, argv[i], stack_size);
+	}
 
 	acl_fiber_schedule();
 
