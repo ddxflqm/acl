@@ -5,6 +5,7 @@
 
 static int __nfibers = 0;
 static int __npkt = 10;
+static int __delay_seconds = 1;  /* 发送 ping 包的时间间隔（秒）*/
 
 static void display_res(ICMP_CHAT *chat)
 {
@@ -21,7 +22,6 @@ static void fiber_ping(ACL_FIBER *fiber acl_unused, void *arg)
 	const char *dest = (const char *) arg;
 	ACL_DNS_DB* dns_db;
 	const char *ip;
-	int   delay = 1;  /* 发送 ping 包的时间间隔（秒）*/
 	ICMP_CHAT *chat;
 
 	/* 通过域名解析出IP地址 */
@@ -44,9 +44,9 @@ static void fiber_ping(ACL_FIBER *fiber acl_unused, void *arg)
 
 	/* 开始 PING */
 	if (strcmp(dest, ip) == 0)
-		icmp_ping_one(chat, NULL, ip, __npkt, delay, 1);
+		icmp_ping_one(chat, NULL, ip, __npkt, __delay_seconds, 1);
 	else
-		icmp_ping_one(chat, dest, ip, __npkt, delay, 1);
+		icmp_ping_one(chat, dest, ip, __npkt, __delay_seconds, 1);
 
 	acl_netdb_free(dns_db);  /* 释放域名解析对象 */
 	display_res(chat);  /* 显示 PING 结果 */
@@ -58,7 +58,7 @@ static void fiber_ping(ACL_FIBER *fiber acl_unused, void *arg)
 
 static void usage(const char* progname)
 {
-	printf("usage: %s -h help -z stack_size -n npkt dest1 dest2...\r\n", progname);
+	printf("usage: %s -h help -d delay -z stack_size -n npkt dest1 dest2...\r\n", progname);
 	printf("example: %s -n 10 www.sina.com.cn www.qq.com\r\n", progname);
 }
 
@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
 	signal(SIGINT, on_sigint);  /* 用户按下 ctr + c 时中断 PING 程序 */
 	acl_msg_stdout_enable(1);  /* 允许 acl_msg_xxx 记录的信息输出至屏幕 */
 
-	while ((ch = getopt(argc, argv, "hn:z:")) > 0) {
+	while ((ch = getopt(argc, argv, "hn:d:z:")) > 0) {
 		switch (ch) {
 		case 'n':
 			__npkt = atoi(optarg);
@@ -86,6 +86,9 @@ int main(int argc, char* argv[])
 			return 0;
 		case 'z':
 			stack_size = atoi(optarg);
+			break;
+		case 'd':
+			__delay_seconds = atoi(optarg);
 			break;
 		default:
 			break;
