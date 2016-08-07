@@ -12,9 +12,19 @@ static int __max_fiber = 1000;
 static __thread struct timeval __begin;
 static __thread int __left_fiber = 1000;
 
+static void stack_dummy(ACL_FIBER *fiber acl_unused)
+{
+	char buf[81920];
+
+	memset(buf, 0, sizeof(buf));
+}
+
 static void fiber_main(ACL_FIBER *fiber, void *ctx acl_unused)
 {
 	int  i;
+
+	if (0)
+		stack_dummy(fiber);
 
 	errno = acl_fiber_errno(fiber);
 	for (i = 0; i < __max_loop; i++) {
