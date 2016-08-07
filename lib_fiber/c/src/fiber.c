@@ -261,9 +261,9 @@ static void fiber_start(unsigned int x, unsigned int y)
 
 #define	MAX_CACHE	100
 
-static void fiber_free(FIBER_TLS *tls, ACL_FIBER *fiber)
+static void fiber_free(ACL_FIBER *fiber)
 {
-	(void) tls;
+	acl_myfree(fiber->buff);
 	acl_myfree(fiber);
 }
 
@@ -279,24 +279,29 @@ static ACL_FIBER *fiber_alloc(void (*fn)(ACL_FIBER *, void *),
 	fiber_check();
 
 	n = acl_ring_size(&__thread_fiber->dead);
+
+	/* if the cached dead fibers reached the limit, some will be freed */
 	if (n > MAX_CACHE) {
 		n -= MAX_CACHE;
 		while (n > 0) {
 			head = acl_ring_pop_head(&__thread_fiber->dead);
 			acl_assert(head != NULL);
 			fiber = ACL_RING_TO_APPL(head, ACL_FIBER,me);
-			fiber_free(__thread_fiber, fiber);
+			fiber_free(fiber);
 			n--;
 		}
 	}
 
+#define	APPL	ACL_RING_TO_APPL
+
+	/* try to reuse the fiber memory in dead queue */
 	head = acl_ring_pop_head(&__thread_fiber->dead);
-	if (head == NULL)
-		fiber = (ACL_FIBER *) acl_mycalloc(1, sizeof(ACL_FIBER) + size);
-	else if ((fiber = ACL_RING_TO_APPL(head, ACL_FIBER, me))->size < size) {
-		fiber_free(__thread_fiber, fiber);
-		fiber = (ACL_FIBER *) acl_mycalloc(1, sizeof(ACL_FIBER) + size);
-	} else
+	if (head == NULL) {
+		fiber = (ACL_FIBER *) acl_mycalloc(1, sizeof(ACL_FIBER));
+		fiber->buff = (char *) acl_mycalloc(1, size);
+	} else if ((fiber = APPL(head, ACL_FIBER, me))->size < size)
+		fiber->buff = (char *) acl_myrealloc(fiber->buff, size);
+	else
 		size = fiber->size;
 
 	fiber->errnum = 0;
@@ -317,6 +322,7 @@ static ACL_FIBER *fiber_alloc(void (*fn)(ACL_FIBER *, void *),
 	fiber->uctx.uc_link = &__thread_fiber->schedule.uctx;
 
 #ifdef USE_VALGRIND
+	/* avoding the valgrind's warning */
 	fiber->vid = VALGRIND_STACK_REGISTER(fiber->uctx.uc_stack.ss_sp,
 			fiber->uctx.uc_stack.ss_sp
 			+ fiber->uctx.uc_stack.ss_size);
@@ -329,7 +335,8 @@ static ACL_FIBER *fiber_alloc(void (*fn)(ACL_FIBER *, void *),
 	return fiber;
 }
 
-ACL_FIBER *acl_fiber_create(void (*fn)(ACL_FIBER *, void *), void *arg, size_t size)
+ACL_FIBER *acl_fiber_create(void (*fn)(ACL_FIBER *, void *),
+	void *arg, size_t size)
 {
 	ACL_FIBER *fiber = fiber_alloc(fn, arg, size);
 
@@ -408,7 +415,7 @@ void acl_fiber_schedule(void)
 	/* release dead fiber */
 	while ((head = acl_ring_pop_head(&__thread_fiber->dead)) != NULL) {
 		fiber = ACL_RING_TO_APPL(head, ACL_FIBER, me);
-		fiber_free(__thread_fiber, fiber);
+		fiber_free(fiber);
 	}
 
 	acl_fiber_hook_api(0);

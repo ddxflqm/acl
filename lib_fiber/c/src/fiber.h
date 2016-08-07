@@ -37,7 +37,7 @@ struct ACL_FIBER {
 	void          *arg;
 	void         (*timer_fn)(ACL_FIBER *, void *);
 	size_t         size;
-	char           buff[1];
+	char          *buff;
 };
 
 /*
