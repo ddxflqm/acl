@@ -410,6 +410,8 @@ void acl_fiber_schedule(void)
 		fiber = ACL_RING_TO_APPL(head, ACL_FIBER, me);
 		fiber_free(__thread_fiber, fiber);
 	}
+
+	acl_fiber_hook_api(0);
 }
 
 void fiber_system(void)
