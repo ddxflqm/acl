@@ -64,6 +64,8 @@ static void event_enable_read(ACL_EVENT *eventp, ACL_VSTREAM *fp,
 		fdp = event_fdtable_alloc();
 		fdp->listener = 0;
 		fdp->stream = fp;
+
+		/* fdp will be freed in acl_vstream_close */
 		fp->fdp = (void *) fdp;
 	} else if (fdp->flag & EVENT_FDTABLE_FLAG_WRITE)
 		acl_msg_panic("%s(%d), %s: fd %d: multiple I/O request",
@@ -167,6 +169,8 @@ static void event_enable_listen(ACL_EVENT *eventp, ACL_VSTREAM *fp,
 		fdp = event_fdtable_alloc();
 		fdp->stream = fp;
 		fdp->listener = 1;
+
+		/* fdp will be freed in acl_vstream_close */
 		fp->fdp = (void *) fdp;
 	} else if (fdp->flag & EVENT_FDTABLE_FLAG_WRITE)
 		acl_msg_panic("%s(%d)->%s: fd %d: multiple I/O request",
@@ -237,6 +241,8 @@ static void event_enable_write(ACL_EVENT *eventp, ACL_VSTREAM *fp,
 		fdp = event_fdtable_alloc();
 		fdp->listener = 0;
 		fdp->stream = fp;
+
+		/* fdp will be freed in acl_vstream_close */
 		fp->fdp = (void *) fdp;
 	} else if (fdp->flag & EVENT_FDTABLE_FLAG_READ)
 		acl_msg_panic("%s(%d)->%s: fd %d: multiple I/O request",
@@ -376,6 +382,7 @@ static void event_disable_readwrite(ACL_EVENT *eventp, ACL_VSTREAM *stream)
 				myname, acl_last_serror(), sockfd);
 	}
 
+	/* fdp will be freed in acl_vstream_close */
 	event_fdtable_reset(fdp);
 }
 
