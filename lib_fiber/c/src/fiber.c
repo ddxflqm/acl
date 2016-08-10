@@ -85,6 +85,9 @@ static void fiber_check(void)
 
 	__thread_fiber = (FIBER_TLS *) acl_mycalloc(1, sizeof(FIBER_TLS));
 #ifdef	USE_JMP
+	/* set context NULL when using setjmp that setcontext will not be
+	 * called in fiber_swap.
+	 */
 	__thread_fiber->original.context = NULL;
 #else
 	__thread_fiber->original.context = (ucontext_t *)
@@ -199,6 +202,10 @@ static void fiber_swap(ACL_FIBER *from, ACL_FIBER *to)
 	 * a stack, but continue with longjmp() as it's much faster.
 	 */
 	if (setjmp(from->jbuf) == 0) {
+		/* context just be used once for set up a stack, which will
+		 * be freed in fiber_start. The context in __thread_fiber
+		 * was set NULL.
+		 */
 		if (to->context != NULL)
 			setcontext(to->context);
 		else
@@ -265,6 +272,7 @@ static void fiber_start(unsigned int x, unsigned int y)
 	fiber = (ACL_FIBER *) arg.p;
 
 #ifdef	USE_JMP
+	/* when using setjmp/longjmp, the context just be used only once */
 	if (fiber->context != NULL) {
 		acl_myfree(fiber->context);
 		fiber->context = NULL;
