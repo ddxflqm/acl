@@ -1,3 +1,5 @@
+19) 2016.8.10
+19.1) performance&feature: 允许使用 setjmp/longjmp 进行栈的跳转，性能更好
 
 18) 2016.8.7
 18.1) feature: fiber.c 中在 acl_fiber_schedule 结束前自动将 acl_var_hook_sys_api

@@ -23,7 +23,7 @@ typedef struct {
 	size_t         size;
 	int            exitcode;
 	ACL_FIBER     *running;
-	ACL_FIBER      schedule;
+	ACL_FIBER      original;
 	int            errnum;
 	size_t         idgen;
 	int            count;
@@ -50,7 +50,10 @@ static void thread_free(void *ctx)
 
 	if (tf->fibers)
 		acl_myfree(tf->fibers);
+	if (tf->original.context)
+		acl_myfree(tf->original.context);
 	acl_myfree(tf);
+
 	if (__main_fiber == __thread_fiber)
 		__main_fiber = NULL;
 	__thread_fiber = NULL;
@@ -81,6 +84,12 @@ static void fiber_check(void)
 	acl_assert(acl_pthread_once(&__once_control, thread_init) == 0);
 
 	__thread_fiber = (FIBER_TLS *) acl_mycalloc(1, sizeof(FIBER_TLS));
+#ifdef	USE_JMP
+	__thread_fiber->original.context = NULL;
+#else
+	__thread_fiber->original.context = (ucontext_t *)
+		acl_mycalloc(1, sizeof(ucontext_t));
+#endif
 	__thread_fiber->fibers = NULL;
 	__thread_fiber->size   = 0;
 	__thread_fiber->idgen  = 0;
@@ -108,7 +117,7 @@ int *__errno_location(void)
 	if (__thread_fiber->running)
 		return &__thread_fiber->running->errnum;
 	else
-		return &__thread_fiber->schedule.errnum;
+		return &__thread_fiber->original.errnum;
 }
 
 int fcntl(int fd, int cmd, ...)
@@ -170,7 +179,7 @@ void fiber_save_errno(void)
 		fiber_check();
 
 	if ((curr = __thread_fiber->running) == NULL)
-		curr = &__thread_fiber->schedule;
+		curr = &__thread_fiber->original;
 
 	if (curr->flag & FIBER_F_SAVE_ERRNO) {
 		curr->flag &= ~FIBER_F_SAVE_ERRNO;
@@ -185,9 +194,21 @@ void fiber_save_errno(void)
 
 static void fiber_swap(ACL_FIBER *from, ACL_FIBER *to)
 {
-	if (swapcontext(&from->uctx, &to->uctx) < 0)
+#ifdef	USE_JMP
+	/* use setcontext() for the initial jump, as it allows us to set up
+	 * a stack, but continue with longjmp() as it's much faster.
+	 */
+	if (setjmp(from->jbuf) == 0) {
+		if (to->context != NULL)
+			setcontext(to->context);
+		else
+			longjmp(to->jbuf, 1);
+	}
+#else
+	if (swapcontext(from->context, to->context) < 0)
 		acl_msg_fatal("%s(%d), %s: swapcontext error %s",
 			__FILE__, __LINE__, __FUNCTION__, acl_last_serror());
+#endif
 }
 
 ACL_FIBER *fiber_running(void)
@@ -243,6 +264,13 @@ static void fiber_start(unsigned int x, unsigned int y)
 	
 	fiber = (ACL_FIBER *) arg.p;
 
+#ifdef	USE_JMP
+	if (fiber->context != NULL) {
+		acl_myfree(fiber->context);
+		fiber->context = NULL;
+	}
+#endif
+
 	fiber->fn(fiber, fiber->arg);
 
 	for (i = 0; i < fiber->nlocal; i++) {
@@ -263,6 +291,8 @@ static void fiber_start(unsigned int x, unsigned int y)
 
 static void fiber_free(ACL_FIBER *fiber)
 {
+	if (fiber->context)
+		acl_myfree(fiber->context);
 	acl_myfree(fiber->buff);
 	acl_myfree(fiber);
 }
@@ -310,26 +340,32 @@ static ACL_FIBER *fiber_alloc(void (*fn)(ACL_FIBER *, void *),
 	fiber->size   = size;
 	fiber->id     = ++__thread_fiber->idgen;
 
-	sigemptyset(&zero);
-	sigprocmask(SIG_BLOCK, &zero, &fiber->uctx.uc_sigmask);
+	carg.p = fiber;
 
-	if (getcontext(&fiber->uctx) < 0)
+	fiber->context = (ucontext_t *) acl_mymalloc(sizeof(ucontext_t));
+	sigemptyset(&zero);
+	sigprocmask(SIG_BLOCK, &zero, &fiber->context->uc_sigmask);
+
+	if (getcontext(fiber->context) < 0)
 		acl_msg_fatal("%s(%d), %s: getcontext error: %s",
 			__FILE__, __LINE__, __FUNCTION__, acl_last_serror());
 
-	fiber->uctx.uc_stack.ss_sp   = fiber->buff + 8;
-	fiber->uctx.uc_stack.ss_size = fiber->size - 64;
-	fiber->uctx.uc_link = &__thread_fiber->schedule.uctx;
+	fiber->context->uc_stack.ss_sp   = fiber->buff + 8;
+	fiber->context->uc_stack.ss_size = fiber->size - 64;
+
+#ifdef	USE_JMP
+	fiber->context->uc_link = NULL;
+#else
+	fiber->context->uc_link = __thread_fiber->original.context;
+#endif
 
 #ifdef USE_VALGRIND
 	/* avoding the valgrind's warning */
-	fiber->vid = VALGRIND_STACK_REGISTER(fiber->uctx.uc_stack.ss_sp,
-			fiber->uctx.uc_stack.ss_sp
-			+ fiber->uctx.uc_stack.ss_size);
+	fiber->vid = VALGRIND_STACK_REGISTER(fiber->context->uc_stack.ss_sp,
+			fiber->context.uc_stack.ss_sp
+			+ fiber->init_context.uc_stack.ss_size);
 #endif
-
-	carg.p = fiber;
-	makecontext(&fiber->uctx, (void(*)(void)) fiber_start,
+	makecontext(fiber->context, (void(*)(void)) fiber_start,
 		2, carg.i[0], carg.i[1]);
 
 	return fiber;
@@ -408,7 +444,7 @@ void acl_fiber_schedule(void)
 		__thread_fiber->running = fiber;
 		__thread_fiber->switched++;
 
-		fiber_swap(&__thread_fiber->schedule, fiber);
+		fiber_swap(&__thread_fiber->original, fiber);
 		__thread_fiber->running = NULL;
 	}
 
@@ -463,7 +499,7 @@ void acl_fiber_switch(void)
 	head = acl_ring_pop_head(&__thread_fiber->ready);
 
 	if (head == NULL) {
-		fiber_swap(current, &__thread_fiber->schedule);
+		fiber_swap(current, &__thread_fiber->original);
 		return;
 	}
 

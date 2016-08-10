@@ -2,6 +2,7 @@
 #define FIBER_INCLUDE_H
 
 #include <ucontext.h>
+#include <setjmp.h>
 #include "event.h"
 
 typedef enum {
@@ -32,7 +33,10 @@ struct ACL_FIBER {
 	FIBER_LOCAL  **locals;
 	int            nlocal;
 
-	ucontext_t     uctx;
+#ifdef	USE_JMP
+	jmp_buf        jbuf;
+#endif
+	ucontext_t    *context;
 	void         (*fn)(ACL_FIBER *, void *);
 	void          *arg;
 	void         (*timer_fn)(ACL_FIBER *, void *);
