@@ -195,13 +195,55 @@ void fiber_save_errno(void)
 		curr->errnum = errno;
 }
 
+#if defined(__x86_64__)
+#define SETJMP(ctx) ({\
+    int ret;\
+    asm ("lea     LJMPRET%=(%%rip), %%rcx\n\t"\
+        "xor     %%rax, %%rax\n\t"\
+        "mov     %%rbx, (%%rdx)\n\t"\
+        "mov     %%rbp, 8(%%rdx)\n\t"\
+        "mov     %%r12, 16(%%rdx)\n\t"\
+        "mov     %%rsp, 24(%%rdx)\n\t"\
+        "mov     %%r13, 32(%%rdx)\n\t"\
+        "mov     %%r14, 40(%%rdx)\n\t"\
+        "mov     %%r15, 48(%%rdx)\n\t"\
+        "mov     %%rcx, 56(%%rdx)\n\t"\
+        "mov     %%rdi, 64(%%rdx)\n\t"\
+        "mov     %%rsi, 72(%%rdx)\n\t"\
+        "LJMPRET%=:\n\t"\
+        : "=a" (ret)\
+        : "d" (ctx) : "memory");\
+    ret;\
+})
+#define LONGJMP(ctx) \
+    asm("movq   (%%rax), %%rbx\n\t"\
+	    "movq   8(%%rax), %%rbp\n\t"\
+	    "movq   16(%%rax), %%r12\n\t"\
+	    "movq   24(%%rax), %%rdx\n\t"\
+	    "movq   32(%%rax), %%r13\n\t"\
+	    "movq   40(%%rax), %%r14\n\t"\
+	    "mov    %%rdx, %%rsp\n\t"\
+	    "movq   48(%%rax), %%r15\n\t"\
+	    "movq   56(%%rax), %%rdx\n\t"\
+	    "movq   64(%%rax), %%rdi\n\t"\
+	    "movq   72(%%rax), %%rsi\n\t"\
+	    "jmp    *%%rdx\n\t"\
+        : : "a" (ctx) : "rdx" \
+    )
+#else
+#define SETJMP(ctx) \
+    sigsetjmp(ctx, 0)
+#define LONGJMP(ctx) \
+    siglongjmp(ctx, 1)
+#endif
+
 static void fiber_swap(ACL_FIBER *from, ACL_FIBER *to)
 {
 #ifdef	USE_JMP
 	/* use setcontext() for the initial jump, as it allows us to set up
 	 * a stack, but continue with longjmp() as it's much faster.
 	 */
-	if (setjmp(from->jbuf) == 0) {
+	if (SETJMP(from->jbuf) == 0) {
 		/* context just be used once for set up a stack, which will
 		 * be freed in fiber_start. The context in __thread_fiber
 		 * was set NULL.
@@ -209,7 +251,7 @@ static void fiber_swap(ACL_FIBER *from, ACL_FIBER *to)
 		if (to->context != NULL)
 			setcontext(to->context);
 		else
-			longjmp(to->jbuf, 1);
+			LONGJMP(to->jbuf);
 	}
 #else
 	if (swapcontext(from->context, to->context) < 0)
