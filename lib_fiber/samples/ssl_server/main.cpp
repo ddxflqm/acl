@@ -8,6 +8,7 @@ static int __rw_timeout = 0;
 static acl::string __ssl_crt("../ssl_crt.pem");
 static acl::string __ssl_key("../ssl_key.pem");
 static acl::polarssl_conf *__ssl_conf = NULL;
+static bool __check_ssl = false;
 
 static void http_server(ACL_FIBER *, void *ctx)
 {
@@ -27,24 +28,25 @@ static void http_server(ACL_FIBER *, void *ctx)
 			delete conn;
 			return;
 		}
-	}
 
-#if 0
-	if (ssl->handshake() == false)
-	{
-		printf("ssl handshake error\r\n");
-		ssl->destroy();
-		delete conn;
-		return;
+		if (__check_ssl)
+		{
+			if (ssl->handshake() == false)
+			{
+				printf("ssl handshake error\r\n");
+				ssl->destroy();
+				delete conn;
+				return;
+			}
+			if (ssl->handshake_ok() == false)
+			{
+				printf("ssl handshake error\r\n");
+				ssl->destroy();
+				delete conn;
+				return;
+			}
+		}
 	}
-	if (ssl->handshake_ok() == false)
-	{
-		printf("ssl handshake error\r\n");
-		ssl->destroy();
-		delete conn;
-		return;
-	}
-#endif
 
 	printf("ssl handshake_ok\r\n");
 
@@ -57,6 +59,7 @@ static void http_server(ACL_FIBER *, void *ctx)
 			printf("gets error: %s\r\n", acl::last_serror());
 			break;
 		}
+
 		if (conn->write(buf) == -1)
 		{
 			printf("write error: %s\r\n", acl::last_serror());
@@ -135,6 +138,7 @@ static void usage(const char* procname)
 		" -s listen_addr\r\n"
 		" -r rw_timeout\r\n"
 		" -c ssl_crt.pem\r\n"
+		" -C [if check ssl status]\r\n"
 		" -k ssl_key.pem\r\n", procname);
 }
 
@@ -143,7 +147,7 @@ int main(int argc, char *argv[])
 	acl::string addr(":9001");
 	int  ch;
 
-	while ((ch = getopt(argc, argv, "hs:r:c:k:")) > 0)
+	while ((ch = getopt(argc, argv, "hs:r:c:k:C")) > 0)
 	{
 		switch (ch)
 		{
@@ -161,6 +165,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'k':
 			__ssl_key = optarg;
+			break;
+		case 'C':
+			__check_ssl = true;
 			break;
 		default:
 			break;

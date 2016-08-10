@@ -55,9 +55,8 @@ static bool ssl_init(acl::socket_stream& conn)
 	return true;
 }
 
-static void fiber_connect(ACL_FIBER *fiber acl_unused, void *ctx)
+static void run(const char* addr)
 {
-	const char *addr = (const char *) ctx;
 	acl::socket_stream conn;
 
 	if (conn.open(addr, __conn_timeout, __rw_timeout) == false)
@@ -96,6 +95,13 @@ static void fiber_connect(ACL_FIBER *fiber acl_unused, void *ctx)
 
 	printf("close one connection: %d, %s\r\n",
 		conn.sock_handle(), acl::last_serror());
+}
+
+static void fiber_connect(ACL_FIBER *fiber acl_unused, void *ctx)
+{
+	const char *addr = (const char *) ctx;
+
+	run(addr);
 
 	--__left_fibers;
 	printf("max_fibers: %d, left: %d\r\n", __max_fibers, __left_fibers);
