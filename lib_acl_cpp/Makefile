@@ -36,6 +36,7 @@ SYSLIB =
 CHECKSYSRES = @echo "Unknow system type!";exit 1
 UNIXNAME = $(shell uname -sm)
 UNIXTYPE = LINUX
+polarssl =
 
 ifeq ($(CC),)
         CC = g++
@@ -50,6 +51,10 @@ ifeq ($(RANLIB),)
 endif
 
 ifeq ($(findstring HAS_POLARSSL, $(FLAGS)), HAS_POLARSSL)
+	CFLAGS += -DHAS_POLARSSL
+endif
+
+ifeq ($(findstring on, $(polarssl)), on)
 	CFLAGS += -DHAS_POLARSSL
 endif
 
