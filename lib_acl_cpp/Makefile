@@ -52,6 +52,7 @@ endif
 
 ifeq ($(findstring HAS_POLARSSL, $(FLAGS)), HAS_POLARSSL)
 	CFLAGS += -DHAS_POLARSSL
+	polarssl = on
 endif
 
 ifeq ($(findstring on, $(polarssl)), on)
@@ -226,6 +227,14 @@ shared: depends pch $(OBJS_DST)
 	fi
 
 depends: $(OBJS_DEF)
+check:
+	@if test -n $(polarssl) && test "$(polarssl)" = "on"; then \
+		rm -f Debug/polarssl_io.o; \
+		rm -f Debug/polarssl_conf.o; \
+		rm -f Debug/polarssl_io.inc; \
+		rm -f Debug/polarssl_conf.inc; \
+	fi
+
 pch: src/acl_stdafx.hpp
 	rm -f $(PCH)
 	@if test "$(UNIXTYPE)" = "LINUX" || test "$(UNIXTYPE)" = "FREEBSD" \
