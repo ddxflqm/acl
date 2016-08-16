@@ -1,3 +1,7 @@
+
+20) 2016.8.16
+20.1) portable: fiber.c 中增强了 SETJMP 汇编代码移植性
+
 19) 2016.8.10
 19.1) performance&feature: 允许使用 setjmp/longjmp 进行栈的跳转，性能更好
 
