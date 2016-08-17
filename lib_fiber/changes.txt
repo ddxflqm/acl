@@ -1,4 +1,8 @@
 
+21) 2016.8.17
+21.1) performance: fiber.c 中函数 fiber_alloc 在创建协程栈时使用 malloc 代替了
+原来的 calloc，避免内存提交，仅使用虚存，从而有效控制了协程的实际占用内存大小
+
 20) 2016.8.16
 20.1) portable: fiber.c 中增强了 SETJMP 汇编代码移植性
 
