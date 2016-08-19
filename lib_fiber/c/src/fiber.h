@@ -35,9 +35,9 @@ struct ACL_FIBER {
 
 #ifdef	USE_JMP
 # if defined(__x86_64__)
-	unsigned long long jbuf[10];
+	unsigned long long env[10];
 # else
-	sigjmp_buf     jbuf;
+	sigjmp_buf     env;
 # endif
 #endif
 	ucontext_t    *context;
