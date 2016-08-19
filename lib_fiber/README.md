@@ -147,6 +147,8 @@ static void fiber_accept(ACL_FIBER *fiber acl_unused, void *ctx acl_unused)
 
 		__nconnect++;
 		printf("accept one, fd: %d\r\n", cfd);
+
+		// 将接收到的客户端连接传递给新创建的协程
 		acl_fiber_create(echo_client, fd, __stack_size);
 	}
 
@@ -203,9 +205,13 @@ int main(int argc, char *argv[])
 	acl_msg_stdout_enable(1);
 
 	printf("%s: call fiber_creater\r\n", __FUNCTION__);
+
+	// 创建监听协程
 	acl_fiber_create(fiber_accept, NULL, 32768);
 
 	printf("call fiber_schedule\r\n");
+
+	// 开始协程调度过程
 	acl_fiber_schedule();
 
 	return 0;
