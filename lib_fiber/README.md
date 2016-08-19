@@ -217,3 +217,8 @@ int main(int argc, char *argv[])
 	return 0;
 }
 ```
+
+参考：
+1、网络协程编程：http://zsxxsz.iteye.com/blog/2312043
+2、使用协程编写高并发网络服务：http://zsxxsz.iteye.com/blog/2309654
+3、使用协程方式编写高并发的WEB服务：http://zsxxsz.iteye.com/blog/2309665
