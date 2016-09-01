@@ -40,11 +40,6 @@ static void fiber4(const acl::string& buf)
 	printf("in fiber: %d, buf: %s\r\n", acl::fiber::self(), buf.c_str());
 }
 
-static void fiber5(const acl::string& buf)
-{
-	printf("in fiber: %d, buf: %s\r\n", acl::fiber::self(), buf.c_str());
-}
-
 #endif
 
 static void usage(const char* procname)
@@ -98,7 +93,7 @@ int main(int argc, char *argv[])
 	};
 
 	go[=] {
-		fiber5(buf);
+		fiber4(buf);
 	};
 #endif
 

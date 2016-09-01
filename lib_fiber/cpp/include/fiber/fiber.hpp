@@ -123,4 +123,41 @@ public:
 
 #define	go acl::go_fiber()=
 
+/**
+ * static void fiber1(void)
+ * {
+ * 	printf("fiber: %d\r\n", acl::fiber::self());
+ * }
+ *
+ * static void fiber2(acl::string& buf)
+ * {
+ * 	printf("in fiber: %d, buf: %s\r\n", acl::fiber::self(), buf.c_str());
+ * 	buf = "world";
+ * }
+ *
+ * static void fiber3(const acl::string& buf)
+ * {
+ * 	printf("in fiber: %d, buf: %s\r\n", acl::fiber::self(), buf.c_str());
+ * }
+ *
+ * static test(void)
+ * {
+ * 	go fiber1;
+ * 	
+ * 	acl::string buf("hello");
+ *
+ * 	go[&] {
+ * 		fiber2(buf);
+ * 	};
+ * 	
+ * 	go[=] {
+ * 		fiber3(buf);
+ * 	};
+ * 
+ * 	go[&] {
+ * 		fiber3(buf);
+ * 	};
+ * }
+ *
+ */
 #endif
