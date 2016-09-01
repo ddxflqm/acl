@@ -115,13 +115,18 @@ class go_fiber
 {
 public:
 	go_fiber(void) = default;
+	go_fiber(size_t stack_size) : stack_size_(stack_size) {}
 
 	void operator=(std::function<void()> fn);
+
+private:
+	size_t stack_size_ = 320000;
 };
 
 } // namespace acl
 
-#define	go acl::go_fiber()=
+#define	go		acl::go_fiber()=
+#define	go_stack(size)	acl::go_fiber(size)=
 
 /**
  * static void fiber1(void)

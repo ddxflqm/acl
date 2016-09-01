@@ -118,7 +118,7 @@ static void fiber_main(ACL_FIBER*, void* ctx)
 void go_fiber::operator=(std::function<void()> fn)
 {
 	fiber_ctx* ctx = new fiber_ctx(fn);
-	acl_fiber_create(fiber_main, (void*) ctx, 320000);
+	acl_fiber_create(fiber_main, (void*) ctx, stack_size_);
 }
 
 } // namespace acl
