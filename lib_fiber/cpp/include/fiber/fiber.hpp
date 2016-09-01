@@ -163,6 +163,5 @@ private:
  * 		fiber3(buf);
  * 	};
  * }
- *
  */
 #endif
