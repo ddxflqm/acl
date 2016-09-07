@@ -747,7 +747,6 @@ int acl_vstream_readtags(ACL_VSTREAM *fp, void *vptr, size_t maxlen,
 	}
 
 	fp->flag &= ~ACL_VSTREAM_FLAG_TAGYES;
-	fp->flag |= ACL_VSTREAM_FLAG_TAGNO;
 
 	needle_end = (const unsigned char *) tag;
 
@@ -798,7 +797,6 @@ int acl_vstream_readtags(ACL_VSTREAM *fp, void *vptr, size_t maxlen,
 		}
 		ptr++;
 		if (matched) {
-			fp->flag &= ~ACL_VSTREAM_FLAG_TAGNO;
 			fp->flag |= ACL_VSTREAM_FLAG_TAGYES;
 			break;
 		}
@@ -823,7 +821,6 @@ int acl_vstream_gets(ACL_VSTREAM *fp, void *vptr, size_t maxlen)
 	}
 
 	fp->flag &= ~ACL_VSTREAM_FLAG_TAGYES;
-	fp->flag |= ACL_VSTREAM_FLAG_TAGNO;
 
 	ptr = (unsigned char *) vptr;
 	for (n = 1; n < (int) maxlen; n++) {
@@ -846,7 +843,6 @@ int acl_vstream_gets(ACL_VSTREAM *fp, void *vptr, size_t maxlen)
 			/* newline is stored, like fgets() */
 
 			fp->flag |= ACL_VSTREAM_FLAG_TAGYES;
-			fp->flag &= ~ACL_VSTREAM_FLAG_TAGNO;
 			break;
 		}
 	}
@@ -871,7 +867,6 @@ int acl_vstream_gets_nonl(ACL_VSTREAM *fp, void *vptr, size_t maxlen)
 	}
 
 	fp->flag &= ~ACL_VSTREAM_FLAG_TAGYES;
-	fp->flag |= ACL_VSTREAM_FLAG_TAGNO;
 
 	ptr = (unsigned char *) vptr;
 	for (n = 1; n < (int) maxlen; n++) {
@@ -889,7 +884,6 @@ int acl_vstream_gets_nonl(ACL_VSTREAM *fp, void *vptr, size_t maxlen)
 
 		*ptr++ = ch;
 		if (ch == '\n') {
-			fp->flag &= ~ACL_VSTREAM_FLAG_TAGNO;
 			fp->flag |= ACL_VSTREAM_FLAG_TAGYES;
 			break;  /* newline is stored, like fgets() */
 		}
@@ -1016,7 +1010,6 @@ static int bfgets_crlf_peek(ACL_VSTREAM *fp, ACL_VSTRING *buf, int *ready)
 		/* when get '\n', set ready 1 */
 		if (ch == '\n') {
 			*ready = 1;
-			fp->flag &= ~ACL_VSTREAM_FLAG_TAGNO;
 			fp->flag |= ACL_VSTREAM_FLAG_TAGYES;
 
 			break;
@@ -1051,7 +1044,6 @@ int acl_vstream_gets_peek(ACL_VSTREAM *fp, ACL_VSTRING *buf, int *ready)
 	}
 
 	fp->flag &= ~ACL_VSTREAM_FLAG_TAGYES;
-	fp->flag |= ACL_VSTREAM_FLAG_TAGNO;
 
 	*ready = 0;
 	n = (int) LEN(buf);
@@ -1126,7 +1118,6 @@ int acl_vstream_gets_nonl_peek(ACL_VSTREAM *fp, ACL_VSTRING *buf, int *ready)
 	}
 
 	fp->flag &= ~ACL_VSTREAM_FLAG_TAGYES;
-	fp->flag |= ACL_VSTREAM_FLAG_TAGNO;
 
 	*ready = 0;
 	n = (int) LEN(buf);
