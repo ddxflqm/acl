@@ -74,7 +74,9 @@ public:
 	websocket& set_frame_payload_len(unsigned long long len);
 	websocket& set_frame_masking_key(unsigned int mask);
 
-	bool send_frame_data(char* buf, size_t size);
+	bool send_frame_data(char* data, size_t len);
+	bool send_frame_pong(char* data, size_t len);
+	bool send_frame_ping(char* data, size_t len);
 
 	bool get_frame_fin(void) const
 	{

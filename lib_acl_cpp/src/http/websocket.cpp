@@ -1,20 +1,20 @@
 #include "acl_stdafx.hpp"
-//#ifndef ACL_PREPARE_COMPILE
+#ifndef ACL_PREPARE_COMPILE
 #include "acl_cpp/stdlib/log.hpp"
 #include "acl_cpp/stream/socket_stream.hpp"
 #include "acl_cpp/http/websocket.hpp"
-//#endif
+#endif
 
 namespace acl
 {
 
 websocket::websocket(socket_stream& client)
-	: client_(client)
-	, header_buf_(NULL)
-	, header_size_(0)
-	, header_len_(0)
-	, payload_nread_(0)
-	, header_sent_(false)
+: client_(client)
+, header_buf_(NULL)
+, header_size_(0)
+, header_len_(0)
+, payload_nread_(0)
+, header_sent_(false)
 {
 }
 
@@ -26,23 +26,17 @@ websocket::~websocket(void)
 
 websocket& websocket::reset(void)
 {
-	header_.fin           = false;
-	header_.rsv1          = false;
-	header_.rsv2          = false;
-	header_.rsv3          = false;
-	header_.opcode        = FRAME_CONTINUATION;
-	header_.mask          = false;
-	header_.payload_len   = 0;
-	header_.masking_key   = 0;
+	header_.fin         = false;
+	header_.rsv1        = false;
+	header_.rsv2        = false;
+	header_.rsv3        = false;
+	header_.opcode      = FRAME_CONTINUATION;
+	header_.mask        = false;
+	header_.payload_len = 0;
+	header_.masking_key = 0;
 
 	payload_nread_ = 0;
-	if (header_buf_)
-	{
-		acl_myfree(header_buf_);
-		header_buf_ = NULL;
-	}
-	header_size_ = 0;
-	header_sent_ = false;
+	header_sent_   = false;
 
 	return *this;
 }
@@ -80,7 +74,6 @@ websocket& websocket::set_frame_opcode(unsigned char type)
 websocket& websocket::set_frame_payload_len(unsigned long long len)
 {
 	header_.payload_len = len;
-	header_.mask = true;
 	return *this;
 }
 
@@ -93,10 +86,13 @@ websocket& websocket::set_frame_masking_key(unsigned int mask)
 
 void websocket::make_frame_header(void)
 {
-	header_len_ = 2
-		+ (header_.payload_len <= 125
-			? 0 : (header_.payload_len <= 65535 ? 2 : 8))
-		+ (header_.payload_len > 0 && header_.mask ? 4 : 0);
+	header_len_ = 2;
+	if (header_.payload_len > 65535)
+		header_len_ += 8;
+	else if (header_.payload_len > 126)
+		header_len_ += 2;
+	if (header_.mask)
+		header_len_ += 4;
 
 	if (header_len_ > header_size_)
 	{
@@ -121,7 +117,7 @@ void websocket::make_frame_header(void)
 	unsigned long long payload_len = header_.payload_len;
 
 	if (payload_len <= 125)
-		ptr[offset++] |= (payload_len & 0xff);
+		ptr[offset++] |= payload_len & 0xff;
 	else if (payload_len <= 65535)
 	{
 		ptr[offset++] |= 126;
@@ -154,7 +150,7 @@ void websocket::make_frame_header(void)
 	}
 }
 
-bool websocket::send_frame_data(char* buf, size_t len)
+bool websocket::send_frame_data(char* data, size_t len)
 {
 	if (!header_sent_)
 	{
@@ -163,25 +159,49 @@ bool websocket::send_frame_data(char* buf, size_t len)
 		header_sent_ = true;
 		if (client_.write(header_buf_, header_len_) == -1)
 		{
-			logger_error("write header error %s", last_serror());
+			logger_error("write header error %s, len: %d",
+				last_serror(), (int) header_len_);
 			return false;
 		}
 	}
+
+	if (data == NULL || len == 0)
+		return true;
 
 	if (header_.mask)
 	{
 		unsigned char* mask = (unsigned char*) &header_.masking_key;
 		for (size_t i = 0; i < len; i++)
-			buf[i] ^= mask[i % 4];
+			data[i] ^= mask[i % 4];
 	}
 
-	if (client_.write(buf, len) == -1)
+	if (client_.write(data, len) == -1)
 	{
 		logger_error("write frame data error %s", last_serror());
 		return false;
 	}
 
 	return true;
+}
+
+bool websocket::send_frame_pong(char* data, size_t len)
+{
+	reset();
+	set_frame_fin(true);
+	set_frame_opcode(FRAME_PONG);
+	set_frame_payload_len(0);
+
+	return send_frame_data(data, len);
+}
+
+bool websocket::send_frame_ping(char* data, size_t len)
+{
+	reset();
+	set_frame_fin(true);
+	set_frame_opcode(FRAME_PING);
+	set_frame_payload_len(len);
+
+	return send_frame_data(data, len);
 }
 
 static bool is_big_endian(void)

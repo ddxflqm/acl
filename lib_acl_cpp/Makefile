@@ -19,7 +19,7 @@ CFLAGS = -c -g -W \
 -Wformat \
 -DHAS_MYSQL_DLL \
 -Winvalid-pch \
--DACL_PREPARE_COMPILE
+#-DACL_PREPARE_COMPILE
 #-DHAS_POLARSSL
 #-DUSE_DYNAMIC
 # -Wcast-align
