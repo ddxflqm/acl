@@ -154,9 +154,8 @@ bool websocket::send_frame_data(char* data, size_t len)
 {
 	if (!header_sent_)
 	{
-		if (header_buf_ == NULL)
-			make_frame_header();
 		header_sent_ = true;
+		make_frame_header();
 		if (client_.write(header_buf_, header_len_) == -1)
 		{
 			logger_error("write header error %s, len: %d",

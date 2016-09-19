@@ -14,13 +14,21 @@ public:
 protected:
 	// @override
 	bool doUnknown(acl::HttpServletRequest&, acl::HttpServletResponse&);
+
 	// @override
 	bool doGet(acl::HttpServletRequest&, acl::HttpServletResponse&);
+
 	// @override
 	bool doPost(acl::HttpServletRequest&, acl::HttpServletResponse&);
 
+	// @override
 	bool doWebsocket(acl::HttpServletRequest&, acl::HttpServletResponse&);
 
 private:
 	acl::session* session_;
+
+	bool doPing(acl::websocket&, acl::websocket&);
+	bool doPong(acl::websocket&, acl::websocket&);
+	bool doClose(acl::websocket&, acl::websocket&);
+	bool doMsg(acl::websocket&, acl::websocket&);
 };

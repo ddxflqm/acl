@@ -30,55 +30,11 @@ bool http_servlet::doUnknown(acl::HttpServletRequest&,
 bool http_servlet::doGet(acl::HttpServletRequest& req,
 	acl::HttpServletResponse& res)
 {
-	const char* ptr = req.getHeader("Connection");
-	if (ptr == NULL)
-	{
-		printf("no connectioin\r\n");
-		return false;
-	}
-	printf("Connection: %s\r\n", ptr);
-	if (strcasestr(ptr, "Upgrade") == NULL)
-	{
-		printf("invalid Connection: %s\r\n", ptr);
-		return false;
-	}
-
-	ptr = req.getHeader("Upgrade");
-	if (ptr == NULL)
-	{
-		printf("no upgrade\r\n");
-		return false;
-	}
-	printf("Upgrade: %s\r\n", ptr);
-	if (strcasestr(ptr, "websocket") == NULL)
-	{
-		printf("invalid Upgrade: %s\r\n", ptr);
-		return false;
-	}
-
-	const char* key = req.getHeader("Sec-WebSocket-Key");
-	if (key == NULL || *key == 0)
-	{
-		printf("no Sec-WebSocket-Key\r\n");
-		return false;
-	}
-
-	printf("Sec-WebSocket-Key: %s\r\n", key);
-	acl::http_header& header = res.getHttpHeader();
-	header.set_upgrade("websocket");
-	header.set_ws_accept(key);
-	if (res.sendHeader() == false)
-	{
-		printf("sendHeader error\r\n");
-		return false;
-	}
-
-	printf("-------------------------------------------------------\r\n");
-
-	return doWebsocket(req, res);
+	printf("in doGet\r\n");
+	return doPost(req, res);
 }
 
-static bool doPing(acl::websocket& in, acl::websocket& out)
+bool http_servlet::doPing(acl::websocket& in, acl::websocket& out)
 {
 	unsigned long long len = in.get_frame_payload_len();
 	if (len == 0)
@@ -112,7 +68,7 @@ static bool doPing(acl::websocket& in, acl::websocket& out)
 	return true;
 }
 
-static bool doPong(acl::websocket& in, acl::websocket&)
+bool http_servlet::doPong(acl::websocket& in, acl::websocket&)
 {
 	unsigned long long len = in.get_frame_payload_len();
 	if (len == 0)
@@ -137,12 +93,12 @@ static bool doPong(acl::websocket& in, acl::websocket&)
 	return true;
 }
 
-static bool doClose(acl::websocket&, acl::websocket&)
+bool http_servlet::doClose(acl::websocket&, acl::websocket&)
 {
 	return false;
 }
 
-static bool doMsg(acl::websocket& in, acl::websocket& out)
+bool http_servlet::doMsg(acl::websocket& in, acl::websocket& out)
 {
 	unsigned long long len = in.get_frame_payload_len();
 	out.reset().set_frame_fin(true)
