@@ -285,7 +285,7 @@ int websocket::read_frame_data(char* buf, size_t size)
 		return 0;
 
 	if (header_.payload_len - payload_nread_ < size)
-		size = header_.payload_len - payload_nread_;
+		size = (size_t) (header_.payload_len - payload_nread_);
 
 	int ret = client_.read(buf, size);
 	if (ret == -1)
