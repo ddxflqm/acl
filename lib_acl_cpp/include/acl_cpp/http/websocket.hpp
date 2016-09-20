@@ -58,6 +58,10 @@ public:
 	~websocket(void);
 
 	websocket& reset(void);
+	socket_stream& get_stream(void) const
+	{
+		return client_;
+	}
 
 	bool read_frame_head(void);
 	int read_frame_data(char* buf, size_t size);
