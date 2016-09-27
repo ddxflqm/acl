@@ -40,8 +40,12 @@ static bool client_login(user_client* uc, ACL_ARGV* tokens)
 {
 	if (tokens->argc < 2)
 	{
-		printf("invalid argc: %d < 2\r\n", tokens->argc);
-		return false;
+		acl::string tmp;
+		tmp.format("invalid argc: %d < 2\r\n", tokens->argc);
+		printf("%s", tmp.c_str());
+
+		return acl_vstream_writen(uc->get_stream(), tmp.c_str(),
+			(int) tmp.size()) != ACL_VSTREAM_EOF;
 	}
 
 	acl::string msg;
