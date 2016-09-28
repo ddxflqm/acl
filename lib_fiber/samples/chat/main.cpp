@@ -203,6 +203,8 @@ static void fiber_flush(ACL_FIBER* fiber acl_unused, void* ctx)
 	ACL_VSTREAM* conn = uc->get_stream();
 	acl::string* msg;
 
+	uc->set_busy(true);
+
 	while ((msg = uc->pop()) != NULL)
 	{
 		if (acl_vstream_writen(conn, msg->c_str(), (int) msg->size())
@@ -220,6 +222,7 @@ static void fiber_flush(ACL_FIBER* fiber acl_unused, void* ctx)
 		}
 	}
 
+	uc->set_busy(false);
 	acl_event_enable_read(event, conn, 120, client_read_callback, uc);
 }
 
@@ -230,7 +233,7 @@ static void fflush_all(void)
 	for (; it != __users.end(); it = next)
 	{
 		++next;
-		if (it->second->empty())
+		if (it->second->empty() || it->second->is_busy())
 			continue;
 
 		ACL_EVENT* event = it->second->get_event();

@@ -5,7 +5,7 @@ class user_client
 {
 public:
 	user_client(ACL_EVENT*event, ACL_VSTREAM* conn)
-		: event_(event), conn_(conn) {}
+		: event_(event), conn_(conn), busy_(false) {}
 	~user_client(void)
 	{
 		for (std::list<acl::string*>::iterator it = messages_.begin();
@@ -61,9 +61,20 @@ public:
 		return name_.c_str();
 	}
 
+	bool is_busy(void) const
+	{
+		return busy_;
+	}
+
+	void set_busy(bool yes)
+	{
+		busy_ = yes;
+	}
+
 private:
 	ACL_EVENT* event_;
 	ACL_VSTREAM* conn_;
 	acl::string name_;
 	std::list<acl::string*> messages_;
+	bool busy_;
 };
