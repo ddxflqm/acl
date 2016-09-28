@@ -69,7 +69,7 @@ static void *thread_main(void *ctx acl_unused)
 	for (i = 0; i < __max_fiber; i++)
 		acl_fiber_create(fiber_main, NULL, __stack_size);
 
-	acl_fiber_schedule_loop(loop_callback, NULL);
+	acl_fiber_post_event(loop_callback, NULL);
 	acl_fiber_schedule();
 
 	printf("thread: %lu, loop: %d\r\n",
