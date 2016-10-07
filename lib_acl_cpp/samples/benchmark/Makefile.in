@@ -5,10 +5,11 @@ CFLAGS = -c -g -W -Wall -Wcast-qual -Wcast-align \
 -Wpointer-arith -Werror -Wshadow -O3 \
 -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS -D_USE_FAST_MACRO
 
+#-Waggregate-return
 ###########################################################
 #Check system:
 #       Linux, SunOS, Solaris, BSD variants, AIX, HP-UX
-SYSLIB = -lpthread -lz
+SYSLIB = -lpthread -lcrypt
 CHECKSYSRES = @echo "Unknow system type!";exit 1
 UNIXNAME = $(shell uname -sm)
 
@@ -25,21 +26,12 @@ ifeq ($(findstring FreeBSD, $(UNIXNAME)), FreeBSD)
 	SYSLIB = -lcrypt -lpthread
 endif
 
-# For Darwin
-ifeq ($(findstring Darwin, $(UNIXNAME)), Darwin)
-	CFLAGS += -DMACOSX -Wno-invalid-source-encoding \
-		  -Wno-extended-offsetof
-	UNIXTYPE = MACOSX
-	SYSLIB +=  -liconv -rdynamic
-endif
-
 #Path for Linux
 ifeq ($(findstring Linux, $(UNIXNAME)), Linux)
 	ifeq ($CC, "gcc")
 		CFLAGS += -Wstrict-prototypes
 	endif
 	CFLAGS += -DLINUX2 -D_REENTRANT
-	SYSLIB += -lcrypt
 endif
 
 #Path for SunOS
@@ -71,9 +63,9 @@ ifneq ($(SYSPATH),)
 endif
 ###########################################################
 
-CFLAGS += -I../../lib_acl/include -I../../lib_protocol/include -I../../lib_acl_cpp/include
+CFLAGS += -I. -I../.. -I../../../include -I../../../../lib_acl/include -I../../../../lib_protocol/include
 EXTLIBS =
-LDFLAGS = -L../../lib_acl_cpp/lib -l_acl_cpp -L../../lib_protocol/lib -l_protocol -L../../lib_acl/lib -l_acl \
+LDFLAGS = -L../../../lib -l_acl_cpp -L../../../../lib_protocol/lib -l_protocol -L../../../../lib_acl/lib -l_acl \
 	$(EXTLIBS) $(SYSLIB)
 
 COMPILE = $(CC) $(CFLAGS)
@@ -82,10 +74,12 @@ LINK = $(CC) $(OBJ) $(LDFLAGS)
 OBJ_PATH = .
 
 #Project's objs
-SRC = $(wildcard *.cpp)
+SRC = $(wildcard *.cpp) $(wildcard ../../*.cpp)
 OBJ = $(patsubst %.cpp, $(OBJ_PATH)/%.o, $(notdir $(SRC)))
 
 $(OBJ_PATH)/%.o: %.cpp
+	$(COMPILE) $< -o $@
+$(OBJ_PATH)/%.o: ../../%.cpp
 	$(COMPILE) $< -o $@
 
 .PHONY = all clean
@@ -99,5 +93,4 @@ RM:
 clean:
 	rm -f $(PROG)
 	rm -f $(OBJ)
-rebuild rb: clean all
 ###########################################################

@@ -2,52 +2,52 @@ CC      = g++
 
 CFLAGS = -c -g -W -Wall -Wcast-qual -Wcast-align \
 -Wno-long-long \
--Wpointer-arith -Werror -Wshadow -O3 \
+-Wpointer-arith -Werror -O3 \
 -D_REENTRANT -D_POSIX_PTHREAD_SEMANTICS -D_USE_FAST_MACRO
 
+#-Waggregate-return
 ###########################################################
 #Check system:
 #       Linux, SunOS, Solaris, BSD variants, AIX, HP-UX
-SYSLIB = -lpthread -lz
+SYSLIB = -lpthread
 CHECKSYSRES = @echo "Unknow system type!";exit 1
-UNIXNAME = $(shell uname -sm)
+OSNAME = $(shell uname -sm)
+UNIXNAME = $(OSNAME)
+RPATH =
 
 ifeq ($(CC),)
         CC = gcc
 endif
 
 # For FreeBSD
-ifeq ($(findstring FreeBSD, $(UNIXNAME)), FreeBSD)
+ifeq ($(findstring FreeBSD, $(OSNAME)), FreeBSD)
 	ifeq ($(findstring gcc, $(CC)), gcc)
 		CFLAGS += -Wstrict-prototypes
 	endif
-	CFLAGS += -DFREEBSD -D_REENTRANT
+	CFLAGS += -DFREEBSD -D_REENTRANT -Wshadow
 	SYSLIB = -lcrypt -lpthread
 endif
 
-# For Darwin
-ifeq ($(findstring Darwin, $(UNIXNAME)), Darwin)
-	CFLAGS += -DMACOSX -Wno-invalid-source-encoding \
-		  -Wno-extended-offsetof
-	UNIXTYPE = MACOSX
-	SYSLIB +=  -liconv -rdynamic
-endif
-
 #Path for Linux
-ifeq ($(findstring Linux, $(UNIXNAME)), Linux)
+ifeq ($(findstring Linux, $(OSNAME)), Linux)
 	ifeq ($CC, "gcc")
 		CFLAGS += -Wstrict-prototypes
 	endif
-	CFLAGS += -DLINUX2 -D_REENTRANT
-	SYSLIB += -lcrypt
+	ifeq ($(findstring i686, $(OSNAME)), i686)
+		RPATH = linux32
+	endif
+	ifeq ($(findstring x86_64, $(OSNAME)), x86_64)
+		RPATH = linux64
+	endif
+	CFLAGS += -DLINUX2 -D_REENTRANT -Wshadow
 endif
 
 #Path for SunOS
-ifeq ($(findstring SunOS, $(UNIXNAME)), SunOS)
-	ifeq ($(findstring 86, $(UNIXNAME)), 86)
+ifeq ($(findstring SunOS, $(OSNAME)), SunOS)
+	ifeq ($(findstring 86, $(OSNAME)), 86)
 		SYSLIB += -lsocket -lnsl -lrt
 	endif
-	ifeq ($(findstring sun4u, $(UNIXNAME)), sun4u)
+	ifeq ($(findstring sun4u, $(OSNAME)), sun4u)
 		SYSLIB += -lsocket -lnsl -lrt
 	endif
 	ifeq ($CC, "gcc")
@@ -57,11 +57,11 @@ ifeq ($(findstring SunOS, $(UNIXNAME)), SunOS)
 endif
 
 #Path for HP-UX
-ifeq ($(findstring HP-UX, $(UNIXNAME)), HP-UX)
+ifeq ($(findstring HP-UX, $(OSNAME)), HP-UX)
 	ifeq ($CC, "gcc")
 		CFLAGS += -Wstrict-prototypes
 	endif
-	CFLAGS += -DHP_UX -DHPUX11
+	CFLAGS += -DHP_UX -DHPUX11 -Wshadow
 	PLAT_NAME=hp-ux
 endif
 
@@ -71,10 +71,10 @@ ifneq ($(SYSPATH),)
 endif
 ###########################################################
 
-CFLAGS += -I../../lib_acl/include -I../../lib_protocol/include -I../../lib_acl_cpp/include
+CFLAGS += -I. -I../../../include -I../../../../lib_acl/include -I../../../../lib_protocol/include
 EXTLIBS =
-LDFLAGS = -L../../lib_acl_cpp/lib -l_acl_cpp -L../../lib_protocol/lib -l_protocol -L../../lib_acl/lib -l_acl \
-	$(EXTLIBS) $(SYSLIB)
+LDFLAGS = -L../../../lib -l_acl_cpp -L../../../../lib_protocol/lib -l_protocol -L../../../../lib_acl/lib -l_acl \
+	  -L../../../../lib/$(RPATH) $(EXTLIBS) $(SYSLIB)
 
 COMPILE = $(CC) $(CFLAGS)
 LINK = $(CC) $(OBJ) $(LDFLAGS)
@@ -82,10 +82,12 @@ LINK = $(CC) $(OBJ) $(LDFLAGS)
 OBJ_PATH = .
 
 #Project's objs
-SRC = $(wildcard *.cpp)
+SRC = $(wildcard *.cpp) $(UTIL)
 OBJ = $(patsubst %.cpp, $(OBJ_PATH)/%.o, $(notdir $(SRC)))
 
 $(OBJ_PATH)/%.o: %.cpp
+	$(COMPILE) $< -o $@
+$(OBJ_PATH)/%.o: ../%.cpp
 	$(COMPILE) $< -o $@
 
 .PHONY = all clean
@@ -99,5 +101,4 @@ RM:
 clean:
 	rm -f $(PROG)
 	rm -f $(OBJ)
-rebuild rb: clean all
 ###########################################################
