@@ -1,12 +1,30 @@
-#include "stdafx.h"
-#include "gsoner.h"
+/**
+ * Copyright (C) 2015-2018
+ * All rights reserved.
+ *
+ * AUTHOR(S)
+ *   E-mail: niukey@qq.com
+ * 
+ * VERSION
+ *   Sat 08 Oct 2016 09:08:14 PM CST
+ */
 
+#include "acl_stdafx.hpp"
+#ifndef ACL_PREPARE_COMPILE
+#include "acl_cpp/stdlib/string.hpp"
+#include "acl_cpp/stdlib/log.hpp"
+#include "acl_cpp/stdlib/json.hpp"
+#endif
+
+#ifdef ACL_USE_CPP11
+
+#include <algorithm>
+#include <iostream>
+#include <fstream>
+#include <string>
 
 namespace acl
 {
-namespace gson
-{
-
 
 struct syntax_error : std::exception
 {
@@ -27,7 +45,7 @@ struct parent_level_error : std::exception
 };
 
 gsoner::field_t::field_t(type_t t, const std::string &name, bool required)
-:type_(t)
+: type_(t)
 , name_(name)
 , required_(required)
 {
@@ -104,7 +122,7 @@ gsoner::parent_obj_t::level_t gsoner::get_level(std::string str)
 
 std::string gsoner::get_node_func(const field_t &field)
 {
-	acl::string code;
+	string code;
 	switch(field.type_)
 	{
 	case gsoner::field_t::e_bool:
@@ -132,21 +150,21 @@ std::string gsoner::get_node_func(const field_t &field)
 
 std::string gsoner::get_gson_func_laber(const field_t &field)
 {
-	acl::string code;
+	string code;
 	switch(field.type_)
 	{
 	case gsoner::field_t::e_list:
 	case gsoner::field_t::e_vector:
 	case gsoner::field_t::e_map:
 	case gsoner::field_t::e_object:
-		return "acl::gson::gson(json,";
+		return "acl::gson(json,";
 	default:
-		return "acl::gson::get_value(";
+		return "acl::get_value(";
 	}
 	return "error_type";
 }
 
-acl::gson::gsoner::function_code_t gsoner::gen_pack_code(const object_t &obj)
+gsoner::function_code_t gsoner::gen_pack_code(const object_t &obj)
 {
 	function_code_t code;
 	std::string str;
@@ -162,7 +180,7 @@ acl::gson::gsoner::function_code_t gsoner::gen_pack_code(const object_t &obj)
 		code.declare2_.substr(0, code.declare2_.find(";"));
 	code.definition2_ += "\n{\n"
 		"    acl::json json;\n"
-		"    acl::json_node &node = acl::gson::gson (json, obj);\n"
+		"    acl::json_node &node = acl::gson (json, obj);\n"
 		"    return node.to_string ();\n}\n\n";
 
 	code.definition_ptr_ = str;
@@ -257,7 +275,7 @@ std::string gsoner::get_node_name(const std::string &name)
 		+ name + " = node[\"" + name + "\"];";
 }
 
-acl::gson::gsoner::function_code_t gsoner::gen_unpack_code(const object_t &obj)
+gsoner::function_code_t gsoner::gen_unpack_code(const object_t &obj)
 {
 	std::list<std::string >node_names;
 	std::list<std::string >unpack_codes;
@@ -1141,12 +1159,12 @@ std::string gsoner::get_include_files()
 
 void gsoner::gen_gson()
 {
-	const char *namespace_start = "namespace acl\n{\nnamespace gson\n{";
-	const char *namespace_end = "\n}///end of acl.\n}///end of gson.";
+	const char *namespace_start = "namespace acl\n{";
+	const char *namespace_end = "\n}///end of acl.";
 
 	write_source("#include \"stdafx.h\"\n");
 	write_source("#include \"" + gen_header_filename_ + "\"\n");
-	write_source("#include \"gson_helper.ipp\"\n");
+	write_source("#include \"acl_cpp/stdlib/gson_helper.ipp\"\n");
 	write_header(get_include_files());
 	write_header(namespace_start);
 	write_source(namespace_start);
@@ -1312,5 +1330,6 @@ bool gsoner::check_pragma()
 	return false;
 }
 
-} // namespace gson
 } // namespace acl
+
+#endif // end ACL_USE_CPP11

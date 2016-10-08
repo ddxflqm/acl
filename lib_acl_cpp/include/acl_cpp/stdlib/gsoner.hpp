@@ -1,11 +1,23 @@
+/**
+ * Copyright (C) 2015-2018
+ * All rights reserved.
+ *
+ * AUTHOR(S)
+ *   E-mail: niukey@qq.com
+ * 
+ * VERSION
+ *   Sat 08 Oct 2016 09:07:14 PM CST
+ */
+
 #pragma once
+#include "acl_cpp/acl_cpp_define.hpp"
 #include <list>
 #include <map>
 #include <vector>
 
+#ifdef ACL_USE_CPP11
+
 namespace acl
-{
-namespace gson
 {
 
 class gsoner
@@ -144,5 +156,6 @@ private:
 	std::string default_delimiters_;
 };
 
-}//end of gson
 }//end of acl
+
+#endif // end ACL_USE_CPP11
