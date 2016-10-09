@@ -46,6 +46,7 @@ void test_base()
 	acl::json_node &node = acl::gson(json, obj);
 	printf("%s\n", node.to_string().c_str());
 
+
 	list1 obj2;
 	acl::json json2;
 	json2.update(node.to_string().c_str());
@@ -53,19 +54,11 @@ void test_base()
 	std::pair<bool,std::string> ret = acl::gson(json2.get_root(), obj2);
 	if(ret.first == false)
 		printf("%s\n",ret.second.c_str());
-	else
-		printf(">>>acl_string: %s\r\n", obj2.b.acl_string.c_str());
 
 	acl::json json3;
-	acl::json_node &node3 = acl::gson(json3, obj2);
+	acl::json_node &node3 = acl::gson(json3, obj);
 	printf("%s\n", node3.to_string().c_str());
-
-	if (node.to_string() == node3.to_string())
-		printf("---- All OK ----\r\n");
-	else
-		printf("---- Error  ----\r\n");
 }
-
 void test02()
 {
 	acl::gsoner gr;
