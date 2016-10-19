@@ -38,7 +38,7 @@ bool http_servlet::doPing(acl::websocket& in, acl::websocket& out)
 {
 	unsigned long long len = in.get_frame_payload_len();
 	if (len == 0)
-		return out.send_frame_pong(NULL, 0);
+		return out.send_frame_pong((const void*) NULL, 0);
 
 	out.reset().set_frame_fin(true)
 		.set_frame_opcode(acl::FRAME_PONG)

@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
 
 		const char* addr = "0.0.0.0:9001";
 		if (argc >= 4)
-			addr = argv[4];
+			addr = argv[3];
 
 		printf("listen on: %s\r\n", addr);
 		ms.run_alone(addr, conf, 0, 1000);  // 单独运行方式
