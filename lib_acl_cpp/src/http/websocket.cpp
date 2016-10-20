@@ -325,9 +325,9 @@ bool websocket::read_frame_head(void)
 	}
 	else if (ret == 2)
 	{
-		unsigned int n;
+		unsigned short n;
 		memcpy(&n, buf, ret);
-		header_.payload_len = ntohl(n);
+		header_.payload_len = ntohs(n);
 	}
 	else	// ret == 8
 	{
@@ -355,7 +355,7 @@ int websocket::read_frame_data(char* buf, size_t size)
 	if (header_.payload_len - payload_nread_ < size)
 		size = (size_t) (header_.payload_len - payload_nread_);
 
-	int ret = client_.read(buf, size);
+	int ret = client_.read(buf, size, false);
 	if (ret == -1)
 	{
 		logger_error("read frame data error %s", last_serror());
