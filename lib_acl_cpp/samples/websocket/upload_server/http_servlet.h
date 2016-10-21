@@ -35,9 +35,9 @@ private:
 	bool doClose(acl::websocket&, acl::websocket&);
 	bool doMsg(acl::websocket&, acl::websocket&);
 
-	bool getFilename(acl::websocket& in, acl::string& filename);
+	bool getFilename(acl::websocket&, acl::string&);
 	long long getFilesize(acl::websocket& in);
-	bool saveFile(acl::websocket& in, const acl::string& filename,
-		long long len);
-	int saveFile(acl::websocket& in, acl::ofstream& out);
+	bool saveFile(acl::websocket&, const acl::string&, long long);
+	bool saveFile(acl::websocket&, acl::ofstream&, long long);
+	int saveFile(acl::websocket&, acl::ofstream&);
 };

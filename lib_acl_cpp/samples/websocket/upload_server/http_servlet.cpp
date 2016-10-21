@@ -57,6 +57,24 @@ bool http_servlet::doPost(acl::HttpServletRequest& req,
 		.setContentEncoding(true)		// 设置是否压缩数据
 		.setChunkedTransferEncoding(true);	// 采用 chunk 传输方式
 
+	const char* ip = req.getLocalAddr();
+	if (ip == NULL || *ip == 0)
+	{
+		logger_error("getLocalAddr error");
+		return false;
+	}
+	unsigned short port = req.getLocalPort();
+	if (port == 0)
+	{
+		logger_error("getLocalPort error");
+		return false;
+	}
+
+	acl::string local_addr;
+	local_addr << ip << ":" << port;
+
+	printf("getLocalAddr: %s\r\n", local_addr.c_str());
+
 	acl::string html_file;
 	html_file << var_cfg_html_path << "/upload.html";
 	acl::string buf;
@@ -66,6 +84,8 @@ bool http_servlet::doPost(acl::HttpServletRequest& req,
 			html_file.c_str(), acl::last_serror());
 		return doError(req, res);
 	}
+
+	buf << "<script>g_url='ws://" << local_addr << "/'</script>";
 
 	// 发送 http 响应体，因为设置了 chunk 传输模式，所以需要多调用一次
 	// res.write 且两个参数均为 0 以表示 chunk 传输数据结束
@@ -221,16 +241,40 @@ long long http_servlet::getFilesize(acl::websocket& in)
 bool http_servlet::saveFile(acl::websocket& in, const acl::string& filename,
 	long long len)
 {
-	acl::string filepath;
+	acl::string filepath, tmppath;
 	filepath << var_cfg_upload_path << "/" << filename;
+	tmppath << filepath << ".tmp";
+	printf("%s, %s\n", tmppath.c_str(), filepath.c_str());
+
 	acl::ofstream fp;
-	if (fp.open_trunc(filepath) == false)
+	if (fp.open_trunc(tmppath) == false)
 	{
-		printf("open_write %s error %s\r\n", filepath.c_str(),
-			acl::last_serror());
+		printf("open_write %s error %s\r\n",
+			tmppath.c_str(), acl::last_serror());
 		return false;
 	}
 
+	if (saveFile(in, fp, len) == false)
+	{
+		fp.remove();
+		return false;
+	}
+
+	fp.close();
+	if (fp.rename(tmppath, filepath) == false)
+	{
+		fp.remove();
+		logger_error("rename from %s to %s error %s",
+			tmppath.c_str(), filepath.c_str(), acl::last_serror());
+		return false;
+	}
+
+	return true;
+}
+
+bool http_servlet::saveFile(acl::websocket& in, acl::ofstream& fp,
+	long long len)
+{
 	while (len > 0)
 	{
 		if (in.read_frame_head() == false)
@@ -277,6 +321,7 @@ int http_servlet::saveFile(acl::websocket& in, acl::ofstream& out)
 			return -1;
 		}
 
+		//printf(">>>read size: %d\r\n", ret);
 		if (out.write(buf, ret) == -1)
 		{
 			printf("write to %s error %s\r\n",
