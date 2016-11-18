@@ -249,7 +249,7 @@ int redis_pubsub::check_channel(const redis_result* obj, const char* cmd,
 bool redis_pubsub::get_message(string& channel, string& msg)
 {
 	clear_request();
-	int rw_timeout = 0;
+	int rw_timeout = -1;
 	const redis_result* result = run(0, &rw_timeout);
 	if (result == NULL)
 		return false;

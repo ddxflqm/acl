@@ -639,7 +639,7 @@ const redis_result* redis_command::run(size_t nchild /* = 0 */,
 
 	if (cluster_ != NULL)
 		return run(cluster_, nchild, timeout);
-	if (conn_ != NULL)
+	if (conn_ == NULL)
 	{
 		logger_error("ERROR: cluster_ and conn_ are all NULL");
 		return NULL;
@@ -647,7 +647,7 @@ const redis_result* redis_command::run(size_t nchild /* = 0 */,
 	if (slice_req_)
 		result_ = conn_->run(dbuf_, *request_obj_, nchild, timeout);
 	else
-		result_ = conn_->run(dbuf_, *request_buf_, nchild);
+		result_ = conn_->run(dbuf_, *request_buf_, nchild, timeout);
 	return result_;
 }
 
