@@ -365,7 +365,7 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
 	ev       = fiber_io_event();
 	pe.fds   = fds;
 	pe.nfds  = nfds;
-	pe.fiber = fiber_running();
+	pe.fiber = acl_fiber_running();
 	pe.proc  = poll_callback;
 
 	SET_TIME(begin);
@@ -775,7 +775,7 @@ int epoll_wait(int epfd, struct epoll_event *events,
 
 	ee->events    = events;
 	ee->maxevents = maxevents;
-	ee->fiber     = fiber_running();
+	ee->fiber     = acl_fiber_running();
 	ee->proc      = epoll_callback;
 
 	SET_TIME(begin);

@@ -27,6 +27,12 @@ ACL_FIBER *acl_fiber_create(void (*fn)(ACL_FIBER *, void *),
 	void *arg, size_t size);
 
 /**
+ * 返回当前正在运行的协程对象
+ * @retur {ACL_FIBER*} 返回 NULL 表示当前没有正在运行的协程
+ */
+ACL_FIBER *acl_fiber_running(void);
+
+/**
  * 获得所给协程的协程 ID 号
  * @param fiber {const ACL_FIBER*} 由 acl_fiber_create 创建的协程对象
  * @return {int} 协程 ID 号

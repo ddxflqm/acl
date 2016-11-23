@@ -109,7 +109,6 @@ struct ACL_FIBER_SEM {
 extern __thread int acl_var_hook_sys_api;
 
 /* in fiber_schedule.c */
-ACL_FIBER *fiber_running(void);
 void fiber_save_errno(void);
 void fiber_exit(int exit_code);
 void fiber_system(void);

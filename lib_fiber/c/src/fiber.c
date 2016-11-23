@@ -194,9 +194,9 @@ void fiber_save_errno(void)
 	}
 
 	if (__sys_errno != NULL)
-		curr->errnum = *__sys_errno();
+		acl_fiber_set_errno(curr, *__sys_errno());
 	else
-		curr->errnum = errno;
+		acl_fiber_set_errno(curr, errno);
 }
 
 #if defined(__x86_64__)
@@ -309,7 +309,7 @@ static void fiber_swap(ACL_FIBER *from, ACL_FIBER *to)
 #endif
 }
 
-ACL_FIBER *fiber_running(void)
+ACL_FIBER *acl_fiber_running(void)
 {
 	fiber_check();
 	return __thread_fiber->running;
@@ -498,7 +498,7 @@ int acl_fiber_id(const ACL_FIBER *fiber)
 
 int acl_fiber_self(void)
 {
-	ACL_FIBER *curr = fiber_running();
+	ACL_FIBER *curr = acl_fiber_running();
 	return acl_fiber_id(curr);
 }
 

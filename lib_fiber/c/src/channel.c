@@ -229,7 +229,7 @@ static int channel_alt(FIBER_ALT a[])
 	n = i;
 	canblock = a[i].op == CHANEND;
 
-	t = fiber_running();
+	t = acl_fiber_running();
 
 	for (i = 0; i < n; i++) {
 		a[i].fiber = t;
