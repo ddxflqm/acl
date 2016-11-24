@@ -60,6 +60,14 @@ void acl_fiber_set_errno(ACL_FIBER *fiber, int errnum);
 int acl_fiber_errno(ACL_FIBER *fiber);
 
 /**
+ * 是否保持所指定协程的错误号，当设置为“保持”后，则该协程仅保持当前状态下的
+ * 错误号，之后该协程的错误号 errno 将不再改变，走到再次调用本函数取消保持
+ * @param fiber {ACL_FIBER*} 协程对象
+ * @param yesno {int} 是否保持
+ */
+void acl_fiber_keep_errno(ACL_FIBER *fiber, int yesno);
+
+/**
  * 获得指定协程的当前状态
  * @param fiber {const ACL_FIBER*} 协程对象
  * @return {int} 协程状态

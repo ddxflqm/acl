@@ -174,8 +174,15 @@ void acl_fiber_set_errno(ACL_FIBER *fiber, int errnum)
 
 int acl_fiber_errno(ACL_FIBER *fiber)
 {
-	fiber->flag |= FIBER_F_SAVE_ERRNO;
 	return fiber->errnum;
+}
+
+void acl_fiber_keep_errno(ACL_FIBER *fiber, int yesno)
+{
+	if (yesno)
+		fiber->flag |= FIBER_F_SAVE_ERRNO;
+	else
+		fiber->flag &= ~FIBER_F_SAVE_ERRNO;
 }
 
 void fiber_save_errno(void)
@@ -189,7 +196,7 @@ void fiber_save_errno(void)
 		curr = &__thread_fiber->original;
 
 	if (curr->flag & FIBER_F_SAVE_ERRNO) {
-		curr->flag &= ~FIBER_F_SAVE_ERRNO;
+		//curr->flag &= ~FIBER_F_SAVE_ERRNO;
 		return;
 	}
 
