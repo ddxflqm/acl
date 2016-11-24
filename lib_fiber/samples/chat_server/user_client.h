@@ -73,19 +73,11 @@ public:
 
 	void shutdown(void)
 	{
-		printf(">>>close sock: %d\r\n", conn_.sock_handle());
 		if (fiber_reader_ != NULL)
 		{
 			existing_ = true;
 			acl_fiber_kill(fiber_reader_);
 		}
-		else if (0)
-		{
-			::close(conn_.sock_handle());
-			ACL_VSTREAM_SET_SOCK(conn_.get_vstream(), -1);
-		}
-		else
-			::shutdown(conn_.sock_handle(), SHUT_RD);
 	}
 
 	bool existing(void) const
