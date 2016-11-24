@@ -1,3 +1,5 @@
+29) 2016.11.24
+29.1) feature: 增加 acl_fiber_kill 接口用来通知指定协程退出
 
 28) 2016.10.31
 28.1) feature: fiber.c 中实现了 __i386__ 下 SETJMP，LONGJMP 的汇编方式，从

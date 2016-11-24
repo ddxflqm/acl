@@ -75,6 +75,12 @@ void acl_fiber_keep_errno(ACL_FIBER *fiber, int yesno);
 int acl_fiber_status(const ACL_FIBER *fiber);
 
 /**
+ * 通知指定协程退出
+ * @param fiber {const ACL_FIBER*} 协程对象
+ */
+void acl_fiber_kill(ACL_FIBER *fiber);
+
+/**
  * 将当前运行的协程挂起，由调度器选择下一个需要运行的协程
  * @return {int}
  */

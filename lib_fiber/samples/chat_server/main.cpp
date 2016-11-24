@@ -141,36 +141,32 @@ static void fiber_reader(user_client* client)
 	while (true)
 	{
 		printf("---------begin gets-------\r\n");
-		bool ret1 = conn.gets(buf);
-		printf(">>>ret: %s\r\n", ret1 ? "true" : "false");
-		if (ret1 == false)
+		bool ret = conn.gets(buf);
+		printf(">>>ret: %s, errno: %d\r\n",
+			ret ? "true" : "false", errno);
+		if (ret == false)
 		{
 			printf("%s(%d): user: %s, gets error %s, fiber: %d\r\n",
 				__FUNCTION__, __LINE__, client->get_name(),
 				acl::last_serror(), acl_fiber_self());
 
-			acl_fiber_keep_errno(acl_fiber_running(), 0);
-
-			if (errno == ETIMEDOUT)
+			if (client->existing())
 			{
-				printf("ETIMEDOUT\r\n");
-				continue;
-			}
-			else if (errno == EAGAIN)
-			{
-				printf("EAGAIIN\r\n");
-				continue;
-			}
-			else if (errno == ERRNO_LOGOUT)
-			{
-				printf("ERRNO_LOGOUT\r\n");
+				printf("----existing now----\r\n");
 				break;
 			}
+
+			if (errno == ETIMEDOUT)
+				printf("ETIMEDOUT\r\n");
+			else if (errno == EAGAIN)
+				printf("EAGAIIN\r\n");
 			else {
 				printf("gets error: %d, %s\r\n",
 					errno, acl::last_serror());
 				break;
 			}
+
+			continue;
 		}
 
 		std::vector<acl::string>& tokens = buf.split2("|");
@@ -180,8 +176,7 @@ static void fiber_reader(user_client* client)
 			continue;
 		}
 
-		bool ret = client_chat(client, tokens);
-		if (ret == false)
+		if (client_chat(client, tokens) == false)
 			break;
 	}
 
@@ -210,7 +205,6 @@ static bool client_flush(user_client* client)
 		}
 	}
 
-//	return false;
 	return ret;
 }
 

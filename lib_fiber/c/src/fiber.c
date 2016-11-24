@@ -322,6 +322,12 @@ ACL_FIBER *acl_fiber_running(void)
 	return __thread_fiber->running;
 }
 
+void acl_fiber_kill(ACL_FIBER *fiber)
+{
+	fiber->flag |= FIBER_F_EXISTING;
+	acl_fiber_ready(fiber);
+}
+
 void fiber_exit(int exit_code)
 {
 	fiber_check();
@@ -448,6 +454,7 @@ static ACL_FIBER *fiber_alloc(void (*fn)(ACL_FIBER *, void *),
 	fiber->arg    = arg;
 	fiber->size   = size;
 	fiber->id     = ++__thread_fiber->idgen;
+	fiber->flag   = 0;
 
 	carg.p = fiber;
 

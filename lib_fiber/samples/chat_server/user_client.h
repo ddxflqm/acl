@@ -1,8 +1,6 @@
 #pragma once
 #include <list>
 
-#define	ERRNO_LOGOUT	100000
-
 enum
 {
 	MT_MSG,
@@ -78,9 +76,8 @@ public:
 		printf(">>>close sock: %d\r\n", conn_.sock_handle());
 		if (fiber_reader_ != NULL)
 		{
-			acl_fiber_set_errno(fiber_reader_, ERRNO_LOGOUT);
-			acl_fiber_keep_errno(fiber_reader_, 1);
-			acl_fiber_ready(fiber_reader_);
+			existing_ = true;
+			acl_fiber_kill(fiber_reader_);
 		}
 		else if (0)
 		{
@@ -89,6 +86,16 @@ public:
 		}
 		else
 			::shutdown(conn_.sock_handle(), SHUT_RD);
+	}
+
+	bool existing(void) const
+	{
+		return existing_;
+	}
+
+	void set_existing(void)
+	{
+		existing_ = true;
 	}
 
 	void set_reading(bool yes)
@@ -139,6 +146,7 @@ private:
 	acl::channel<int> chan_exit_;
 	acl::string name_;
 	std::list<acl::string*> messages_;
+	bool existing_ = false;
 	bool reading_ = false;
 	bool waiting_ = false;
 	ACL_FIBER* fiber_reader_ = NULL;

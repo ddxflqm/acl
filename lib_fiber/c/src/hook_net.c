@@ -375,15 +375,25 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
 		fiber_io_inc();
 		acl_fiber_switch();
 
+		if ((pe.fiber->flag & FIBER_F_EXISTING) != 0) {
+			acl_ring_detach(&pe.me);
+			break;
+		}
+
 		if (acl_ring_size(&ev->poll_list) == 0)
 			ev->timeout = -1;
-		if (pe.nready != 0 || timeout == 0)
+
+		if (pe.nready != 0 || timeout == 0) {
+			acl_ring_detach(&pe.me);
 			break;
+		}
 
 		SET_TIME(now);
 
-		if (timeout > 0 && (now - begin >= timeout))
+		if (timeout > 0 && (now - begin >= timeout)) {
+			acl_ring_detach(&pe.me);
 			break;
+		}
 	}
 
 	return pe.nready;
@@ -786,13 +796,23 @@ int epoll_wait(int epfd, struct epoll_event *events,
 		acl_fiber_switch();
 
 		ev->timeout = -1;
-		if (ee->nready != 0 || timeout == 0)
+
+		if ((ee->fiber->flag & FIBER_F_EXISTING) != 0) {
+			acl_ring_detach(&ee->me);
 			break;
+		}
+
+		if (ee->nready != 0 || timeout == 0) {
+			acl_ring_detach(&ee->me);
+			break;
+		}
 
 		SET_TIME(now);
 
-		if (timeout > 0 && (now - begin >= timeout))
+		if (timeout > 0 && (now - begin >= timeout)) {
+			acl_ring_detach(&ee->me);
 			break;
+		}
 	}
 
 	return ee->nready;
