@@ -140,10 +140,7 @@ static void fiber_reader(user_client* client)
 
 	while (true)
 	{
-		printf("---------begin gets-------\r\n");
 		bool ret = conn.gets(buf);
-		printf(">>>ret: %s, errno: %d\r\n",
-			ret ? "true" : "false", errno);
 		if (ret == false)
 		{
 			printf("%s(%d): user: %s, gets error %s, fiber: %d\r\n",
