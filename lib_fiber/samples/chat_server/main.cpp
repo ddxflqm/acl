@@ -154,7 +154,14 @@ static void fiber_reader(user_client* client)
 			}
 
 			if (errno == ETIMEDOUT)
+			{
 				printf("ETIMEDOUT\r\n");
+				if (conn.write("ping\r\n") == -1)
+				{
+					printf("ping error\r\n");
+					break;
+				}
+			}
 			else if (errno == EAGAIN)
 				printf("EAGAIIN\r\n");
 			else {
