@@ -324,7 +324,20 @@ ACL_FIBER *acl_fiber_running(void)
 
 void acl_fiber_kill(ACL_FIBER *fiber)
 {
+	if (fiber == NULL) {
+		acl_msg_error("%s(%d), %s: fiber NULL",
+			__FILE__, __LINE__, __FUNCTION__);
+		return;
+	}
+
 	fiber->flag |= FIBER_F_EXISTING;
+
+	if (fiber == acl_fiber_running()) {
+		acl_msg_error("%s(%d), %s: fiber-%d kill itself disable!",
+			__FILE__, __LINE__, __FUNCTION__, acl_fiber_id(fiber));
+		return;
+	}
+
 	acl_fiber_ready(fiber);
 }
 
