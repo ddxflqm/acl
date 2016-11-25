@@ -34,12 +34,18 @@ static void remove_user(user_client* uc)
 static bool client_login(user_client* uc)
 {
 	acl::string buf;
-	if (uc->get_stream().gets(buf) == false)
+
+	while (true)
 	{
-		printf("gets error %s\r\n", acl::last_serror());
-		if (errno == ETIMEDOUT)
-			uc->get_stream().write("Login read timeout\r\n");
-		return false;
+		if (uc->get_stream().gets(buf) == false)
+		{
+			printf("gets error %s\r\n", acl::last_serror());
+			if (errno == ETIMEDOUT)
+				uc->get_stream().write("Login read timeout\r\n");
+			return false;
+		}
+		if (!buf.empty())
+			break;
 	}
 
 	std::vector<acl::string>& tokens = buf.split2("|");
@@ -107,18 +113,42 @@ static bool client_chat(user_client* uc, std::vector<acl::string>& tokens)
 	if (it == __users.end())
 	{
 		acl::string tmp;
-		tmp.format("from user: %s, to user: %s not exist\r\n",
+		tmp.format("chat >> from user: %s, to user: %s not exist\r\n",
 			uc->get_name(), to.c_str());
 		printf("%s", tmp.c_str());
 
 		return uc->get_stream().write(tmp) != -1;
 	}
-	else
+
+	it->second->push(msg);
+	it->second->notify(MT_MSG);
+	return true;
+}
+
+static bool client_kick(user_client* uc, std::vector<acl::string>& tokens)
+{
+	if (tokens.size() < 2)
 	{
-		it->second->push(msg);
-		it->second->notify(MT_MSG);
+		printf("invalid argc: %d < 2\r\n", (int) tokens.size());
 		return true;
 	}
+
+	const acl::string& to = tokens[1];
+
+	std::map<acl::string, user_client*>::iterator it = __users.find(to);
+	if (it == __users.end())
+	{
+		acl::string tmp;
+		tmp.format("kick >> from user: %s, to user: %s not exist\r\n",
+			uc->get_name(), to.c_str());
+		printf("%s", tmp.c_str());
+
+		return uc->get_stream().write(tmp) != -1;
+	}
+
+	it->second->notify(MT_KICK);
+
+	return true;
 }
 
 static void fiber_reader(user_client* client)
@@ -155,7 +185,6 @@ static void fiber_reader(user_client* client)
 
 			if (errno == ETIMEDOUT)
 			{
-				printf("ETIMEDOUT\r\n");
 				if (conn.write("ping\r\n") == -1)
 				{
 					printf("ping error\r\n");
@@ -163,7 +192,7 @@ static void fiber_reader(user_client* client)
 				}
 			}
 			else if (errno == EAGAIN)
-				printf("EAGAIIN\r\n");
+				printf("EAGAIN\r\n");
 			else {
 				printf("gets error: %d, %s\r\n",
 					errno, acl::last_serror());
@@ -173,20 +202,27 @@ static void fiber_reader(user_client* client)
 			continue;
 		}
 
-		std::vector<acl::string>& tokens = buf.split2("|");
-		if (tokens[0] != "chat")
-		{
-			printf("invalid data: %s\r\n", buf.c_str());
+		if (buf.empty())
 			continue;
-		}
 
-		if (client_chat(client, tokens) == false)
+		std::vector<acl::string>& tokens = buf.split2("|");
+		if (tokens[0] == "quit" || tokens[0] == "exit")
+		{
+			conn.write("Bye!\r\n");
 			break;
+		}
+		else if (tokens[0] == "chat" && !client_chat(client, tokens))
+			break;
+		else if (tokens[0] == "kick" && !client_kick(client, tokens))
+			break;
+		else
+			printf("invalid data: %s\r\n", buf.c_str());
 	}
 
-	client->set_reading(false);
 	printf(">>%s(%d), user: %s, logout\r\n", __FUNCTION__, __LINE__,
 		client->get_name());
+
+	client->set_reading(false);
 	client_logout(client);
 }
 
@@ -231,6 +267,13 @@ static void fiber_writer(user_client* client)
 		{
 			printf("%s(%d), user: %s, MT_LOGOUT\r\n",
 				__FUNCTION__, __LINE__, client->get_name());
+			break;
+		}
+		if (mtype == MT_KICK)
+		{
+			printf("%s(%d), user: %s, MT_KICK\r\n",
+				__FUNCTION__, __LINE__, client->get_name());
+			client->get_stream().write("You're kicked\r\n");
 			break;
 		}
 	}

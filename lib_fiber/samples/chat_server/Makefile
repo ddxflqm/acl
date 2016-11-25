@@ -1,2 +1,2 @@
 include ../Makefile_cpp.in
-PROG = chat
+PROG = chat_server

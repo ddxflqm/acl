@@ -406,17 +406,13 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
 		if (acl_ring_size(&ev->poll_list) == 0)
 			ev->timeout = -1;
 
-		if (pe.nready != 0 || timeout == 0) {
-			acl_ring_detach(&pe.me);
+		if (pe.nready != 0 || timeout == 0)
 			break;
-		}
 
 		SET_TIME(now);
 
-		if (timeout > 0 && (now - begin >= timeout)) {
-			acl_ring_detach(&pe.me);
+		if (timeout > 0 && (now - begin >= timeout))
 			break;
-		}
 	}
 
 	return pe.nready;
@@ -828,17 +824,13 @@ int epoll_wait(int epfd, struct epoll_event *events,
 			break;
 		}
 
-		if (ee->nready != 0 || timeout == 0) {
-			acl_ring_detach(&ee->me);
+		if (ee->nready != 0 || timeout == 0)
 			break;
-		}
 
 		SET_TIME(now);
 
-		if (timeout > 0 && (now - begin >= timeout)) {
-			acl_ring_detach(&ee->me);
+		if (timeout > 0 && (now - begin >= timeout))
 			break;
-		}
 	}
 
 	return ee->nready;

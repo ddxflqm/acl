@@ -5,6 +5,7 @@ enum
 {
 	MT_MSG,
 	MT_LOGOUT,
+	MT_KICK,
 };
 
 class user_client
