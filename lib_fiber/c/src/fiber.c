@@ -330,7 +330,7 @@ void acl_fiber_kill(ACL_FIBER *fiber)
 		return;
 	}
 
-	fiber->flag |= FIBER_F_EXISTING;
+	fiber->flag |= FIBER_F_EXITING;
 
 	if (fiber == acl_fiber_running()) {
 		acl_msg_error("%s(%d), %s: fiber-%d kill itself disable!",
@@ -339,6 +339,11 @@ void acl_fiber_kill(ACL_FIBER *fiber)
 	}
 
 	acl_fiber_ready(fiber);
+}
+
+int acl_fiber_killed(ACL_FIBER *fiber)
+{
+	return fiber->flag & FIBER_F_EXITING;
 }
 
 void fiber_exit(int exit_code)

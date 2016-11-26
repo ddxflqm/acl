@@ -79,6 +79,7 @@ int acl_fiber_status(const ACL_FIBER *fiber);
  * @param fiber {const ACL_FIBER*} 协程对象
  */
 void acl_fiber_kill(ACL_FIBER *fiber);
+int acl_fiber_killed(ACL_FIBER *fiber);
 
 /**
  * 将当前运行的协程挂起，由调度器选择下一个需要运行的协程
