@@ -29,7 +29,7 @@ struct ACL_FIBER {
 	int            sys;
 	unsigned int   flag;
 #define FIBER_F_SAVE_ERRNO	(unsigned) 1 << 0
-#define	FIBER_F_EXITING		(unsigned) 1 << 1
+#define	FIBER_F_KILLED		(unsigned) 1 << 1
 
 	FIBER_LOCAL  **locals;
 	int            nlocal;

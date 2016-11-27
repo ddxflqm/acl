@@ -6,10 +6,11 @@
 #include "fiber/lib_fiber.hpp"
 #include "user_client.h"
 
-#define	STACK_SIZE	128000
+#define	STACK_SIZE	32000
 
 static int __rw_timeout = 0;
 
+static acl::channel<int> __chan_monitor;
 static std::map<acl::string, user_client*> __users;
 
 static void remove_user(user_client* uc)
@@ -67,8 +68,8 @@ static bool client_flush(user_client* client)
 	{
 		if (conn.write(*msg) == -1)
 		{
-			printf("flush to user: %s error\r\n",
-				client->get_name());
+			printf("flush to user: %s error %s\r\n",
+				client->get_name(), acl::last_serror());
 			delete msg;
 			ret = false;
 			break;
@@ -79,6 +80,8 @@ static bool client_flush(user_client* client)
 
 	return ret;
 }
+
+static int __nwriter = 0;
 
 static void fiber_writer(user_client* client)
 {
@@ -91,10 +94,13 @@ static void fiber_writer(user_client* client)
 		client->wait(mtype);
 		if (client_flush(client) == false)
 		{
-			printf("%s(%d), user: %s, flush error\r\n",
-				__FUNCTION__, __LINE__, client->get_name());
+			printf("%s(%d), user: %s, flush error %s\r\n",
+				__FUNCTION__, __LINE__, client->get_name(),
+				acl::last_serror());
 			break;
 		}
+
+#ifdef USE_CHAN
 		if (mtype == MT_LOGOUT)
 		{
 			printf("%s(%d), user: %s, MT_LOGOUT\r\n",
@@ -108,12 +114,15 @@ static void fiber_writer(user_client* client)
 			client->get_stream().write("You're kicked\r\n");
 			break;
 		}
+#endif
 	}
 
 	client->set_waiting(false);
 	printf(">>%s(%d), user: %s, logout\r\n", __FUNCTION__, __LINE__,
 		client->get_name());
 	client_logout(client);
+
+	printf("-------__nwriter: %d-----\r\n", --__nwriter);
 }
 
 static bool client_login(user_client* uc)
@@ -219,13 +228,12 @@ static bool client_kick(user_client* uc, std::vector<acl::string>& tokens)
 	return true;
 }
 
+static int __nreader = 0;
+
 static void fiber_reader(user_client* client)
 {
-	client->notify_exit();
-	return;
-
 	acl::socket_stream& conn = client->get_stream();
-	conn.set_rw_timeout(60);
+	conn.set_rw_timeout(0);
 
 	client->set_reader();
 	client->set_reading(true);
@@ -235,15 +243,19 @@ static void fiber_reader(user_client* client)
 		client->set_reading(false);
 		printf("----------client_logout-------\r\n");
 		client_logout(client);
+
+		printf("----__nreader: %d-----\r\n", --__nreader);
 		return;
 	}
 
-	go[&] {
+	go_stack(STACK_SIZE) [&] {
+		__nwriter++;
 		fiber_writer(client);
 	};
 
-	conn.set_rw_timeout(30);
+	conn.set_rw_timeout(0);
 
+	bool stop = false;
 	acl::string buf;
 
 	while (true)
@@ -299,6 +311,11 @@ static void fiber_reader(user_client* client)
 			if (client_kick(client, tokens) == false)
 				break;
 		}
+		else if (tokens[0] == "stop")
+		{
+			stop = true;
+			break;
+		}
 		else
 			printf("invalid data: %s, cmd: [%s]\r\n",
 				buf.c_str(), tokens[0].c_str());
@@ -309,35 +326,43 @@ static void fiber_reader(user_client* client)
 
 	client->set_reading(false);
 	client_logout(client);
+
+	printf("----__nreader: %d-----\r\n", --__nreader);
+
+	if (stop)
+	{
+		int dumy = 1;
+		__chan_monitor.put(dumy);
+	}
 }
 
-static int __n = 100;
-static int __i = 0;
+static int __nclients = 0;
+
 static void fiber_client(acl::socket_stream* conn)
 {
 	user_client* client = new user_client(*conn);
 
-	/*
-	go[=] {
+	go_stack(STACK_SIZE) [=] {
+		__nreader++;
 		fiber_reader(client);
 	};
 
 	client->wait_exit();
 
-	printf("----- client (%s) n: %d, exit now -----\r\n", client->get_name(), __n);
-	*/
-	if (0)
-		fiber_reader(client);
+	printf("----- client (%s), exit now -----\r\n", client->get_name());
 	delete client;
 	delete conn;
-	if (++__i == __n)
-	{
-		acl_fiber_schedule_stop();
-	}
+
+	printf("----__nclients: %d-----\r\n", --__nclients);
+	printf("----dead fibers: %d---\r\n", acl_fiber_ndead());
 }
+
+static ACL_FIBER *__fiber_accept = NULL;
 
 static void fiber_accept(acl::server_socket& ss)
 {
+	__fiber_accept = acl_fiber_running();
+
 	while (true)
 	{
 		acl::socket_stream* conn = ss.accept();
@@ -347,10 +372,24 @@ static void fiber_accept(acl::server_socket& ss)
 			break;
 		}
 
-		go[=] {
+		go_stack(STACK_SIZE) [=] {
+			__nclients++;
 			fiber_client(conn);
 		};
 	}
+}
+
+static void fiber_monitor(void)
+{
+	int n;
+
+	__chan_monitor.pop(n);
+
+	printf("--- kill fiber_accept ---\r\n");
+	acl_fiber_kill(__fiber_accept);
+
+	printf("--- stop fiber schedule ---\r\n");
+	acl_fiber_schedule_stop();
 }
 
 static void usage(const char *procname)
@@ -395,6 +434,10 @@ int main(int argc, char *argv[])
 
 	go[&] {
 		fiber_accept(ss);
+	};
+
+	go[] {
+		fiber_monitor();
 	};
 
 	acl::fiber::schedule();

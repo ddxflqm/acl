@@ -9,7 +9,7 @@
 
 #define	STACK_SIZE	128000
 
-static const char* __user_prefix = "user";
+static const char* __user_prefix = "reader";
 static int __rw_timeout = 0;
 static int __max_client = 10;
 static int __cur_client = 10;
@@ -44,7 +44,7 @@ static void client_logout(user_client* client)
 static void fiber_reader(user_client* client)
 {
 	acl::socket_stream& conn = client->get_stream();
-	conn.set_rw_timeout(5);
+	conn.set_rw_timeout(0);
 
 	if (client_login(client) == false)
 	{
@@ -57,29 +57,16 @@ static void fiber_reader(user_client* client)
 
 	acl::string buf;
 
-	const char* to = client->get_to();
-	acl::string msg;
-	int max_loop = client->get_max_loop(), i = 0, n = 0;
+	int max_loop = client->get_max_loop(), i;
 
-	for (;;)
+	for (i = 0; i < max_loop; ++i)
 	{
-		msg.format("chat|%s|hello world\r\n", to);
-		if (conn.write(msg) != (int) msg.size())
-		{
-			printf("fiber-%d: msg(%s) write error %s\r\n",
-				acl_fiber_self(), msg.c_str(),
-				acl::last_serror());
-		}
-
 		if (conn.gets(buf))
 		{
-			if (++i <= 1)
+			if (i <= 1)
 				printf("fiber-%d: gets->%s\r\n",
 					acl_fiber_self(), buf.c_str());
-			n++;
 			__total_read++;
-			if (n == max_loop)
-				break;
 			continue;
 		}
 
@@ -87,34 +74,19 @@ static void fiber_reader(user_client* client)
 			__FUNCTION__, __LINE__, client->get_name(),
 			acl::last_serror(), acl_fiber_self());
 
-		if (client->existing())
-		{
-			printf("----existing now----\r\n");
-			break;
-		}
-
-		if (errno == ETIMEDOUT)
-			printf("ETIMEDOUT\r\n");
-		else if (errno == EAGAIN)
-			printf("EAGAIN\r\n");
-		else {
-			printf("gets error: %d, %s\r\n",
-				errno, acl::last_serror());
-			break;
-		}
+		break;
 	}
 
-	printf(">>%s(%d), user: %s, logout, loop: %d, ngets: %d\r\n",
-		__FUNCTION__, __LINE__, client->get_name(), i, n);
+	printf(">>%s(%d), user: %s, logout, loop: %d\r\n",
+		__FUNCTION__, __LINE__, client->get_name(), i);
 
 	client_logout(client);
 }
 
-static void fiber_client(const char* addr, const char* user,
-	const char* to, int loop)
+static void fiber_client(const char* addr, const char* user, int max_loop)
 {
 	acl::socket_stream conn;
-	if (conn.open(addr, 0, 10) == false)
+	if (conn.open(addr, 0, 0) == false)
 	{
 		printf("connect %s error %s\r\n", addr, acl::last_serror());
 	}
@@ -122,7 +94,7 @@ static void fiber_client(const char* addr, const char* user,
 	{
 		printf("fiber-%d, connect %s ok\r\n", acl_fiber_self(), addr);
 
-		user_client* client = new user_client(conn, user, to, loop);
+		user_client* client = new user_client(conn, user, max_loop);
 		go[=] {
 			fiber_reader(client);
 		};
@@ -193,17 +165,12 @@ int main(int argc, char *argv[])
 
 	for (int i = 0; i < __max_client; i++)
 	{
-		char user[128], to[128];
+		char user[128];
 
 		snprintf(user, sizeof(user), "%s-%d", __user_prefix, i);
 
-		if (i + 1 == __max_client)
-			snprintf(to, sizeof(to), "%s-0", __user_prefix);
-		else
-			snprintf(to, sizeof(to), "%s-%d", __user_prefix, i);
-
 		go[=] {
-			fiber_client(addr, user, to, max_loop);
+			fiber_client(addr, user, max_loop);
 		};
 	}
 

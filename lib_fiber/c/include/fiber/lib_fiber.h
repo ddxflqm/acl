@@ -27,6 +27,12 @@ ACL_FIBER *acl_fiber_create(void (*fn)(ACL_FIBER *, void *),
 	void *arg, size_t size);
 
 /**
+ * 返回当前线程中处于消亡状态的协程数
+ * @retur {int}
+ */
+int acl_fiber_ndead(void);
+
+/**
  * 返回当前正在运行的协程对象
  * @retur {ACL_FIBER*} 返回 NULL 表示当前没有正在运行的协程
  */
@@ -79,6 +85,11 @@ int acl_fiber_status(const ACL_FIBER *fiber);
  * @param fiber {const ACL_FIBER*} 协程对象
  */
 void acl_fiber_kill(ACL_FIBER *fiber);
+
+/**
+ * 检查本协程是否被其它协程通知退出
+ * @param fiber {const ACL_FIBER*} 协程对象
+ */
 int acl_fiber_killed(ACL_FIBER *fiber);
 
 /**

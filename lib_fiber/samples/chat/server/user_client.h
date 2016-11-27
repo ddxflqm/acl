@@ -11,7 +11,11 @@ enum
 class user_client
 {
 public:
+#ifdef USE_CHAN
 	user_client(acl::socket_stream& conn) : conn_(conn) {}
+#else
+	user_client(acl::socket_stream& conn) : conn_(conn), sem_msg_(1) {}
+#endif
 	~user_client(void)
 	{
 		for (std::list<acl::string*>::iterator it = messages_.begin();
@@ -64,12 +68,22 @@ public:
 
 	void wait(int& mtype)
 	{
-		chan_.pop(mtype);
+#ifdef USE_CHAN
+		chan_msg_.pop(mtype);
+#else
+		(void) mtype;
+		sem_msg_.wait();
+#endif
 	}
 
 	void notify(int mtype)
 	{
-		chan_.put(mtype);
+#ifdef USE_CHAN
+		chan_msg_.put(mtype);
+#else
+		(void) mtype;
+		(void) sem_msg_.post();
+#endif
 	}
 
 	void kill_reader(void)
@@ -135,7 +149,11 @@ public:
 
 private:
 	acl::socket_stream& conn_;
-	acl::channel<int> chan_;
+#ifdef	USE_CHAN
+	acl::channel<int> chan_msg_;
+#else
+	acl::fiber_sem	  sem_msg_;
+#endif
 	acl::channel<int> chan_exit_;
 	acl::string name_;
 	std::list<acl::string*> messages_;
