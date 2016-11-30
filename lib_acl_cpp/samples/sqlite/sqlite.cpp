@@ -155,13 +155,12 @@ int main(void)
 {
 	acl::acl_cpp_init();
 
-
 	acl::stdin_stream in;
 	acl::stdout_stream out;
 	acl::string line;
 
 #if	defined(_WIN32) || defined(_WIN64)
-	const char* libname = "libmysql.dll";
+	const char* libname = "sqlite3.dll";
 #else
 	const char* libname = "libsqlite3.so";
 #endif
