@@ -3,8 +3,7 @@
 
 #include "stdafx.h"
 #include "lib_acl.h"
-#include "acl_cpp/stdlib/string.hpp"
-#include "acl_cpp/db/db_mysql.hpp"
+#include "acl_cpp/lib_acl.hpp"
 
 const char* CREATE_TBL =
 	"create table group_tbl\r\n"

@@ -77,7 +77,7 @@ int main(void)
 	acl::db_mysql db(dbaddr, dbname, dbuser, dbpass);
 
 
-	if (db.open(NULL) == false)
+	if (db.dbopen(NULL) == false)
 	{
 		printf("open db(%s) error\r\n", dbname);
 		getchar();
