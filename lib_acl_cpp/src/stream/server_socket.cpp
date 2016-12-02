@@ -7,6 +7,8 @@
 #include "acl_cpp/stream/server_socket.hpp"
 #endif
 
+#define	SAFE_COPY	ACL_SAFE_STRNCPY
+
 namespace acl {
 
 server_socket::server_socket(int backlog /* = 128 */, bool block /* = true */)
@@ -16,18 +18,27 @@ server_socket::server_socket(int backlog /* = 128 */, bool block /* = true */)
 , fd_(ACL_SOCKET_INVALID)
 , fd_local_(ACL_SOCKET_INVALID)
 {
+	addr_[0] = 0;
 }
 
 server_socket::server_socket(ACL_VSTREAM* sstream)
 : fd_(ACL_VSTREAM_SOCK(sstream))
 , fd_local_(ACL_SOCKET_INVALID)
 {
+	if (fd_ != ACL_SOCKET_INVALID)
+		SAFE_COPY(addr_, ACL_VSTREAM_LOCAL(sstream), sizeof(addr_));
+	else
+		addr_[0] = 0;
 }
 
 server_socket::server_socket(ACL_SOCKET fd)
 : fd_(fd)
 , fd_local_(ACL_SOCKET_INVALID)
 {
+	if (fd_ != ACL_SOCKET_INVALID)
+		acl_getsockname(fd_, addr_, sizeof(addr_));
+	else
+		addr_[0] = 0;
 }
 
 server_socket::~server_socket()
@@ -50,7 +61,7 @@ bool server_socket::open(const char* addr)
 		fd_ = acl_unix_listen(addr, backlog_, block_
 			? ACL_BLOCKING : ACL_NON_BLOCKING);
 		unix_sock_ = true;
-		ACL_SAFE_STRNCPY(addr_, addr, sizeof(addr_));
+		SAFE_COPY(addr_, addr, sizeof(addr_));
 	}
 	else
 #endif
@@ -61,7 +72,7 @@ bool server_socket::open(const char* addr)
 	{
 		logger_error("listen %s error %s", addr, last_serror());
 		unix_sock_ = false;
-		ACL_SAFE_STRNCPY(addr_, addr, sizeof(addr_));
+		SAFE_COPY(addr_, addr, sizeof(addr_));
 		return false;
 	}
 
@@ -77,7 +88,7 @@ bool server_socket::open(const char* addr)
 	if (acl_getsockname(fd_, addr_, sizeof(addr_)) < 0)
 	{
 		logger_error("getsockname error: %s", acl_last_serror());
-		ACL_SAFE_STRNCPY(addr_, addr, sizeof(addr_));
+		SAFE_COPY(addr_, addr, sizeof(addr_));
 	}
 	return true;
 }

@@ -38,9 +38,9 @@ protected:
 	/**
 	 * @override
 	 * 在进程启动时，服务进程每成功监听一个本地地址，便调用本函数
-	 * @param ss {const server_socket&} 监听对象
+	 * @param ss {acl::server_socket&} 监听对象
 	 */
-	void proc_on_listen(const acl::server_socket& ss);
+	void proc_on_listen(acl::server_socket& ss);
 
 	/**
 	 * @override

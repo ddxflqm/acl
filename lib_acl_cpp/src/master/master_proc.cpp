@@ -184,8 +184,10 @@ void master_proc::service_exit(char*, char**)
 void master_proc::service_on_listen(ACL_VSTREAM* sstream)
 {
 	acl_assert(__mp != NULL);
-	server_socket ss(sstream);
-	__mp->proc_on_listen(ss);
+	server_socket* ss = new server_socket(sstream);
+	__mp->servers_.push_back(ss);
+	server_socket m(sstream);
+	__mp->proc_on_listen(*ss);
 }
 
 }  // namespace acl

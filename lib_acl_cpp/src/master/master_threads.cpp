@@ -270,10 +270,10 @@ int master_threads::service_main(ACL_VSTREAM *client, void*)
 
 void master_threads::service_on_listen(ACL_VSTREAM* sstream)
 {
-	server_socket ss(sstream);
-
 	acl_assert(__mt != NULL);
-	__mt->proc_on_listen(ss);
+	server_socket* ss = new server_socket(sstream);
+	__mt->servers_.push_back(ss);
+	__mt->proc_on_listen(*ss);
 }
 
 int master_threads::service_on_timeout(ACL_VSTREAM* client, void*)

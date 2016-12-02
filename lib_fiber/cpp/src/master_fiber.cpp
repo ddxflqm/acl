@@ -97,8 +97,9 @@ void master_fiber::service_exit(void*)
 void master_fiber::service_on_listen(ACL_VSTREAM* sstream)
 {
 	acl_assert(__mf != NULL);
-	server_socket ss(sstream);
-	__mf->proc_on_listen(ss);
+	server_socket* ss = new server_socket(sstream);
+	__mf->servers_.push_back(ss);
+	__mf->proc_on_listen(*ss);
 }
 
 void master_fiber::service_on_accept(ACL_VSTREAM *client, void*)

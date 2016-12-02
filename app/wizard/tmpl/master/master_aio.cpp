@@ -146,7 +146,7 @@ bool master_service::on_accept(acl::aio_socket_stream* client)
 	return true;
 }
 
-void master_service::proc_on_listen(const acl::server_socket& ss)
+void master_service::proc_on_listen(acl::server_socket& ss)
 {
 	logger(">>>listen %s ok<<<", ss.get_addr());
 }

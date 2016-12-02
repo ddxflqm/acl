@@ -219,8 +219,9 @@ void master_aio::service_main(ACL_SOCKET fd, void*)
 void master_aio::service_on_listen(ACL_VSTREAM *sstream)
 {
 	acl_assert(__ma);
-	server_socket ss(sstream);
-	__ma->proc_on_listen(ss);
+	server_socket* ss = new server_socket(sstream);
+	__ma->servers_.push_back(ss);
+	__ma->proc_on_listen(*ss);
 }
 
 }  // namespace acl

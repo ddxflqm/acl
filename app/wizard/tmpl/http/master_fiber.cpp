@@ -63,7 +63,7 @@ void master_service::proc_pre_jail(void)
 	logger(">>>proc_pre_jail<<<");
 }
 
-void master_service::proc_on_listen(const acl::server_socket& ss)
+void master_service::proc_on_listen(acl::server_socket& ss)
 {
 	logger(">>>listen %s ok<<<", ss.get_addr());
 }
