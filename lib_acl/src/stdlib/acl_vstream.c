@@ -2200,17 +2200,13 @@ ACL_VSTREAM *acl_vstream_fdopen(ACL_SOCKET fd, unsigned int oflags,
 
 		if (acl_getsockname(fd, (char *) fp->read_buf, buflen) == 0)
 			acl_vstream_set_local(fp, (char *) fp->read_buf);
-	} else if (ret == 0) {
-		if (acl_getsockname(fd, (char *) fp->read_buf, buflen) == 0) {
-			acl_vstream_set_local(fp, (char *) fp->read_buf);
-			ret++;
-		}
-		if (acl_getpeername(fd, (char *) fp->read_buf, buflen) == 0) {
+	} else if (ret == 0
+		&& acl_getsockname(fd, (char *) fp->read_buf, buflen) == 0)
+	{
+		acl_vstream_set_local(fp, (char *) fp->read_buf);
+		fp->type |= ACL_VSTREAM_TYPE_SOCK;
+		if (acl_getpeername(fd, (char *) fp->read_buf, buflen) == 0)
 			acl_vstream_set_peer(fp, (char *) fp->read_buf);
-			ret++;
-		}
-		if (ret == 2)
-			fp->type |= ACL_VSTREAM_TYPE_SOCK;
 	}
 
 	return fp;
