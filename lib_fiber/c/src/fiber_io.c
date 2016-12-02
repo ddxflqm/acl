@@ -247,6 +247,8 @@ unsigned int acl_fiber_delay(unsigned int milliseconds)
 
 	acl_fiber_switch();
 
+	//acl_ring_detach(&fiber->me);
+
 	if (acl_ring_size(&__thread_fiber->ev_timer) == 0)
 		ev->timeout = -1;
 

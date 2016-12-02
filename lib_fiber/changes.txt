@@ -1,3 +1,6 @@
+32) 2016.12.3
+32.1) feature: acl_fiber_kill 可以支持因调用 acl_fiber_sleep, acl_fiber_sem,
+acl_fiber_mutex_lock 而阻塞的协程
 
 31) 2016.11.28
 31.1) feature: fiber.cpp 中，fiber 类增加了 kill 和 killed 方法用来”杀死“协程
