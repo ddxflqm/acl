@@ -173,7 +173,8 @@ static void fiber_io_loop(ACL_FIBER *self acl_unused, void *ctx)
 
 		if (__thread_fiber->io_stop) {
 			if (__thread_fiber->io_count > 0)
-				acl_msg_info("---------waiting io: %d-----",
+				acl_msg_info("%s(%d), %s: waiting io: %d",
+					__FILE__, __LINE__, __FUNCTION__,
 					(int) __thread_fiber->io_count);
 			break;
 		}

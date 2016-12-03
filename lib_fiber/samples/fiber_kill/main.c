@@ -58,6 +58,7 @@ static void fiber_client(ACL_FIBER *fiber, void *ctx)
 	printf("fiber-%d: accept client, local: %s, peer: %s\r\n",
 		acl_fiber_self(), ACL_VSTREAM_LOCAL(conn),
 		ACL_VSTREAM_PEER(conn));
+
 	while (1) {
 		ret = acl_vstream_gets(conn, buf, sizeof(buf) - 1);
 		if (ret == ACL_VSTREAM_EOF) {
@@ -77,7 +78,7 @@ static void fiber_client(ACL_FIBER *fiber, void *ctx)
 
 static void fiber_server(ACL_FIBER *fiber, void *ctx acl_unused)
 {
-	ACL_VSTREAM *server = acl_vstream_listen("127.0.0.1:0", 128);
+	ACL_VSTREAM *server = acl_vstream_listen("127.0.0.1:9005", 128);
 
 	if (server == NULL) {
 		printf("fiber-%d: listen error %s\r\n",
@@ -91,13 +92,19 @@ static void fiber_server(ACL_FIBER *fiber, void *ctx acl_unused)
 		ACL_VSTREAM *conn = acl_vstream_accept(server, NULL, 0);
 		if (conn == NULL) {
 			printf("accept error %s\r\n", acl_last_serror());
-			exit (1);
+			if (acl_fiber_killed(fiber)) {
+				printf("server fiber-%d: killed\r\n",
+					acl_fiber_self());
+				break;
+			}
 		}
 		else
 			printf("----accept one client ----\r\n");
 
 		acl_fiber_create(fiber_client, conn, 32000);
 	}
+
+	acl_vstream_close(server);
 }
 
 static void fiber_killer(ACL_FIBER *fiber, void *ctx acl_unused)
@@ -118,11 +125,14 @@ static void fiber_killer(ACL_FIBER *fiber, void *ctx acl_unused)
 		acl_fiber_id(__fiber_sleep));
 	acl_fiber_kill(__fiber_sleep);
 
-	//acl_fiber_kill(__fiber_sleep2);
+	acl_fiber_kill(__fiber_sleep2);
+
+	acl_fiber_kill(__fiber_server);
 
 	printf("=====all fiber are killed, %d, %p=======\r\n",
 		acl_fiber_self(), fiber);
-	//acl_fiber_schedule_stop();
+
+	acl_fiber_schedule_stop();
 }
 
 static void usage(const char *procname)
@@ -157,11 +167,8 @@ int main(int argc, char *argv[])
 	__fiber_sleep2 = acl_fiber_create(fiber_sleep2, NULL, 32000);
 	acl_fiber_create(fiber_killer, NULL, 32000);
 
-	printf("----%s-%d----\r\n", __FUNCTION__, __LINE__);
 	acl_fiber_schedule();
-	printf("----%s-%d----\r\n", __FUNCTION__, __LINE__);
 	acl_fiber_sem_free(sem);
-	printf("----%s-%d----\r\n", __FUNCTION__, __LINE__);
 
 	return 0;
 }
