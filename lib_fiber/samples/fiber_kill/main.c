@@ -7,6 +7,7 @@ static ACL_FIBER *__fiber_wait1 = NULL;
 static ACL_FIBER *__fiber_wait2 = NULL;
 static ACL_FIBER *__fiber_sleep = NULL;
 static ACL_FIBER *__fiber_sleep2 = NULL;
+static ACL_FIBER *__fiber_server = NULL;
 
 static void fiber_wait(ACL_FIBER *fiber, void *ctx)
 {
@@ -33,7 +34,7 @@ static void fiber_sleep(ACL_FIBER *fiber, void *ctx acl_unused)
 	}
 }
 
-static void fiber_sleep2(ACL_FIBER *fiber acl_unused, void *ctx acl_unused)
+static void fiber_sleep2(ACL_FIBER *fiber, void *ctx acl_unused)
 {
 	while (1)
 	{
@@ -45,6 +46,57 @@ static void fiber_sleep2(ACL_FIBER *fiber acl_unused, void *ctx acl_unused)
 			printf("fiber-%d was killed\r\n", acl_fiber_id(fiber));
 			break;
 		}
+	}
+}
+
+static void fiber_client(ACL_FIBER *fiber, void *ctx)
+{
+	ACL_VSTREAM *conn = (ACL_VSTREAM *) ctx;
+	char buf[8192];
+	int  ret;
+
+	printf("fiber-%d: accept client, local: %s, peer: %s\r\n",
+		acl_fiber_self(), ACL_VSTREAM_LOCAL(conn),
+		ACL_VSTREAM_PEER(conn));
+	while (1) {
+		ret = acl_vstream_gets(conn, buf, sizeof(buf) - 1);
+		if (ret == ACL_VSTREAM_EOF) {
+			printf("fiber-%d: gets error %s\r\n",
+				acl_fiber_id(fiber), acl_last_serror());
+			break;
+		}
+		if (acl_vstream_writen(conn, buf, ret) != ret) {
+			printf("fiber-%d: write error %s\r\n",
+				acl_fiber_id(fiber), acl_last_serror());
+			break;
+		}
+	}
+
+	acl_vstream_close(conn);
+}
+
+static void fiber_server(ACL_FIBER *fiber, void *ctx acl_unused)
+{
+	ACL_VSTREAM *server = acl_vstream_listen("127.0.0.1:0", 128);
+
+	if (server == NULL) {
+		printf("fiber-%d: listen error %s\r\n",
+			acl_fiber_id(fiber), acl_last_serror());
+		exit (1);
+	}
+	printf("fiber-%d: listen %s ok\r\n", acl_fiber_self(),
+		ACL_VSTREAM_LOCAL(server));
+
+	while (1) {
+		ACL_VSTREAM *conn = acl_vstream_accept(server, NULL, 0);
+		if (conn == NULL) {
+			printf("accept error %s\r\n", acl_last_serror());
+			exit (1);
+		}
+		else
+			printf("----accept one client ----\r\n");
+
+		acl_fiber_create(fiber_client, conn, 32000);
 	}
 }
 
@@ -100,6 +152,7 @@ int main(int argc, char *argv[])
 	__fiber_wait1 = acl_fiber_create(fiber_wait, sem, 32000);
 	__fiber_wait2 = acl_fiber_create(fiber_wait, sem, 32000);
 	__fiber_sleep = acl_fiber_create(fiber_sleep, sem, 32000);
+	__fiber_server = acl_fiber_create(fiber_server, NULL, 32000);
 
 	__fiber_sleep2 = acl_fiber_create(fiber_sleep2, NULL, 32000);
 	acl_fiber_create(fiber_killer, NULL, 32000);
