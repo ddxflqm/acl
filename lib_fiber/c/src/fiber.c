@@ -509,10 +509,7 @@ static ACL_FIBER *fiber_alloc(void (*fn)(ACL_FIBER *, void *),
 	} else if ((fiber = APPL(head, ACL_FIBER, me))->size < size)
 		fiber->buff = (char *) acl_myrealloc(fiber->buff, size);
 	else
-	{
 		size = fiber->size;
-		printf("====================reuse one-------------\r\n");
-	}
 
 	fiber->errnum = 0;
 	fiber->fn     = fn;
