@@ -5,6 +5,12 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+
+typedef struct ACL_VSTREAM ACL_VSTREAM;
+
 /**
  * 协程结构类型
  */
