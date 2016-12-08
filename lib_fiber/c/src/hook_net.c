@@ -125,9 +125,9 @@ int listen(int sockfd, int backlog)
 
 int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {
-	int    clifd;
+	ACL_FIBER *me;
 	EVENT *ev;
-	ACL_FIBER *me = acl_fiber_running();
+	int    clifd;
 
 	if (sockfd < 0) {
 		acl_msg_error("%s: invalid sockfd %d", __FUNCTION__, sockfd);
@@ -136,6 +136,8 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 
 	if (!acl_var_hook_sys_api)
 		return __sys_accept(sockfd, addr, addrlen);
+
+	me = acl_fiber_running();
 
 #ifdef	FAST_ACCEPT
 
@@ -219,12 +221,13 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 {
 	int err;
-	socklen_t len = sizeof(err);
-	ACL_FIBER *me = acl_fiber_running();
+	socklen_t len;
+	ACL_FIBER *me;
 
 	if (!acl_var_hook_sys_api)
 		return __sys_connect(sockfd, addr, addrlen);
 
+	me = acl_fiber_running();
 	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
 
 	int ret = __sys_connect(sockfd, addr, addrlen);
@@ -278,6 +281,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 		return -1;
 	}
 
+	len = sizeof(err);
 	ret = getsockopt(sockfd, SOL_SOCKET, SO_ERROR, (char *) &err, &len);
 	if (ret == 0 && err == 0)
 	{
