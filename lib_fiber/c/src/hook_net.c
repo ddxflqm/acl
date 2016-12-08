@@ -645,6 +645,9 @@ int epoll_create(int size acl_unused)
 	EVENT *ev;
 	int epfd;
 
+	if (!acl_var_hook_sys_api)
+		return __sys_epoll_create(size);
+
 	fiber_io_check();
 	ev = fiber_io_event();
 	if (ev == NULL) {
@@ -711,6 +714,9 @@ int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
 	EPOLL_EVENT *ee;
 	EVENT *ev;
 	int    mask = 0;
+
+	if (!acl_var_hook_sys_api)
+		return __sys_epoll_ctl(epfd, op, fd, event);
 
 	ee = epoll_event_find(epfd);
 	if (ee == NULL) {
@@ -787,6 +793,9 @@ int epoll_wait(int epfd, struct epoll_event *events,
 	EVENT *ev;
 	EPOLL_EVENT *ee;
 	acl_int64 begin, now;
+
+	if (!acl_var_hook_sys_api)
+		return __sys_epoll_wait(epfd, events, maxevents, timeout);
 
 	ev = fiber_io_event();
 	if (ev == NULL) {
