@@ -410,6 +410,9 @@ const redis_result* redis_script::eval_cmd(const char* cmd,
 
 	acl_assert(i == argc);
 
+	if (keys.size() == 1)
+		hash_slot(keys[0].c_str());
+
 	build_request(argc, argv, lens);
 	return run();
 }

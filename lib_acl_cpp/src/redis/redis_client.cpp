@@ -360,6 +360,12 @@ const redis_result* redis_client::run(dbuf_pool* pool, const string& req,
 
 		close();
 
+		if (req.empty())
+		{
+			logger_error("no retry for request is empty");
+			break;
+		}
+
 		if (!retry_ || retried)
 		{
 			logger_error("result NULL, addr: %s, retry: %s, "
