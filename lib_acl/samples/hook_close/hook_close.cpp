@@ -5,7 +5,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#ifndef __USE_GNU
 #define __USE_GNU
+#endif
 #include <dlfcn.h>
 
 #include "hook_close.h"
@@ -40,9 +42,9 @@ static void trace_info(const char* prompt)
 
 	if (acl_pthread_once(&__trace_once, trace_buf_init) != 0)
 		return;
-	intbuf = acl_pthread_getspecific(__trace_key);
+	intbuf = (unsigned int *) acl_pthread_getspecific(__trace_key);
 	if (intbuf == NULL) {
-		intbuf = malloc(sizeof(int));
+		intbuf = (unsigned int *) malloc(sizeof(int));
 		*intbuf = 0;
 		acl_assert(acl_pthread_setspecific(__trace_key, intbuf) == 0);
 		if ((unsigned long) acl_pthread_self() == acl_main_thread_self()) {
