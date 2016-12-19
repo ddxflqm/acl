@@ -30,7 +30,7 @@ bool http_servlet::doOther(acl::HttpServletRequest&,
 	acl::HttpServletResponse& res, const char* method)
 {
 	res.setStatus(400);
-	res.setContentType("text/html; charset=utf-8");
+	res.setContentType("text/xml; charset=utf-8");
 	// ∑¢ÀÕ http œÏ”¶ÃÂ
 	acl::string buf;
 	buf.format("<root error='unkown request method %s' />\r\n", method);
