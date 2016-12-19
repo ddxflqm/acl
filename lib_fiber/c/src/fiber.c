@@ -31,6 +31,7 @@ typedef struct {
 	size_t         idgen;
 	int            count;
 	int            switched;
+	int            nlocal;
 } FIBER_TLS;
 
 static FIBER_TLS *__main_fiber = NULL;
@@ -105,6 +106,7 @@ static void fiber_check(void)
 	__thread_fiber->slot   = 0;
 	__thread_fiber->idgen  = 0;
 	__thread_fiber->count  = 0;
+	__thread_fiber->nlocal = 0;
 
 	acl_ring_init(&__thread_fiber->ready);
 	acl_ring_init(&__thread_fiber->dead);
@@ -458,8 +460,11 @@ static void fiber_start(unsigned int x, unsigned int y)
 	fiber->fn(fiber, fiber->arg);
 
 	for (i = 0; i < fiber->nlocal; i++) {
+		if (fiber->locals[i] == NULL)
+			continue;
 		if (fiber->locals[i]->free_fn)
 			fiber->locals[i]->free_fn(fiber->locals[i]->ctx);
+		acl_myfree(fiber->locals[i]);
 	}
 
 	if (fiber->locals) {
@@ -683,40 +688,77 @@ void acl_fiber_switch(void)
 	fiber_swap(current, __thread_fiber->running);
 }
 
-int acl_fiber_set_specific(void *ctx, void (*free_fn)(void *))
+int acl_fiber_set_specific(int *key, void *ctx, void (*free_fn)(void *))
 {
 	FIBER_LOCAL *local;
 	ACL_FIBER *curr;
-	int key;
 
-	if (__thread_fiber == NULL || __thread_fiber->running == NULL)
+	if (key == NULL) {
+		acl_msg_error("%s(%d), %s: key NULL",
+			__FILE__, __LINE__, __FUNCTION__);
 		return -1;
+	}
 
-	curr = __thread_fiber->running;
+	if (__thread_fiber == NULL) {
+		acl_msg_error("%s(%d), %s: __thread_fiber: NULL",
+			__FILE__, __LINE__, __FUNCTION__);
+		return -1;
+	} else if (__thread_fiber->running == NULL) {
+		acl_msg_error("%s(%d), %s: running: NULL",
+			__FILE__, __LINE__, __FUNCTION__);
+		return -1;
+	} else
+		curr = __thread_fiber->running;
 
-	key = curr->nlocal;
-	local = (FIBER_LOCAL *) acl_mymalloc(sizeof(FIBER_LOCAL));
+	if (*key <= 0)
+		*key = ++__thread_fiber->nlocal;
+	else if (*key > __thread_fiber->nlocal) {
+		acl_msg_error("%s(%d), %s: invalid key: %d > nlocal: %d",
+			__FILE__, __LINE__, __FUNCTION__,
+			*key, __thread_fiber->nlocal);
+		return -1;
+	}
+
+	if (curr->nlocal < __thread_fiber->nlocal) {
+		curr->nlocal = __thread_fiber->nlocal;
+		curr->locals = (FIBER_LOCAL **) acl_myrealloc(curr->locals,
+			curr->nlocal * sizeof(FIBER_LOCAL*));
+	}
+
+	local = (FIBER_LOCAL *) acl_mycalloc(1, sizeof(FIBER_LOCAL));
 	local->ctx = ctx;
 	local->free_fn = free_fn;
+	curr->locals[*key - 1] = local;
 
-	if (curr->nlocal % 64 == 0)
-		curr->locals = (FIBER_LOCAL **) acl_myrealloc(curr->locals,
-			(curr->nlocal + 64) * sizeof(FIBER_LOCAL*));
-	curr->locals[curr->nlocal++] = local;
-
-	return key;
+	return *key;
 }
 
 void *acl_fiber_get_specific(int key)
 {
+	FIBER_LOCAL *local;
 	ACL_FIBER *curr;
 
-	if (__thread_fiber == NULL || __thread_fiber->running == NULL)
+	if (key <= 0)
 		return NULL;
 
-	curr = __thread_fiber->running;
-	if (key >= curr->nlocal || key < 0)
+	if (__thread_fiber == NULL) {
+		acl_msg_error("%s(%d), %s: __thread_fiber NULL",
+			__FILE__, __LINE__, __FUNCTION__);
 		return NULL;
+	} else if (__thread_fiber->running == NULL) {
+		acl_msg_error("%s(%d), %s: running fiber NULL",
+			__FILE__, __LINE__, __FUNCTION__);
+		return NULL;
+	} else
+		curr = __thread_fiber->running;
 
-	return curr->locals[key];
+	if (key > curr->nlocal) {
+		acl_msg_error("%s(%d), %s: invalid key: %d > nlocal: %d",
+			__FILE__, __LINE__, __FUNCTION__,
+			key, curr->nlocal);
+		return NULL;
+	}
+
+	local = curr->locals[key - 1];
+	return local ? local->ctx : NULL;
 }
