@@ -3,6 +3,7 @@
 -----------------------------------------------------------------------
 458) 2016.12.21
 458.1) compile: gsoner.cpp, http_header.cpp 用 VC x64 编译时有警告
+458.2) bugfix: master_threads.cpp 中 thread_on_handshake 被调用了两次
 
 457) 2016.12.19
 457.1) bugfix: redis_command::run 中当遇到 ASK 命令执行重定向成功，但紧接着执行
