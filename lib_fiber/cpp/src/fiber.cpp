@@ -78,8 +78,9 @@ bool fiber::kill(void)
 {
 	if (f_ == NULL)
 		return false;
-	acl_fiber_kill(f_);
+	ACL_FIBER* fb = f_;
 	f_ = NULL;
+	acl_fiber_kill(fb);
 	return true;
 }
 

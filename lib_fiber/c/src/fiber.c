@@ -10,19 +10,25 @@
 #include "event_epoll.h"  /* just for hook_epoll */
 #include "fiber.h"
 
-#define	MAX_CACHE	1000000
+#define	MAX_CACHE	1000
 
 typedef int  *(*errno_fn)(void);
 typedef int   (*fcntl_fn)(int, int, ...);
+
+#ifdef __DEBUG_MEM
 typedef void *(*malloc_fn)(size_t);
 typedef void *(*calloc_fn)(size_t, size_t);
 typedef void *(*realloc_fn)(void*, size_t);
+#endif
 
 static errno_fn __sys_errno     = NULL;
 static fcntl_fn __sys_fcntl     = NULL;
+
+#ifdef __DEBUG_MEM
 static malloc_fn __sys_malloc   = NULL;
 //static calloc_fn __sys_calloc   = NULL;
 static realloc_fn __sys_realloc = NULL;
+#endif
 
 typedef struct {
 	ACL_RING       ready;		/* ready fiber queue */
@@ -180,6 +186,7 @@ int fcntl(int fd, int cmd, ...)
 	return ret;
 }
 
+#ifdef __DEBUG_MEM
 void *malloc(size_t size)
 {
 	if (__sys_malloc == NULL)
@@ -205,6 +212,7 @@ void *realloc(void *ptr, size_t size)
 	//assert(size < 64000000);
 	return __sys_realloc(ptr, size);
 }
+#endif
 
 void acl_fiber_set_errno(ACL_FIBER *fiber, int errnum)
 {
@@ -638,9 +646,12 @@ static void fiber_init(void)
 
 	__called++;
 
+#ifdef __DEBUG_MEM
 	//__sys_calloc  = (calloc_fn) dlsym(RTLD_NEXT, "calloc");
 	__sys_malloc  = (malloc_fn) dlsym(RTLD_NEXT, "malloc");
 	__sys_realloc = (realloc_fn) dlsym(RTLD_NEXT, "realloc");
+#endif
+
 	__sys_errno   = (errno_fn) dlsym(RTLD_NEXT, "__errno_location");
 	__sys_fcntl   = (fcntl_fn) dlsym(RTLD_NEXT, "fcntl");
 
