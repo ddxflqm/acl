@@ -424,11 +424,8 @@ void acl_fiber_kill(ACL_FIBER *fiber)
 
 	fiber->flag |= FIBER_F_KILLED;
 
-	if (fiber == curr) {
-		acl_msg_error("%s(%d), %s: fiber-%d kill itself disable!",
-			__FILE__, __LINE__, __FUNCTION__, acl_fiber_id(fiber));
+	if (fiber == curr) // just return if kill myself
 		return;
-	}
 
 	acl_ring_detach(&curr->me);
 	acl_ring_detach(&fiber->me);
