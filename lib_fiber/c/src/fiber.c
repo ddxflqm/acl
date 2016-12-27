@@ -618,7 +618,7 @@ ACL_FIBER *acl_fiber_create(void (*fn)(ACL_FIBER *, void *),
 
 int acl_fiber_id(const ACL_FIBER *fiber)
 {
-	return fiber->id;
+	return fiber ? fiber->id : 0;
 }
 
 int acl_fiber_self(void)
