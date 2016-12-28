@@ -22,6 +22,42 @@
 
 #include "ring.h"
 
+/****************************************************************************/
+
+static void *(*__slice_malloc_fn)(const char*, int, size_t)
+	= acl_default_malloc;
+static void *(*__slice_calloc_fn)(const char*, int, size_t, size_t)
+	= acl_default_calloc;
+static void *(*__slice_realloc_fn)(const char*, int, void*, size_t)
+	= acl_default_realloc;
+static void  (*__slice_free_fn)(const char*, int, void*)
+	= acl_default_free;
+
+void acl_slice_mem_hook(void *(*malloc_hook)(const char*, int, size_t),
+	void *(*calloc_hook)(const char*, int, size_t, size_t),
+	void *(*realloc_hook)(const char*, int, void*, size_t),
+	void  (*free_hook)(const char*, int, void*))
+{
+	if (malloc_hook != NULL)
+		__slice_malloc_fn  = malloc_hook;
+	if (calloc_hook != NULL)
+		__slice_calloc_fn  = calloc_hook;
+	if (realloc_hook != NULL)
+		__slice_realloc_fn = realloc_hook;
+	if (free_hook != NULL)
+		__slice_free_fn    = free_hook;
+}
+
+void acl_slice_mem_unhook(void)
+{
+	__slice_malloc_fn  = acl_default_malloc;
+	__slice_calloc_fn  = acl_default_calloc;
+	__slice_realloc_fn = acl_default_realloc;
+	__slice_free_fn    = acl_default_free;
+}
+
+/****************************************************************************/
+
 typedef struct MBUF_SLOTS {
 	void **slots;		/* in which free slice can use */
 	int   islots;		/* current position of free slots slice */
@@ -126,37 +162,37 @@ typedef struct SLICE3 {
 } SLICE3;
 
 #define	MBUF_SLOTS_SPACE(slice, mslots_in, incr, incr_real) do  \
-{  \
-	MBUF_SLOTS *mslots = mslots_in;  \
-	if (mslots->slots == NULL) {  \
-		incr_real = incr < slice->page_nslots ? slice->page_nslots : incr;  \
-		mslots->slots = (void **) acl_default_malloc(__FILE__, __LINE__,  \
-						sizeof(void*) * incr_real);  \
-		mslots->nslots = incr_real;  \
-		mslots->islots = 0;  \
-	} else if (mslots->islots + incr >= mslots->nslots) {  \
-		incr_real = incr < slice->page_nslots ? slice->page_nslots : incr;  \
-		mslots->nslots += incr_real;  \
-		mslots->slots = (void **) acl_default_realloc(__FILE__, __LINE__,  \
-				mslots->slots, sizeof(void*) * mslots->nslots);  \
-	}  \
+{ \
+  MBUF_SLOTS *mslots = mslots_in;  \
+  if (mslots->slots == NULL) {  \
+    incr_real = incr < slice->page_nslots ? slice->page_nslots : incr;  \
+    mslots->slots = (void **) __slice_malloc_fn(__FILE__, __LINE__,  \
+                                 sizeof(void*) * incr_real);  \
+    mslots->nslots = incr_real;  \
+    mslots->islots = 0;  \
+  } else if (mslots->islots + incr >= mslots->nslots) {  \
+    incr_real = incr < slice->page_nslots ? slice->page_nslots : incr;  \
+    mslots->nslots += incr_real;  \
+    mslots->slots = (void **) __slice_realloc_fn(__FILE__, __LINE__,  \
+                      mslots->slots, sizeof(void*) * mslots->nslots);  \
+  }  \
 } while (0)
 
 #define	SLICE_MBUF_SPACE(slice_in, incr, incr_real, mbuf_type) do  \
 {  \
-	if (slice_in->mbufs == NULL) {  \
-		incr_real = incr > 16 ? incr : 16;  \
-		slice_in->mbufs = (mbuf_type**) acl_default_malloc(__FILE__,  \
-					__LINE__, sizeof(mbuf_type*) * incr_real);  \
-		slice_in->capacity = incr_real;  \
-		slice_in->imbuf_avail = 0; \
-	} else if (slice_in->slice.nbuf + incr >= slice_in->capacity) {  \
-		incr_real = incr > 16 ? incr : 16;  \
-		slice_in->capacity += incr_real;  \
-		slice_in->mbufs = (mbuf_type**)  \
-			acl_default_realloc(__FILE__, __LINE__, slice_in->mbufs,  \
-				sizeof(mbuf_type*) * slice_in->capacity);  \
-	}  \
+  if (slice_in->mbufs == NULL) {  \
+    incr_real = incr > 16 ? incr : 16;  \
+    slice_in->mbufs = (mbuf_type**) __slice_malloc_fn(__FILE__,  \
+                        __LINE__, sizeof(mbuf_type*) * incr_real);  \
+    slice_in->capacity = incr_real;  \
+    slice_in->imbuf_avail = 0; \
+  } else if (slice_in->slice.nbuf + incr >= slice_in->capacity) {  \
+    incr_real = incr > 16 ? incr : 16;  \
+    slice_in->capacity += incr_real;  \
+    slice_in->mbufs = (mbuf_type**)  \
+      __slice_realloc_fn(__FILE__, __LINE__, slice_in->mbufs,  \
+          sizeof(mbuf_type*) * slice_in->capacity);  \
+  }  \
 } while (0)
 
 /* forward declare */
@@ -179,7 +215,7 @@ static void slice3_mbuf_alloc(ACL_SLICE *slice)
 	int   i, incr_real = 0, n;
 	char *ptr;
 
-	mbuf = (MBUF3*) acl_default_malloc(__FILE__, __LINE__,
+	mbuf = (MBUF3*) __slice_malloc_fn(__FILE__, __LINE__,
 			slice->page_size);
 	mbuf->mbuf.slice = slice;
 	mbuf->mbuf.nused = 0;
@@ -273,8 +309,8 @@ static void slice3_mbuf_free(ACL_SLICE *slice, MBUF3 *mbuf)
 	if (slice3->imbuf_avail == -1)
 		slice3->imbuf_avail = 0;
 
-	acl_default_free(__FILE__, __LINE__, mbuf->mslots.slots);
-	acl_default_free(__FILE__, __LINE__, mbuf);
+	__slice_free_fn(__FILE__, __LINE__, mbuf->mslots.slots);
+	__slice_free_fn(__FILE__, __LINE__, mbuf);
 	slice->nbuf--;
 	slice->nfree++;
 	slice->length -= slice->page_size + sizeof(void*) * slice->page_nslots;
@@ -361,8 +397,8 @@ static void slice3_destroy(ACL_SLICE *slice)
 		mbuf = slice3->mbufs[i];
 		slice3_mbuf_free(slice, mbuf);
 	}
-	acl_default_free(__FILE__, __LINE__, slice3->mbufs);
-	acl_default_free(__FILE__, __LINE__, slice3);
+	__slice_free_fn(__FILE__, __LINE__, slice3->mbufs);
+	__slice_free_fn(__FILE__, __LINE__, slice3);
 }
 
 static void slice3_stat(ACL_SLICE *slice,  ACL_SLICE_STAT *sbuf)
@@ -396,7 +432,7 @@ static ACL_SLICE *slice3_create(int page_size,
 	SLICE3 *slice;
 	int   incr_real;
 
-	slice = (SLICE3 *) acl_default_calloc(__FILE__, __LINE__,
+	slice = (SLICE3 *) __slice_calloc_fn(__FILE__, __LINE__,
 			1, sizeof(SLICE3));
 
 	/* call the base ACL_SLICE's init function */
@@ -453,7 +489,7 @@ static void slice2_mbuf_alloc(ACL_SLICE *slice)
 	int   i, incr_real = 0, n;
 	char *ptr;
 
-	mbuf = (MBUF2*) acl_default_malloc(__FILE__, __LINE__, slice->page_size);
+	mbuf = (MBUF2*) __slice_malloc_fn(__FILE__, __LINE__, slice->page_size);
 	mbuf->mbuf.slice = slice;
 	mbuf->mbuf.nused = 0;
 	mbuf->mbuf.signature = SIGNATURE;
@@ -629,7 +665,7 @@ static void slice2_mbuf_free(SLICE2 *slice2, MBUF2 *mbuf)
 	}
 #endif
 	ring_detach(&mbuf->entry);
-	acl_default_free(__FILE__, __LINE__, mbuf);
+	__slice_free_fn(__FILE__, __LINE__, mbuf);
 	slice2->slice.nbuf--;
 	slice2->slice.nfree++;
 }
@@ -725,13 +761,13 @@ static void slice2_destroy(ACL_SLICE *slice)
 	for (iter = ring_succ(&slice2->mbuf_head); iter != &slice2->mbuf_head;) {
 		tmp = ring_succ(iter);
 		mbuf = RING_TO_APPL(iter, MBUF2, entry);
-		acl_default_free(__FILE__, __LINE__, mbuf);
+		__slice_free_fn(__FILE__, __LINE__, mbuf);
 		iter = tmp;
 	}
 
 	if (slice2->mslots.slots)
-		acl_default_free(__FILE__, __LINE__, slice2->mslots.slots);
-	acl_default_free(__FILE__, __LINE__, slice2);
+		__slice_free_fn(__FILE__, __LINE__, slice2->mslots.slots);
+	__slice_free_fn(__FILE__, __LINE__, slice2);
 }
 
 static void slice2_stat(ACL_SLICE *slice,  ACL_SLICE_STAT *sbuf)
@@ -756,7 +792,7 @@ static ACL_SLICE *slice2_create(int page_size,
 {
 	SLICE2 *slice;
 
-	slice = (SLICE2 *) acl_default_calloc(__FILE__, __LINE__,
+	slice = (SLICE2 *) __slice_calloc_fn(__FILE__, __LINE__,
 		1, sizeof(SLICE2));
 
 	/* call the base ACL_SLICE's init function */
@@ -808,12 +844,12 @@ static ACL_SLICE *slice2_create(int page_size,
 static void slice1_mbuf_alloc(ACL_SLICE *slice)
 {
 	SLICE1 *slice1 = (SLICE1*) slice;
-	MBUF1 *mbuf = (MBUF1*) acl_default_malloc(__FILE__, __LINE__,
+	MBUF1 *mbuf = (MBUF1*) __slice_malloc_fn(__FILE__, __LINE__,
 			sizeof(MBUF1));
 	int   i, incr_real = 0, n;
 	char *ptr;
 
-	mbuf->buf = (void*) acl_default_malloc(__FILE__, __LINE__,
+	mbuf->buf = (void*) __slice_malloc_fn(__FILE__, __LINE__,
 			slice->page_size);
 	ring_append(&slice1->mbuf_head, &mbuf->entry);
 	ptr = (char*) mbuf->buf;
@@ -872,8 +908,8 @@ static void slice1_mbuf_free(ACL_SLICE *slice, void *buf)
 		mbuf = RING_TO_APPL(iter, MBUF1, entry);
 		if (buf == mbuf->buf) {
 			ring_detach(&mbuf->entry);
-			acl_default_free(__FILE__, __LINE__, mbuf->buf);
-			acl_default_free(__FILE__, __LINE__, mbuf);
+			__slice_free_fn(__FILE__, __LINE__, mbuf->buf);
+			__slice_free_fn(__FILE__, __LINE__, mbuf);
 			slice->nbuf--;
 			slice->nfree++;
 			return;
@@ -949,13 +985,13 @@ static void slice1_destroy(ACL_SLICE *slice)
 	for (iter = ring_succ(&slice1->mbuf_head); iter != &slice1->mbuf_head;) {
 		tmp = ring_succ(iter);
 		mbuf = RING_TO_APPL(iter, MBUF1, entry);
-		acl_default_free(__FILE__, __LINE__, mbuf->buf);
-		acl_default_free(__FILE__, __LINE__, mbuf);
+		__slice_free_fn(__FILE__, __LINE__, mbuf->buf);
+		__slice_free_fn(__FILE__, __LINE__, mbuf);
 		iter = tmp;
 	}
 	if (slice1->mslots.slots)
-		acl_default_free(__FILE__, __LINE__, slice1->mslots.slots);
-	acl_default_free(__FILE__, __LINE__, slice1);
+		__slice_free_fn(__FILE__, __LINE__, slice1->mslots.slots);
+	__slice_free_fn(__FILE__, __LINE__, slice1);
 }
 
 static int slice1_used(ACL_SLICE *slice acl_unused)
@@ -987,7 +1023,7 @@ static ACL_SLICE *slice1_create(int page_size, int slice_length, unsigned int fl
 {
 	SLICE1 *slice;
 
-	slice = (SLICE1 *) acl_default_calloc(__FILE__, __LINE__,
+	slice = (SLICE1 *) __slice_calloc_fn(__FILE__, __LINE__,
 			1, sizeof(SLICE1));
 
 	/* call the base ACL_SLICE's init function */
@@ -1190,12 +1226,12 @@ ACL_SLICE_POOL *acl_slice_pool_create(int base, int nslice,
 	unsigned int slice_flag)
 {
 	ACL_SLICE_POOL *asp = (ACL_SLICE_POOL*)
-		acl_default_calloc(__FILE__, __LINE__, 1, sizeof(*asp));
+		__slice_calloc_fn(__FILE__, __LINE__, 1, sizeof(*asp));
 
 	asp->base = base;
 	asp->nslice = nslice;
 	asp->slice_flag = slice_flag;
-	asp->slices = (ACL_SLICE**) acl_default_calloc(__FILE__, __LINE__,
+	asp->slices = (ACL_SLICE**) __slice_calloc_fn(__FILE__, __LINE__,
 			nslice, sizeof(ACL_SLICE*));
 	acl_slice_pool_init(asp);
 	return asp;
@@ -1209,8 +1245,8 @@ void acl_slice_pool_destroy(ACL_SLICE_POOL *asp)
 		acl_slice_destroy(asp->slices[i]);
 	}
 
-	acl_default_free(__FILE__, __LINE__, asp->slices);
-	acl_default_free(__FILE__, __LINE__, asp);
+	__slice_free_fn(__FILE__, __LINE__, asp->slices);
+	__slice_free_fn(__FILE__, __LINE__, asp);
 }
 
 int acl_slice_pool_used(ACL_SLICE_POOL *asp)
@@ -1254,9 +1290,10 @@ void acl_slice_pool_free(const char *filename, int line, void *buf)
 	char *ptr = (char*) buf;
 
 	ptr -= sizeof(size_t);  /* 移至内存头的标志位 */
-	if (*((size_t*) ptr) == 0)
-		acl_default_free(filename, line, ptr);
-	else {
+	if (*((size_t*) ptr) == 0) {
+		ptr -= sizeof(size_t);
+		__slice_free_fn(filename, line, ptr);
+	} else {
 		acl_slice_free(ptr);
 	}
 }
@@ -1269,10 +1306,12 @@ void *acl_slice_pool_alloc(const char *filename, int line,
 
 	size += sizeof(size_t);  /* 头部留出空间做为标志位 */
 	if (asp == NULL || (int) size >= asp->base * asp->nslice) {
-		ptr = (char*) acl_default_malloc(filename, line, size);
+		size += sizeof(size_t);
+		ptr = (char*) __slice_malloc_fn(filename, line, size);
 		if (ptr) {
-			*((size_t*) ptr) = 0;
-			ptr += sizeof(size_t);
+			*((size_t*) ptr) = size - sizeof(size_t) * 2;
+			*(((size_t*) ptr) + 1) = 0;
+			ptr += sizeof(size_t) * 2;
 		}
 		return ptr;
 	}
@@ -1282,7 +1321,7 @@ void *acl_slice_pool_alloc(const char *filename, int line,
 
 	ptr = (char*) acl_slice_alloc(asp->slices[n - 1]);
 	if (ptr) {
-		*((size_t*) ptr) = 1;
+		*((size_t*) ptr) = size - sizeof(size_t);
 		ptr += sizeof(size_t);
 	}
 	return ptr;
@@ -1304,7 +1343,15 @@ void *acl_slice_pool_realloc(const char *filename, int line,
 	void *buf;
 
 	buf = acl_slice_pool_alloc(filename, line, asp, size);
-	memcpy(buf, ptr, size);
+	if (ptr != NULL) {
+		size_t old_size = *(((size_t*) ptr) - 1);
+		if (old_size == 0) {
+			old_size = *(((size_t*) ptr) - 2);
+			if (old_size == 0)
+				abort();
+		}
+		memcpy(buf, ptr, old_size);
+	}
 	acl_slice_pool_free(filename, line, ptr);
 	return buf;
 }
