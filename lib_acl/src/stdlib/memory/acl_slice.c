@@ -88,26 +88,11 @@ struct ACL_SLICE {
 	void  (*slice_stat)(ACL_SLICE *slice, ACL_SLICE_STAT *sbuf);
 };
 
-/**
- * MBUF1: 比较节省内存模式，但该方式在垃圾自动回收时比较费时，
- * 比较适合于分配但不回收的情形
- */
+#define	SLICE_OFF_SIZE		4
 
-typedef struct MBUF1 {
-	RING  entry;		/* linked by SLICE1->mbuf_head */
-	void *buf;		/* memory buf can be sliced */
-} MBUF1;
-
-typedef struct SLICE1 {
-	ACL_SLICE slice;	/* the bases class */
-	MBUF_SLOTS mslots;	/* slice slots holding all slice of the mbuf */
-	RING  mbuf_head;	/* link all mbuf's entry */
-} SLICE1;
-
-/* MBUF2, MBUF3 的基础类型 */
+/* MBUF1, MBUF2, MBUF3 的基础类型 */
 
 #define SIGNATURE		0xdead
-#define	SLICE_OFF_SIZE		4
 
 typedef struct MBUF {
 	ACL_SLICE *slice;
@@ -116,11 +101,30 @@ typedef struct MBUF {
 } MBUF;
 
 /**
+ * MBUF1: 比较节省内存模式，但该方式在垃圾自动回收时比较费时，
+ * 比较适合于分配但不回收的情形
+ */
+
+#define	SLICE1_HEAD_SIZE	SLICE_OFF_SIZE
+
+typedef struct MBUF1 {
+	MBUF  mbuf;
+	RING  entry;		/* linked by SLICE1->mbuf_head */
+	char  payload[1];	/* format: {off}{data}{off}{data}... */
+} MBUF1;
+
+typedef struct SLICE1 {
+	ACL_SLICE slice;	/* the bases class */
+	MBUF_SLOTS mslots;	/* slice slots holding all slice of the mbuf */
+	RING  mbuf_head;	/* link all mbuf's entry */
+} SLICE1;
+
+/**
  * MBUF2: 内存稍微大点，但实时垃圾的自动回收性能比较好, 但如果某
  * 个 MBUF2 只要有一个结点被引用, 则该内存便不能被释放给系统
  */
 
-#define	SLICE2_HEAD_SIZE	8
+#define	SLICE2_HEAD_SIZE	(SLICE_OFF_SIZE + 4)
 
 typedef struct MBUF2 {
 	MBUF  mbuf;
@@ -142,7 +146,7 @@ typedef struct SLICE2 {
  * 但如果是随机释放则效率下降非常厉害，尤其当结点比较多时
  */
 
-#define	SLICE3_HEAD_SIZE	4
+#define	SLICE3_HEAD_SIZE	SLICE_OFF_SIZE
 
 typedef struct MBUF3 {
 	MBUF  mbuf;
@@ -215,8 +219,7 @@ static void slice3_mbuf_alloc(ACL_SLICE *slice)
 	int   i, incr_real = 0, n;
 	char *ptr;
 
-	mbuf = (MBUF3*) __slice_malloc_fn(__FILE__, __LINE__,
-			slice->page_size);
+	mbuf = (MBUF3*) __slice_malloc_fn(__FILE__, __LINE__, slice->page_size);
 	mbuf->mbuf.slice = slice;
 	mbuf->mbuf.nused = 0;
 	mbuf->mbuf.signature = SIGNATURE;
@@ -532,9 +535,8 @@ static void *slice2_alloc(ACL_SLICE *slice)
 	MBUF2 *mbuf;
 	int  off, pos;
 
-	if (slice2->mslots.islots == 0) {
+	if (slice2->mslots.islots == 0)
 		slice2_mbuf_alloc(slice);
-	}
 
 	ptr = (char*) slice2->mslots.slots[--slice2->mslots.islots];
 	slice->used_length += slice->slice_size;
@@ -790,10 +792,8 @@ static void slice2_stat(ACL_SLICE *slice,  ACL_SLICE_STAT *sbuf)
 static ACL_SLICE *slice2_create(int page_size,
 	int slice_length, unsigned int flag)
 {
-	SLICE2 *slice;
-
-	slice = (SLICE2 *) __slice_calloc_fn(__FILE__, __LINE__,
-		1, sizeof(SLICE2));
+	SLICE2 *slice = (SLICE2 *) __slice_calloc_fn(
+			__FILE__, __LINE__, 1, sizeof(SLICE2));
 
 	/* call the base ACL_SLICE's init function */
 	
@@ -844,23 +844,26 @@ static ACL_SLICE *slice2_create(int page_size,
 static void slice1_mbuf_alloc(ACL_SLICE *slice)
 {
 	SLICE1 *slice1 = (SLICE1*) slice;
-	MBUF1 *mbuf = (MBUF1*) __slice_malloc_fn(__FILE__, __LINE__,
-			sizeof(MBUF1));
+	MBUF1 *mbuf;
 	int   i, incr_real = 0, n;
 	char *ptr;
 
-	mbuf->buf = (void*) __slice_malloc_fn(__FILE__, __LINE__,
-			slice->page_size);
+	mbuf = (MBUF1*) __slice_malloc_fn(__FILE__, __LINE__, slice->page_size);
+	mbuf->mbuf.slice = slice;
+	mbuf->mbuf.nused = 0;
+	mbuf->mbuf.signature = SIGNATURE;
 	ring_append(&slice1->mbuf_head, &mbuf->entry);
-	ptr = (char*) mbuf->buf;
+	ptr = mbuf->payload;
 
 	slice->nalloc++;
 	n = slice->page_nslots;
 	MBUF_SLOTS_SPACE(slice, &slice1->mslots, n, incr_real);
 
 	for (i = 0; i < slice->page_nslots; i++) {
+		ptr += SLICE1_HEAD_SIZE;
+		*((int*) (ptr - SLICE_OFF_SIZE)) = (int) (ptr - (char*) mbuf);
 		slice1->mslots.slots[slice1->mslots.islots++] = ptr;
-		ptr += slice->slice_size;
+		ptr += slice->slice_length;
 	}
 	for (i = slice->page_nslots; i < incr_real; i++)
 		slice1->mslots.slots[i] = NULL;
@@ -906,9 +909,8 @@ static void slice1_mbuf_free(ACL_SLICE *slice, void *buf)
 	FOREACH_RING_BACKWARD(iter, &slice1->mbuf_head) {
 #endif
 		mbuf = RING_TO_APPL(iter, MBUF1, entry);
-		if (buf == mbuf->buf) {
+		if (buf == mbuf->payload) {
 			ring_detach(&mbuf->entry);
-			__slice_free_fn(__FILE__, __LINE__, mbuf->buf);
 			__slice_free_fn(__FILE__, __LINE__, mbuf);
 			slice->nbuf--;
 			slice->nfree++;
@@ -916,8 +918,7 @@ static void slice1_mbuf_free(ACL_SLICE *slice, void *buf)
 		}
 	}
 
-	acl_msg_fatal("%s: unknown buf addr: 0x%p",
-		myname, buf ? buf : 0);
+	acl_msg_fatal("%s: unknown buf addr: 0x%p", myname, buf ? buf : 0);
 }
 
 static int cmp_fn(const void *p1, const void *p2)
@@ -985,7 +986,6 @@ static void slice1_destroy(ACL_SLICE *slice)
 	for (iter = ring_succ(&slice1->mbuf_head); iter != &slice1->mbuf_head;) {
 		tmp = ring_succ(iter);
 		mbuf = RING_TO_APPL(iter, MBUF1, entry);
-		__slice_free_fn(__FILE__, __LINE__, mbuf->buf);
 		__slice_free_fn(__FILE__, __LINE__, mbuf);
 		iter = tmp;
 	}
@@ -1038,9 +1038,10 @@ static ACL_SLICE *slice1_create(int page_size, int slice_length, unsigned int fl
 
 	/* reset the base ACL_SLICE's params */
 	slice->slice.slice_length = slice_length;
-	slice->slice.slice_size = slice_length;
+	slice->slice.slice_size = slice_length + SLICE1_HEAD_SIZE;
 	slice->slice.page_size = page_size;
-	slice->slice.page_nslots = page_size / slice->slice.slice_size;
+	slice->slice.page_nslots = (page_size - sizeof(MBUF2))
+		/ slice->slice.slice_size;
 	slice->slice.gap_size = page_size - slice->slice.page_nslots
 		* slice->slice.slice_size;
 
