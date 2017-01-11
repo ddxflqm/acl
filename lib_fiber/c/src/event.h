@@ -33,7 +33,8 @@ struct FILE_EVENT {
 	event_proc   *r_proc;
 	event_proc   *w_proc;
 	POLL_EVENT   *pe;
-	void         *ctx;
+	void         *r_ctx;
+	void         *w_ctx;
 	DEFER_DELETE *defer;
 };
 

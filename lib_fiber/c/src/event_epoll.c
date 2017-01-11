@@ -76,6 +76,10 @@ static int epoll_event_add(EVENT *ev, int fd, int mask)
 	if (mask & EVENT_WRITABLE)
 		ee.events |= EPOLLOUT;
 
+	if ((ee.events & EPOLLIN) != 0 && (ee.events & EPOLLOUT) != 0) {
+		printf("===========%s=======double set --------------\r\n", __FUNCTION__);
+		abort();
+	}
 #if 0
 #ifdef	EPOLLRDHUP
 	ee.events |= EPOLLERR | EPOLLRDHUP | EPOLLHUP;
@@ -172,6 +176,7 @@ static int epoll_event_loop(EVENT *ev, int timeout)
 
 		ev->fired[j].fd   = e->data.fd;
 		ev->fired[j].mask = mask;
+		//printf("-------%s-----fired, fd: %d, %s, %s\r\n", __FUNCTION__, e->data.fd, mask & EVENT_READABLE ? "read":"no read", mask &EVENT_WRITABLE?"write":"no write");
 	}
 
 	return ret;

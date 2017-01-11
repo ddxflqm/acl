@@ -164,12 +164,14 @@ int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 		fe->mask |= mask;
 	}
 
-	if (mask & EVENT_READABLE)
+	if (mask & EVENT_READABLE) {
 		fe->r_proc = proc;
-	if (mask & EVENT_WRITABLE)
+		fe->r_ctx  = ctx;
+	}
+	if (mask & EVENT_WRITABLE) {
 		fe->w_proc = proc;
-
-	fe->ctx = ctx;
+		fe->w_ctx  = ctx;
+	}
 
 	if (fd > ev->maxfd)
 		ev->maxfd = fd;
@@ -214,7 +216,7 @@ static void __event_del(EVENT *ev, int fd, int mask)
 	}
 }
 
-#define DEL_DELAY
+//#define DEL_DELAY
 
 void event_del(EVENT *ev, int fd, int mask)
 {
@@ -301,6 +303,7 @@ int event_process(EVENT *ev, int timeout)
 	}
 
 	numevents = ev->loop(ev, timeout);
+	//printf("-------------------numevents: %d----------\r\n", numevents);
 
 	for (j = 0; j < numevents; j++) {
 		fd             = ev->fired[j].fd;
@@ -313,15 +316,33 @@ int event_process(EVENT *ev, int timeout)
 		 * still didn't processed, so we check if the event is
 		 * still valid.
 		 */
+		if ((mask & EVENT_READABLE) && (mask & EVENT_WRITABLE))
+		{
+			//printf("----------double io------\r\n");
+		}
 		if (fe->mask & mask & EVENT_READABLE) {
 			rfired = 1;
-			fe->r_proc(ev, fd, fe->ctx, mask);
+			fe->r_proc(ev, fd, fe->r_ctx, EVENT_READABLE);
 		} else
 			rfired = 0;
 
 		if (fe->mask & mask & EVENT_WRITABLE) {
+			/*
+			if (rfired)
+				printf("-----------------reader first---\r\n");
+			else
+				printf("-----------------no reader\r\n");
+				*/
+
 			if (!rfired || fe->w_proc != fe->r_proc)
-				fe->w_proc(ev, fd, fe->ctx, mask);
+			{
+				//printf(">>>>>>>>>>>>>>>>..call writer: %p-\r\n", fe->w_proc);
+				fe->w_proc(ev, fd, fe->w_ctx, EVENT_WRITABLE);
+			}
+			else
+			{
+				//printf("------------disable writer-----\r\n");
+			}
 		}
 
 		processed++;
