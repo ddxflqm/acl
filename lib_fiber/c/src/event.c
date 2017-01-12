@@ -116,6 +116,7 @@ static int check_fdtype(int fd)
 
 #define DEL_DELAY
 
+#ifdef DEL_DELAY
 static int event_defer_r_merge(EVENT *ev, int fd, int mask)
 {
 	FILE_EVENT *fe = &ev->events[fd];
@@ -187,6 +188,7 @@ static int event_defer_w_merge(EVENT *ev, int fd, int mask)
 	fe->mask    = to_mask;
 	return 0;
 }
+#endif /* !DEL_DELAY */
 
 int event_add(EVENT *ev, int fd, int mask, event_proc *proc, void *ctx)
 {
