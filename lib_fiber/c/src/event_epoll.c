@@ -67,7 +67,7 @@ static int epoll_event_add(EVENT *ev, int fd, int mask)
 	ee.data.ptr = NULL;
 	ee.data.fd  = fd;
 
-#if 0
+#if 1
 	mask |= ev->events[fd].mask; /* Merge old events */
 #endif
 
@@ -76,10 +76,6 @@ static int epoll_event_add(EVENT *ev, int fd, int mask)
 	if (mask & EVENT_WRITABLE)
 		ee.events |= EPOLLOUT;
 
-	if ((ee.events & EPOLLIN) != 0 && (ee.events & EPOLLOUT) != 0) {
-		printf("===========%s=======double set --------------\r\n", __FUNCTION__);
-		abort();
-	}
 #if 0
 #ifdef	EPOLLRDHUP
 	ee.events |= EPOLLERR | EPOLLRDHUP | EPOLLHUP;
@@ -123,6 +119,9 @@ static int epoll_event_del(EVENT *ev, int fd, int delmask)
 	if (mask != EVENT_NONE) {
 		if (__sys_epoll_ctl(ep->epfd, EPOLL_CTL_MOD, fd, &ee) < 0) {
 			fiber_save_errno();
+			if (errno == EEXIST)
+				return 0;
+
 			acl_msg_error("%s(%d), epoll_ctl error: %s, fd: %d",
 				__FUNCTION__, __LINE__, acl_last_serror(), fd);
 			return -1;
@@ -176,7 +175,6 @@ static int epoll_event_loop(EVENT *ev, int timeout)
 
 		ev->fired[j].fd   = e->data.fd;
 		ev->fired[j].mask = mask;
-		//printf("-------%s-----fired, fd: %d, %s, %s\r\n", __FUNCTION__, e->data.fd, mask & EVENT_READABLE ? "read":"no read", mask &EVENT_WRITABLE?"write":"no write");
 	}
 
 	return ret;

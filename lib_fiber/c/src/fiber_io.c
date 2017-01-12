@@ -304,7 +304,6 @@ static void read_callback(EVENT *ev, int fd, void *ctx, int mask)
 {
 	ACL_FIBER *me = (ACL_FIBER *) ctx;
 
-	//printf("-----------------------call reader ready=============\r\n");
 	event_del(ev, fd, mask);
 	acl_fiber_ready(me);
 
@@ -337,7 +336,6 @@ static void write_callback(EVENT *ev, int fd, void *ctx, int mask)
 	ACL_FIBER *me = (ACL_FIBER *) ctx;
 
 	event_del(ev, fd, mask);
-	//printf("-----------------------call writer ready=============\r\n");
 	acl_fiber_ready(me);
 
 	__thread_fiber->io_count--;

@@ -436,9 +436,7 @@ void acl_fiber_ready(ACL_FIBER *fiber)
 {
 	if (fiber->status != FIBER_STATUS_EXITING) {
 		fiber->status = FIBER_STATUS_READY;
-		//printf(">>>append fiber: %p, ready: %d\r\n", fiber, acl_ring_size(&__thread_fiber->ready));
 		acl_ring_prepend(&__thread_fiber->ready, &fiber->me);
-		//acl_ring_append(&__thread_fiber->ready, &fiber->me);
 	}
 }
 
