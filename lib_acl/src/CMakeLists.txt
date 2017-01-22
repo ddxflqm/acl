@@ -68,4 +68,7 @@ aux_source_directory(${src}/unit_test lib_src)
 aux_source_directory(${src}/xml lib_src)
 
 #add_library(_acl ${lib_src})
+#link_directories("${CMAKE_BINARY_DIR}")
+set(lib_output_path ${PROJECT_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${lib_output_path})
 add_library(_acl SHARED ${lib_src})

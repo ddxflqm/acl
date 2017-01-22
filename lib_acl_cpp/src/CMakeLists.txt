@@ -59,4 +59,7 @@ aux_source_directory(${src}/smtp lib_src)
 aux_source_directory(${src}/stdlib lib_src)
 aux_source_directory(${src}/stream lib_src)
 
-add_library(_acl_cpp ${lib_src})
+set(lib_output_path ${PROJECT_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${lib_output_path})
+SET(CMAKE_SHARED_LINKER_FLAGS "-Wl,-rpath,. -L${lib_output_path} -l_protocol -l_acl")
+add_library(_acl_cpp SHARED ${lib_src})
