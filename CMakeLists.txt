@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(acl)
 message(${CMAKE_SYSTEM_NAME})
+#set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Release CACHE STRING "set build type to release")
 add_subdirectory(lib_protocol/src lib_protocol)
 add_subdirectory(lib_acl/src lib_acl)
 add_subdirectory(lib_acl_cpp/src lib_acl_cpp)

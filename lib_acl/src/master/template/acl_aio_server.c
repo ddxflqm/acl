@@ -173,6 +173,10 @@ static void dispatch_close(ACL_AIO *aio);
 
 static void aio_init(void)
 {
+#ifdef ACL_ARM_LINUX
+	(void) __closing_time_mutex;
+	(void) __counter_mutex;
+#endif
 	acl_assert(pthread_mutex_init(&__closing_time_mutex, NULL) == 0);
 	acl_assert(pthread_mutex_init(&__counter_mutex, NULL) == 0);
 	__last_closing_time = time(NULL);
