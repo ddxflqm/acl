@@ -44,11 +44,8 @@ static void master_wakeup_timer_event(int type acl_unused,
 	static char wakeup = ACL_TRIGGER_REQ_WAKEUP;
 	int     status = 0;
 
-#ifdef ACL_ARM_LINUX
-	(void) event;
-#endif	
-
-	acl_assert(event == acl_var_master_global_event);
+	if (event != acl_var_master_global_event)
+		abort();
 
 	/*
 	 * Don't wakeup services whose automatic wakeup feature was
