@@ -69,8 +69,12 @@ aux_source_directory(${src}/stdlib lib_src)
 aux_source_directory(${src}/stream lib_src)
 
 set(lib_output_path ${PROJECT_BINARY_DIR}/lib)
+
+#set(LIBRARY_OUTPUT_PATH ${lib_output_path})
+#add_library(_acl_cpp STATIC ${lib_src})
+
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${lib_output_path})
-SET(CMAKE_SHARED_LINKER_FLAGS "-Wl,-rpath,. -L${lib_output_path} -l_protocol -l_acl")
+set(CMAKE_SHARED_LINKER_FLAGS "-Wl,-rpath,. -L${lib_output_path} -l_protocol -l_acl")
 add_library(_acl_cpp SHARED ${lib_src})
-link_directories(${PROJECT_BINARY_DIR}/lib)
+link_directories(${lib_output_path})
 target_link_libraries(_acl_cpp _protocol _acl)

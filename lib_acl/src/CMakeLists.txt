@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 #set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_BUILD_TYPE Release CACHE STRING "set build type to release")
+#set(CMAKE_BUILD_TYPE Release CACHE STRING "set build type to release")
 
 #add_definitions("-g")
 add_definitions("-W")
@@ -69,8 +69,11 @@ aux_source_directory(${src}/thread lib_src)
 aux_source_directory(${src}/unit_test lib_src)
 aux_source_directory(${src}/xml lib_src)
 
-#add_library(_acl ${lib_src})
-#link_directories("${CMAKE_BINARY_DIR}")
 set(lib_output_path ${PROJECT_BINARY_DIR}/lib)
+
+#set(LIBRARY_OUTPUT_PATH ${lib_output_path})
+#add_library(_acl STATIC ${lib_src})
+
+#link_directories("${lib_output_path}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${lib_output_path})
 add_library(_acl SHARED ${lib_src})
