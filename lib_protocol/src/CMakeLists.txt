@@ -2,50 +2,85 @@ cmake_minimum_required(VERSION 2.8)
 #set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_BUILD_TYPE Release CACHE STRING "set build type to release")
 
-add_definitions("-g")
-add_definitions("-W")
-add_definitions("-O3")
-add_definitions("-Wall")
-add_definitions("-Werror")
-add_definitions("-Wshadow")
-add_definitions("-Wpointer-arith")
-add_definitions("-Waggregate-return")
-add_definitions("-Wmissing-prototypes")
-add_definitions("-D_REENTRANT")
-add_definitions("-D_USE_FAST_MACRO")
-add_definitions("-Wno-long-long")
-add_definitions("-Wuninitialized")
-add_definitions("-D_POSIX_PTHREAD_SEMANTICS")
-add_definitions("-DACL_ARM_LINUX")
+set(flags
+	"-W"
+	"-Wall"
+	"-Werror"
+	"-Wshadow"
+	"-Wpointer-arith"
+	"-Waggregate-return"
+	"-Wmissing-prototypes"
+	"-D_REENTRANT"
+	"-D_USE_FAST_MACRO"
+	"-DACL_WRITEABLE_CHECK"
+	"-Wno-long-long"
+	"-Wuninitialized"
+	"-D_POSIX_PTHREAD_SEMANTICS"
+	"-DACL_PREPARE_COMPILE"
+	"-Wno-invalid-source-encoding"
+	"-fPIC"
+	"-Wstrict-prototypes"
+)
 
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-	add_definitions("-DLINUX2")
-	add_definitions("-Wstrict-prototypes")
-	add_definitions("-fPIC")
+foreach(iter ${flags})
+	add_definitions(${iter})
+endforeach()
+
+if (CMAKE_BUILD_TYPE STREQUAL "")
+	set(CMAKE_BUILD_TYPE "DEBUG")
+else()
+	string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE)
 endif()
 
+if (${CMAKE_BUILD_TYPE} STREQUAL "RELEASE")
+	add_definitions("-O3")
+else()
+	add_definitions("-g")
+endif()
+
+string(TOUPPER ${CMAKE_SYSTEM_NAME} CMAKE_SYSTEM_NAME)
+if (${CMAKE_SYSTEM_NAME} MATCHES "LINUX")
+	add_definitions("-DLINUX2")
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "ANDROID")
+	add_definitions("-DACL_ARM_LINUX")
+else()
+	message(FATAL_ERROR "unknown CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}")
+endif()
+
+##############################################################################
+
 set(rpath lib_protocol)
-set(src ${PROJECT_SOURCE_DIR}/${rpath}/src)
 set(acl_path ${PROJECT_SOURCE_DIR}/lib_acl)
 set(acl_include ${acl_path}/include)
 
-include_directories(${acl_include})
-include_directories(${PROJECT_SOURCE_DIR}/${rpath}/src)
-include_directories(${PROJECT_SOURCE_DIR}/${rpath}/include)
+include_directories(
+	${acl_include}
+	${PROJECT_SOURCE_DIR}/${rpath}/src
+	${PROJECT_SOURCE_DIR}/${rpath}/include
+)
 
-aux_source_directory(${src} lib_src)
-aux_source_directory(${src}/http lib_src)
-aux_source_directory(${src}/smtp lib_src)
-aux_source_directory(${src}/icmp lib_src)
+set(src ${PROJECT_SOURCE_DIR}/${rpath}/src)
+set(sources
+	${src}
+	${src}/http
+	${src}/smtp
+	${src}/icmp
+)
+
+foreach(iter ${sources})
+	aux_source_directory(${iter} lib_src)
+endforeach()
 
 set(lib_output_path ${PROJECT_BINARY_DIR}/lib)
 
-#add_library(_protocol ${lib_src})
+set(LIBRARY_OUTPUT_PATH ${lib_output_path})
+add_library(_protocol_static STATIC ${lib_src})
+SET_TARGET_PROPERTIES(_protocol_static PROPERTIES OUTPUT_NAME "_protocol")
 
-##SET(CMAKE_SKIP_BUILD_RPATH FALSE)
-##set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${lib_output_path})
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,-rpath,. -L${lib_output_path} -l_acl")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${lib_output_path})
 add_library(_protocol SHARED ${lib_src})
 link_directories(${lib_output_path})
 target_link_libraries(_protocol _acl)
+
+##############################################################################

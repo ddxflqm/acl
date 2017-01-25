@@ -2,78 +2,111 @@ cmake_minimum_required(VERSION 2.8)
 #set(CMAKE_BUILD_TYPE Release)
 #set(CMAKE_BUILD_TYPE Release CACHE STRING "set build type to release")
 
-add_definitions("-g")
-add_definitions("-W")
-add_definitions("-O3")
-add_definitions("-Wall")
-add_definitions("-Werror")
-add_definitions("-Wshadow")
-add_definitions("-Wpointer-arith")
-add_definitions("-Waggregate-return")
-add_definitions("-Wmissing-prototypes")
-add_definitions("-D_REENTRANT")
-add_definitions("-D_USE_FAST_MACRO")
-add_definitions("-DACL_WRITEABLE_CHECK")
-add_definitions("-Wno-long-long")
-add_definitions("-Wuninitialized")
-add_definitions("-D_POSIX_PTHREAD_SEMANTICS")
-add_definitions("-DACL_PREPARE_COMPILE")
-add_definitions("-Wno-invalid-source-encoding")
-add_definitions("-DACL_ARM_LINUX")
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-	add_definitions("-DLINUX2")
-	add_definitions("-Wstrict-prototypes")
-	add_definitions("-fPIC")
+message(${PROJECT_SOURCE_DIR})
+
+set(flags
+	"-W"
+	"-Wall"
+	"-Werror"
+	"-Wshadow"
+	"-Wpointer-arith"
+	"-Waggregate-return"
+	"-Wmissing-prototypes"
+	"-D_REENTRANT"
+	"-D_USE_FAST_MACRO"
+	"-DACL_WRITEABLE_CHECK"
+	"-Wno-long-long"
+	"-Wuninitialized"
+	"-D_POSIX_PTHREAD_SEMANTICS"
+	"-DACL_PREPARE_COMPILE"
+	"-Wno-invalid-source-encoding"
+	"-fPIC"
+	"-Wstrict-prototypes"
+)
+
+foreach(iter ${flags})
+	add_definitions(${iter})
+endforeach()
+
+if (CMAKE_BUILD_TYPE STREQUAL "")
+	set(CMAKE_BUILD_TYPE "DEBUG")
+else()
+	string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE)
 endif()
 
-message(${PROJECT_SOURCE_DIR})
+if (${CMAKE_BUILD_TYPE} STREQUAL "RELEASE")
+	add_definitions("-O3")
+else()
+	add_definitions("-g")
+endif()
+
+string(TOUPPER ${CMAKE_SYSTEM_NAME} CMAKE_SYSTEM_NAME)
+if (${CMAKE_SYSTEM_NAME} MATCHES "LINUX")
+	add_definitions("-DLINUX2")
+elseif(${CMAKE_SYSTEM_NAME} MATCHES "ANDROID")
+	add_definitions("-DACL_ARM_LINUX")
+else()
+	message(FATAL_ERROR "unknown CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}")
+endif()
+
+##############################################################################
+
 set(rpath lib_acl)
 set(src ${PROJECT_SOURCE_DIR}/${rpath}/src)
 
-message(${src})
-message(${src}/stdlib)
-include_directories(${PROJECT_SOURCE_DIR}/${rpath})
-include_directories(${PROJECT_SOURCE_DIR}/${rpath}/include)
-aux_source_directory(${src}/stdlib lib_src)
-aux_source_directory(${src}/stdlib/debug lib_src)
-aux_source_directory(${src}/stdlib/memory lib_src)
-aux_source_directory(${src}/stdlib/filedir lib_src)
-aux_source_directory(${src}/stdlib/string lib_src)
-aux_source_directory(${src}/stdlib/common lib_src)
-aux_source_directory(${src}/stdlib/sys lib_src)
-aux_source_directory(${src}/stdlib/sys/unix lib_src)
-aux_source_directory(${src}/stdlib/configure lib_src)
-aux_source_directory(${src}/stdlib/iostuff lib_src)
-aux_source_directory(${src}/aio lib_src)
-aux_source_directory(${src}/code lib_src)
-aux_source_directory(${src}/db lib_src)
-aux_source_directory(${src}/db/memdb lib_src)
-aux_source_directory(${src}/db/mysql lib_src)
-aux_source_directory(${src}/db/null lib_src)
-aux_source_directory(${src}/db/zdb lib_src)
-aux_source_directory(${src}/event lib_src)
-aux_source_directory(${src}/init lib_src)
-aux_source_directory(${src}/ioctl lib_src)
-aux_source_directory(${src}/json lib_src)
-aux_source_directory(${src}/master lib_src)
-aux_source_directory(${src}/master/framework lib_src)
-aux_source_directory(${src}/master/framework/trigger lib_src)
-aux_source_directory(${src}/master/template lib_src)
-aux_source_directory(${src}/msg lib_src)
-aux_source_directory(${src}/net lib_src)
-aux_source_directory(${src}/net/dns lib_src)
-aux_source_directory(${src}/net/connect lib_src)
-aux_source_directory(${src}/net/listen lib_src)
-aux_source_directory(${src}/private lib_src)
-aux_source_directory(${src}/thread lib_src)
-aux_source_directory(${src}/unit_test lib_src)
-aux_source_directory(${src}/xml lib_src)
+include_directories(
+	${PROJECT_SOURCE_DIR}/${rpath}
+	${PROJECT_SOURCE_DIR}/${rpath}/include
+)
+
+set(sources
+	${src}/stdlib lib_src
+	${src}/stdlib/debug
+	${src}/stdlib/memory
+	${src}/stdlib/filedir
+	${src}/stdlib/string
+	${src}/stdlib/common
+	${src}/stdlib/sys
+	${src}/stdlib/sys/unix
+	${src}/stdlib/configure
+	${src}/stdlib/iostuff
+	${src}/aio
+	${src}/code
+	${src}/db
+	${src}/db/memdb
+	${src}/db/mysql
+	${src}/db/null
+	${src}/db/zdb
+	${src}/event
+	${src}/init
+	${src}/ioctl
+	${src}/json
+	${src}/master
+	${src}/master/framework
+	${src}/master/framework/trigger
+	${src}/master/template
+	${src}/msg
+	${src}/net
+	${src}/net/dns
+	${src}/net/connect
+	${src}/net/listen
+	${src}/private
+	${src}/thread
+	${src}/unit_test
+	${src}/xml
+)
+
+foreach(iter ${sources})
+	aux_source_directory(${iter} lib_src)
+endforeach()
 
 set(lib_output_path ${PROJECT_BINARY_DIR}/lib)
 
-#set(LIBRARY_OUTPUT_PATH ${lib_output_path})
-#add_library(_acl STATIC ${lib_src})
+set(LIBRARY_OUTPUT_PATH ${lib_output_path})
+add_library(_acl_static STATIC ${lib_src})
+SET_TARGET_PROPERTIES(_acl_static PROPERTIES OUTPUT_NAME "_acl")
 
-#link_directories("${lib_output_path}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${lib_output_path})
 add_library(_acl SHARED ${lib_src})
+
+##############################################################################
