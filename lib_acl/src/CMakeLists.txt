@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 2.8)
 
 message(${PROJECT_SOURCE_DIR})
 
-set(flags
+add_definitions(
 	"-W"
 	"-Wall"
 	"-Werror"
@@ -24,26 +24,22 @@ set(flags
 	"-Wstrict-prototypes"
 )
 
-foreach(iter ${flags})
-	add_definitions(${iter})
-endforeach()
-
 if (CMAKE_BUILD_TYPE STREQUAL "")
 	set(CMAKE_BUILD_TYPE "DEBUG")
 else()
 	string(TOUPPER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE)
 endif()
 
-if (${CMAKE_BUILD_TYPE} STREQUAL "RELEASE")
+if (CMAKE_BUILD_TYPE STREQUAL "RELEASE")
 	add_definitions("-O3")
 else()
 	add_definitions("-g")
 endif()
 
 string(TOUPPER ${CMAKE_SYSTEM_NAME} CMAKE_SYSTEM_NAME)
-if (${CMAKE_SYSTEM_NAME} MATCHES "LINUX")
+if (CMAKE_SYSTEM_NAME MATCHES "LINUX")
 	add_definitions("-DLINUX2")
-elseif(${CMAKE_SYSTEM_NAME} MATCHES "ANDROID")
+elseif(CMAKE_SYSTEM_NAME MATCHES "ANDROID")
 	add_definitions("-DACL_ARM_LINUX")
 else()
 	message(FATAL_ERROR "unknown CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}")
