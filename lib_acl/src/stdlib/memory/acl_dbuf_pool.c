@@ -235,8 +235,13 @@ void *acl_dbuf_pool_alloc(ACL_DBUF_POOL *pool, size_t length)
 
 	length += length % 4;
 
+#ifdef ACL_ARM_LINUX
+	if ((dbuf = acl_dbuf_alloc(pool, length)) != NULL) {
+	}
+#else
 	if (length > pool->block_size)
 		dbuf = acl_dbuf_alloc(pool, length);
+#endif
 	else if (pool->head == NULL)
 		dbuf = acl_dbuf_alloc(pool, pool->block_size);
 	else if (pool->block_size < ((char*) pool->head->addr

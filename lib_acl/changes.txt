@@ -1,5 +1,8 @@
 修改历史列表：
 
+574) 2017.1.28
+574.1) feature: acl_dbuf_pool.c 支持 ARM LINUX
+
 573) 2016.12.29
 573.1) bugfix: acl_slice.c 中修复了 SLICE1 方式分配内存的一处 BUG
 
