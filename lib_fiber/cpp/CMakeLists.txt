@@ -9,19 +9,21 @@ add_definitions(
 	"-Wall"
 	"-Werror"
 	"-Wshadow"
+	"-Wformat"
 	"-Wpointer-arith"
-	"-Waggregate-return"
-	"-Wmissing-prototypes"
 	"-D_REENTRANT"
 	"-D_USE_FAST_MACRO"
-	"-DACL_WRITEABLE_CHECK"
 	"-Wno-long-long"
 	"-Wuninitialized"
 	"-D_POSIX_PTHREAD_SEMANTICS"
-	"-DACL_PREPARE_COMPILE"
+	"-DHAS_MYSQL_DLL"
+	"-DHAS_SQLITE_DLL"
+	"-DHAS_ZLIB_DLL"
 	"-Wno-invalid-source-encoding"
-	"-fPIC"
-	"-Wstrict-prototypes"
+	"-Wno-unused-private-field"
+	"-Wno-unused-parameter"
+	"-Wno-unused-const-variable"
+	"-fexceptions"
 )
 
 if (CMAKE_BUILD_TYPE STREQUAL "")
@@ -47,50 +49,24 @@ endif()
 
 ##############################################################################
 
-set(rpath lib_acl)
+set(rpath lib_fiber/cpp)
 set(src ${PROJECT_SOURCE_DIR}/${rpath}/src)
+set(acl_path ${PROJECT_SOURCE_DIR}/lib_acl)
+set(acl_include ${acl_path}/include)
+set(acl_cpp_path ${PROJECT_SOURCE_DIR}/lib_acl_cpp)
+set(acl_cpp_include ${acl_cpp_path}/include)
+set(fiber_path ${PROJECT_SOURCE_DIR}/lib_fiber/c)
+set(fiber_include ${fiber_path}/include)
 
 include_directories(
-	${PROJECT_SOURCE_DIR}/${rpath}
+	${PROJECT_SOURCE_DIR}/${rpath}/src
 	${PROJECT_SOURCE_DIR}/${rpath}/include
+	${acl_include}
+	${acl_cpp_include}
+	${fiber_include}
 )
 
-set(sources
-	${src}/stdlib
-	${src}/stdlib/debug
-	${src}/stdlib/memory
-	${src}/stdlib/filedir
-	${src}/stdlib/string
-	${src}/stdlib/common
-	${src}/stdlib/sys
-	${src}/stdlib/sys/unix
-	${src}/stdlib/configure
-	${src}/stdlib/iostuff
-	${src}/aio
-	${src}/code
-	${src}/db
-	${src}/db/memdb
-	${src}/db/mysql
-	${src}/db/null
-	${src}/db/zdb
-	${src}/event
-	${src}/init
-	${src}/ioctl
-	${src}/json
-	${src}/master
-	${src}/master/framework
-	${src}/master/framework/trigger
-	${src}/master/template
-	${src}/msg
-	${src}/net
-	${src}/net/dns
-	${src}/net/connect
-	${src}/net/listen
-	${src}/private
-	${src}/thread
-	${src}/unit_test
-	${src}/xml
-)
+set(sources ${src})
 
 foreach(iter ${sources})
 	aux_source_directory(${iter} lib_src)
@@ -99,10 +75,15 @@ endforeach()
 set(lib_output_path ${PROJECT_BINARY_DIR}/lib)
 
 set(LIBRARY_OUTPUT_PATH ${lib_output_path})
-add_library(_acl_static STATIC ${lib_src})
-SET_TARGET_PROPERTIES(_acl_static PROPERTIES OUTPUT_NAME "_acl")
+add_library(_fiber_cpp_static STATIC ${lib_src})
+SET_TARGET_PROPERTIES(_fiber_cpp_static PROPERTIES OUTPUT_NAME "_fiber_cpp")
 
+set(CMAKE_SHARED_LINKER_FLAGS
+	-Wl,-rpath,. -L${lib_output_path}
+	-l_acl_cpp -l_protocol -l_fiber -l_acl)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${lib_output_path})
-add_library(_acl SHARED ${lib_src})
+add_library(_fiber_cpp SHARED ${lib_src})
+link_directories(${lib_output_path})
+target_link_libraries(_fiber_cpp _acl_cpp _protocol _fiber _acl)
 
 ##############################################################################

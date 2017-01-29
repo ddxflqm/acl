@@ -79,7 +79,9 @@ static void fiber_schedule_main_free(void)
 
 static void thread_init(void)
 {
-	acl_assert(acl_pthread_key_create(&__fiber_key, thread_free) == 0);
+	if (acl_pthread_key_create(&__fiber_key, thread_free) != 0)
+		acl_msg_fatal("%s(%d), %s: pthread_key_create error %s",
+			__FILE__, __LINE__, __FUNCTION__, acl_last_serror());
 }
 
 static acl_pthread_once_t __once_control = ACL_PTHREAD_ONCE_INIT;
@@ -89,7 +91,9 @@ static void fiber_check(void)
 	if (__thread_fiber != NULL)
 		return;
 
-	acl_assert(acl_pthread_once(&__once_control, thread_init) == 0);
+	if (acl_pthread_once(&__once_control, thread_init) != 0)
+		acl_msg_fatal("%s(%d), %s: pthread_once error %s",
+			__FILE__, __LINE__, __FUNCTION__, acl_last_serror());
 
 	__thread_fiber = (FIBER_TLS *) acl_mycalloc(1, sizeof(FIBER_TLS));
 #ifdef	USE_JMP

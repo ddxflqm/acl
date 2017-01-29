@@ -47,49 +47,22 @@ endif()
 
 ##############################################################################
 
-set(rpath lib_acl)
+set(rpath lib_fiber/c)
 set(src ${PROJECT_SOURCE_DIR}/${rpath}/src)
+set(acl_path ${PROJECT_SOURCE_DIR}/lib_acl)
+set(acl_include ${acl_path}/include)
+message(${acl_include})
 
 include_directories(
-	${PROJECT_SOURCE_DIR}/${rpath}
+	${PROJECT_SOURCE_DIR}/${rpath}/src
 	${PROJECT_SOURCE_DIR}/${rpath}/include
+	${acl_include}
+	${acl_path}/src/master
 )
 
 set(sources
-	${src}/stdlib
-	${src}/stdlib/debug
-	${src}/stdlib/memory
-	${src}/stdlib/filedir
-	${src}/stdlib/string
-	${src}/stdlib/common
-	${src}/stdlib/sys
-	${src}/stdlib/sys/unix
-	${src}/stdlib/configure
-	${src}/stdlib/iostuff
-	${src}/aio
-	${src}/code
-	${src}/db
-	${src}/db/memdb
-	${src}/db/mysql
-	${src}/db/null
-	${src}/db/zdb
-	${src}/event
-	${src}/init
-	${src}/ioctl
-	${src}/json
+	${src}
 	${src}/master
-	${src}/master/framework
-	${src}/master/framework/trigger
-	${src}/master/template
-	${src}/msg
-	${src}/net
-	${src}/net/dns
-	${src}/net/connect
-	${src}/net/listen
-	${src}/private
-	${src}/thread
-	${src}/unit_test
-	${src}/xml
 )
 
 foreach(iter ${sources})
@@ -99,10 +72,13 @@ endforeach()
 set(lib_output_path ${PROJECT_BINARY_DIR}/lib)
 
 set(LIBRARY_OUTPUT_PATH ${lib_output_path})
-add_library(_acl_static STATIC ${lib_src})
-SET_TARGET_PROPERTIES(_acl_static PROPERTIES OUTPUT_NAME "_acl")
+add_library(_fiber_static STATIC ${lib_src})
+SET_TARGET_PROPERTIES(_fiber_static PROPERTIES OUTPUT_NAME "_fiber")
 
+set(CMAKE_SHARED_LINKER_FLAGS "-Wl,-rpath,. -L${lib_output_path} -l_acl")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${lib_output_path})
-add_library(_acl SHARED ${lib_src})
+add_library(_fiber SHARED ${lib_src})
+link_directories(${lib_output_path})
+target_link_libraries(_fiber _acl)
 
 ##############################################################################
