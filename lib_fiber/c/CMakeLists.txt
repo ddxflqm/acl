@@ -45,6 +45,9 @@ else()
 	message(FATAL_ERROR "unknown CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}")
 endif()
 
+if(CMAKE_SYSTEM_NAME MATCHES "ANDROID")
+	add_definitions("-Wno-incompatible-pointer-types-discards-qualifiers")
+endif()
 ##############################################################################
 
 set(rpath lib_fiber/c)

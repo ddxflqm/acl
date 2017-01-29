@@ -8,6 +8,7 @@ add_subdirectory(lib_acl/src lib_acl)
 add_subdirectory(lib_protocol/src lib_protocol)
 add_subdirectory(lib_acl_cpp/src lib_acl_cpp)
 
+#if (CMAKE_SYSTEM_NAME MATCHES "Linux" OR CMAKE_SYSTEM_NAME MATCHES "Android")
 if (CMAKE_SYSTEM_NAME MATCHES "Linux")
 	add_subdirectory(lib_fiber/c lib_fiber)
 	add_subdirectory(lib_fiber/cpp lib_fiber_cpp)

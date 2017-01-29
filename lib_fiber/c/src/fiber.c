@@ -123,7 +123,11 @@ static void fiber_check(void)
 }
 
 /* see /usr/include/bits/errno.h for __errno_location */
+#ifdef ACL_ARM_LINUX
+volatile int*   __errno(void)
+#else
 int *__errno_location(void)
+#endif
 {
 	if (!acl_var_hook_sys_api)
 		return __sys_errno();
@@ -637,7 +641,11 @@ static void fiber_init(void)
 
 	__called++;
 
+#ifdef ACL_ARM_LINUX
+	__sys_errno   = (errno_fn) dlsym(RTLD_NEXT, "__errno");
+#else
 	__sys_errno   = (errno_fn) dlsym(RTLD_NEXT, "__errno_location");
+#endif
 	__sys_fcntl   = (fcntl_fn) dlsym(RTLD_NEXT, "fcntl");
 
 	hook_io();
