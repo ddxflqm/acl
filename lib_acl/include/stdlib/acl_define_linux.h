@@ -1,13 +1,12 @@
 #ifndef	ACL_DEFINE_LINUX_INCLUDE_H
 #define	ACL_DEFINE_LINUX_INCLUDE_H
 
-#ifdef ACL_ARM_LINUX
-# ifndef LINUX2
-#  define LINUX2
-# endif
-#endif
-
 #if defined(LINUX2) || defined(__linux__)
+# ifdef __arm__
+#  ifndef ACL_ARM_LINUX
+#   define ACL_ARM_LINUX
+#  endif
+# endif
 # ifndef ACL_LINUX
 #  define ACL_LINUX
 # endif

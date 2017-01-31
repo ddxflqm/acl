@@ -38,14 +38,14 @@ else()
 	add_definitions("-g")
 endif()
 
-string(TOUPPER ${CMAKE_SYSTEM_NAME} CMAKE_SYSTEM_NAME)
-if (CMAKE_SYSTEM_NAME MATCHES "LINUX")
-	add_definitions("-DLINUX2")
-elseif(CMAKE_SYSTEM_NAME MATCHES "ANDROID")
-	add_definitions("-DACL_ARM_LINUX")
-else()
-	message(FATAL_ERROR "unknown CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}")
-endif()
+#string(TOUPPER ${CMAKE_SYSTEM_NAME} CMAKE_SYSTEM_NAME)
+#if (CMAKE_SYSTEM_NAME MATCHES "LINUX")
+#	add_definitions("-DLINUX2")
+#elseif(CMAKE_SYSTEM_NAME MATCHES "ANDROID")
+#	add_definitions("-DACL_ARM_LINUX")
+#else()
+#	message(FATAL_ERROR "unknown CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}")
+#endif()
 
 ##############################################################################
 
