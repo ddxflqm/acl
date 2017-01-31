@@ -580,7 +580,7 @@ static void file_vsyslog(ACL_LOG *log, const char *info, const char *fmt, va_lis
 		snprintf(tbuf, sizeof(tbuf), "%s %s (pid=%d, tid=%u)(%s): ",
 			fmtstr, log->logpre, (int) getpid(),
 			(unsigned int) acl_pthread_self(), info);
-#elif defined(LINUX2)
+#elif defined(ACL_LINUX)
 		snprintf(tbuf, sizeof(tbuf), "%s %s (pid=%d, tid=%llu)(%s): ",
 			fmtstr, log->logpre, (int) getpid(),
 			(unsigned long long int) acl_pthread_self(), info);
@@ -637,7 +637,7 @@ static void net_vsyslog(ACL_LOG *log, const char *info, const char *fmt, va_list
 		snprintf(tbuf, sizeof(tbuf), " %s (pid=%d, tid=%u)(%s): ",
 			log->logpre, (int) getpid(),
 			(unsigned int) acl_pthread_self(), info);
-#elif defined(LINUX2)
+#elif defined(ACL_LINUX)
 		snprintf(tbuf, sizeof(tbuf), " %s (pid=%d, tid=%llu)(%s): ",
 			log->logpre, (int) getpid(),
 			(unsigned long long int) acl_pthread_self(), info);

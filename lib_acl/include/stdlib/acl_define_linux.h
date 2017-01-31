@@ -7,9 +7,13 @@
 # endif
 #endif
 
-#ifdef LINUX2
-# define ACL_LINUX
-# define ACL_UNIX
+#if defined(LINUX2) || defined(__linux__)
+# ifndef ACL_LINUX
+#  define ACL_LINUX
+# endif
+# ifndef ACL_UNIX
+#  define ACL_UNIX
+# endif
 
 #include <stddef.h>	/* just for size_t */
 
