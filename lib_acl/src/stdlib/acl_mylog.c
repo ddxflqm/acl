@@ -133,7 +133,7 @@ static int open_file_log(const char *filename, const char *logpre)
 #else
 	int   flag = O_RDWR | O_CREAT | O_APPEND;
 #endif
-#ifdef ACL_ARM_LINUX
+#ifdef ACL_ANDROID
 	int   mode = 0644;
 #else
 	int   mode = S_IREAD | S_IWRITE;
