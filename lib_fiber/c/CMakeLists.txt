@@ -81,7 +81,7 @@ SET_TARGET_PROPERTIES(_fiber_static PROPERTIES OUTPUT_NAME "_fiber")
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,-rpath,. -L${lib_output_path} -l_acl")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${lib_output_path})
-#add_library(_fiber SHARED ${lib_src})
+add_library(_fiber SHARED ${lib_src})
 link_directories(${lib_output_path})
 target_link_libraries(_fiber _acl)
 
