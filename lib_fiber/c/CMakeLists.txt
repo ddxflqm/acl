@@ -2,7 +2,11 @@ cmake_minimum_required(VERSION 2.8)
 #set(CMAKE_BUILD_TYPE Release)
 #set(CMAKE_BUILD_TYPE Release CACHE STRING "set build type to release")
 
-message(${PROJECT_SOURCE_DIR})
+#message(${PROJECT_SOURCE_DIR})
+
+if (${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
+	message(FATAL_ERROR "Please into another dir to build!")
+endif()
 
 add_definitions(
 	"-W"
@@ -49,15 +53,13 @@ if(CMAKE_SYSTEM_NAME MATCHES "ANDROID")
 endif()
 ##############################################################################
 
-set(rpath lib_fiber/c)
-set(src ${PROJECT_SOURCE_DIR}/${rpath}/src)
-set(acl_path ${PROJECT_SOURCE_DIR}/lib_acl)
+set(src ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(acl_path ${CMAKE_CURRENT_SOURCE_DIR}/../../lib_acl)
 set(acl_include ${acl_path}/include)
-message(${acl_include})
 
 include_directories(
-	${PROJECT_SOURCE_DIR}/${rpath}/src
-	${PROJECT_SOURCE_DIR}/${rpath}/include
+	${CMAKE_CURRENT_SOURCE_DIR}/src
+	${CMAKE_CURRENT_SOURCE_DIR}/include
 	${acl_include}
 	${acl_path}/src/master
 )
@@ -79,7 +81,7 @@ SET_TARGET_PROPERTIES(_fiber_static PROPERTIES OUTPUT_NAME "_fiber")
 
 set(CMAKE_SHARED_LINKER_FLAGS "-Wl,-rpath,. -L${lib_output_path} -l_acl")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${lib_output_path})
-add_library(_fiber SHARED ${lib_src})
+#add_library(_fiber SHARED ${lib_src})
 link_directories(${lib_output_path})
 target_link_libraries(_fiber _acl)
 

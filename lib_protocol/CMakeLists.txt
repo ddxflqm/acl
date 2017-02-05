@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
 #set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_BUILD_TYPE Release CACHE STRING "set build type to release")
+#set(CMAKE_BUILD_TYPE Release CACHE STRING "set build type to release")
+
+if (${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
+	message(FATAL_ERROR "Please into another dir to build!")
+endif()
 
 add_definitions(
 	"-W"
@@ -44,17 +48,16 @@ endif()
 
 ##############################################################################
 
-set(rpath lib_protocol)
-set(acl_path ${PROJECT_SOURCE_DIR}/lib_acl)
+set(acl_path ${CMAKE_CURRENT_SOURCE_DIR}/../lib_acl)
 set(acl_include ${acl_path}/include)
 
 include_directories(
 	${acl_include}
-	${PROJECT_SOURCE_DIR}/${rpath}/src
-	${PROJECT_SOURCE_DIR}/${rpath}/include
+	${CMAKE_CURRENT_SOURCE_DIR}/src
+	${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-set(src ${PROJECT_SOURCE_DIR}/${rpath}/src)
+set(src ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(sources
 	${src}
 	${src}/http

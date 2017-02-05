@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 2.8)
 #set(CMAKE_BUILD_TYPE Release)
 #set(CMAKE_BUILD_TYPE Release CACHE STRING "set build type to release")
 
-message(${PROJECT_SOURCE_DIR})
+if (${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
+	message(FATAL_ERROR "Please into another dir to build!")
+endif()
 
 add_definitions(
 	"-W"
@@ -48,18 +50,17 @@ endif()
 
 ##############################################################################
 
-set(rpath lib_fiber/cpp)
-set(src ${PROJECT_SOURCE_DIR}/${rpath}/src)
-set(acl_path ${PROJECT_SOURCE_DIR}/lib_acl)
+set(src ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(acl_path ${CMAKE_CURRENT_SOURCE_DIR}/../../lib_acl)
 set(acl_include ${acl_path}/include)
-set(acl_cpp_path ${PROJECT_SOURCE_DIR}/lib_acl_cpp)
+set(acl_cpp_path ${CMAKE_CURRENT_SOURCE_DIR}/../../lib_acl_cpp)
 set(acl_cpp_include ${acl_cpp_path}/include)
-set(fiber_path ${PROJECT_SOURCE_DIR}/lib_fiber/c)
+set(fiber_path ${CMAKE_CURRENT_SOURCE_DIR}/../c)
 set(fiber_include ${fiber_path}/include)
 
 include_directories(
-	${PROJECT_SOURCE_DIR}/${rpath}/src
-	${PROJECT_SOURCE_DIR}/${rpath}/include
+	${CMAKE_CURRENT_SOURCE_DIR}/src
+	${CMAKE_CURRENT_SOURCE_DIR}/include
 	${acl_include}
 	${acl_cpp_include}
 	${fiber_include}

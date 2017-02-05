@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
 #set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_BUILD_TYPE Release CACHE STRING "set build type to release")
+#set(CMAKE_BUILD_TYPE Release CACHE STRING "set build type to release")
+
+if (${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
+	message(FATAL_ERROR "Please into another dir to build!")
+endif()
 
 add_definitions(
 	"-W"
@@ -46,24 +50,23 @@ endif()
 
 ##############################################################################
 
-set(rpath lib_acl_cpp)
-set(acl_path ${PROJECT_SOURCE_DIR}/lib_acl)
+set(acl_path ${CMAKE_CURRENT_SOURCE_DIR}/../lib_acl)
 set(acl_include ${acl_path}/include)
-set(proto_path ${PROJECT_SOURCE_DIR}/lib_protocol)
+set(proto_path ${CMAKE_CURRENT_SOURCE_DIR}/../lib_protocol)
 set(proto_include ${proto_path}/include)
-set(mysql_include ${PROJECT_SOURCE_DIR}/include/mysql)
-set(sqlite_include ${PROJECT_SOURCE_DIR}/include/sqlite)
+set(mysql_include ${CMAKE_CURRENT_SOURCE_DIR}/../include/mysql)
+set(sqlite_include ${CMAKE_CURRENT_SOURCE_DIR}/../include/sqlite)
 
 include_directories(
 	${mysql_include}
 	${sqlite_include}
 	${acl_include}
 	${proto_include}
-	${PROJECT_SOURCE_DIR}/${rpath}/src
-	${PROJECT_SOURCE_DIR}/${rpath}/include
+	${CMAKE_CURRENT_SOURCE_DIR}/src
+	${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-set(src ${PROJECT_SOURCE_DIR}/${rpath}/src)
+set(src ${CMAKE_CURRENT_SOURCE_DIR}/src)
 set(sources
 	${src}
 	${src}/aliyun
@@ -104,7 +107,7 @@ if(NOT CMAKE_SYSTEM_NAME MATCHES "ANDROID")
 	link_directories(${lib_output_path})
 endif()
 
-add_library(_acl_cpp SHARED ${lib_src})
-target_link_libraries(_acl_cpp _protocol _acl)
+#add_library(_acl_cpp SHARED ${lib_src})
+#target_link_libraries(_acl_cpp _protocol _acl)
 
 ##############################################################################

@@ -1,8 +1,13 @@
 cmake_minimum_required(VERSION 2.8)
 project(acl)
 message(${CMAKE_SYSTEM_NAME})
+
 #set(CMAKE_BUILD_TYPE Release)
 #set(CMAKE_BUILD_TYPE Release CACHE STRING "set build type to release")
+
+if (${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
+	message(FATAL_ERROR "Please into another dir to build!")
+endif()
 
 add_subdirectory(lib_acl lib_acl)
 add_subdirectory(lib_protocol lib_protocol)
