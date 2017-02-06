@@ -73,16 +73,22 @@ foreach(iter ${sources})
 	aux_source_directory(${iter} lib_src)
 endforeach()
 
-set(lib_output_path ${PROJECT_BINARY_DIR}/lib)
+if(NOT CMAKE_SYSTEM_NAME MATCHES "ANDROID")
+	set(lib_output_path ${PROJECT_BINARY_DIR}/lib)
 
-set(LIBRARY_OUTPUT_PATH ${lib_output_path})
-add_library(_fiber_static STATIC ${lib_src})
-SET_TARGET_PROPERTIES(_fiber_static PROPERTIES OUTPUT_NAME "_fiber")
+	set(LIBRARY_OUTPUT_PATH ${lib_output_path})
+	add_library(_fiber_static STATIC ${lib_src})
+	SET_TARGET_PROPERTIES(_fiber_static PROPERTIES OUTPUT_NAME "_fiber")
 
-set(CMAKE_SHARED_LINKER_FLAGS "-Wl,-rpath,. -L${lib_output_path} -l_acl")
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${lib_output_path})
-add_library(_fiber SHARED ${lib_src})
-link_directories(${lib_output_path})
-target_link_libraries(_fiber _acl)
+	set(CMAKE_SHARED_LINKER_FLAGS
+		-Wl,-rpath,. -L${lib_output_path} -l_acl)
+	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${lib_output_path})
+	link_directories(${lib_output_path})
+endif()
+
+if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+	add_library(_fiber SHARED ${lib_src})
+	target_link_libraries(_fiber _acl)
+endif()
 
 ##############################################################################

@@ -107,7 +107,9 @@ if(NOT CMAKE_SYSTEM_NAME MATCHES "ANDROID")
 	link_directories(${lib_output_path})
 endif()
 
-#add_library(_acl_cpp SHARED ${lib_src})
-#target_link_libraries(_acl_cpp _protocol _acl)
+if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+	add_library(_acl_cpp SHARED ${lib_src})
+	target_link_libraries(_acl_cpp _protocol _acl)
+endif()
 
 ##############################################################################
