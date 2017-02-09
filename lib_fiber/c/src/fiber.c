@@ -34,6 +34,8 @@ typedef struct {
 	int            nlocal;
 } FIBER_TLS;
 
+static void fiber_init(void) __attribute__ ((constructor));
+
 static FIBER_TLS *__main_fiber = NULL;
 static __thread FIBER_TLS *__thread_fiber = NULL;
 __thread int acl_var_hook_sys_api = 0;
@@ -129,8 +131,12 @@ volatile int*   __errno(void)
 int *__errno_location(void)
 #endif
 {
-	if (!acl_var_hook_sys_api)
+	if (!acl_var_hook_sys_api) {
+		if (__sys_errno == NULL)
+			fiber_init();
+
 		return __sys_errno();
+	}
 
 	if (__thread_fiber == NULL)
 		fiber_check();
@@ -147,6 +153,9 @@ int fcntl(int fd, int cmd, ...)
 	struct flock *lock;
 	va_list ap;
 	int ret;
+
+	if (__sys_fcntl == NULL)
+		fiber_init();
 
 	va_start(ap, cmd);
 
@@ -629,8 +638,6 @@ int acl_fiber_status(const ACL_FIBER *fiber)
 		fiber = acl_fiber_running();
 	return fiber ? fiber->status : 0;
 }
-
-static void fiber_init(void) __attribute__ ((constructor));
 
 static void fiber_init(void)
 {
