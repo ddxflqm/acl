@@ -300,11 +300,11 @@ bool db_sqlite::dbopen(const char* charset /* = NULL */)
 	string& dir = path.dirname(dbfile_);
 
 #ifdef ACL_WINDOWS
-	if (!dir.empty() && dir != "."
-		&& _access(dir.c_str(), 6) == -1 && errno == ENOENT)
+	if (!dir.empty() && dir != "." &&
+		_access(dir.c_str(), 6) == -1 && errno == ENOENT)
 #else
-	if (!dir.empty() && dir != "."
-		&& dir.c_str(), R_OK | W_OK | X_OK) == -1 && errno == ENOENT)
+	if (!dir.empty() && dir != "." &&
+		access(dir.c_str(), R_OK | W_OK | X_OK) == -1 && errno == ENOENT)
 #endif
 	{
 		if (acl_make_dirs(dir.c_str(), 0755) == -1)
