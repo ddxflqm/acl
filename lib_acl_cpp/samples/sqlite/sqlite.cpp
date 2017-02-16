@@ -154,6 +154,7 @@ static bool tbl_delete(acl::db_handle& db, int n)
 int main(void)
 {
 	acl::acl_cpp_init();
+	acl::log::stdout_open(true);
 
 	acl::stdin_stream in;
 	acl::stdout_stream out;
@@ -180,11 +181,12 @@ int main(void)
 	// 设置动态库加载的全路径
 	acl::db_handle::set_loadpath(path);
 
-	acl::string dbfile("test.db");
+	//acl::string dbfile("测试数据库.db");
+	acl::string dbfile("./数据库路径/二级路径/数据库.db");
 
 	// db_sqlite 类对象的声明需在 set_loadpath 之后，因为在 db_sqlite 的
 	// 构造函数中需要运行加载 libsqlite3.so
-	acl::db_sqlite db(dbfile);
+	acl::db_sqlite db(dbfile, "gbk");
 	int   max = 100;
 
 	if (db.open() == false)
