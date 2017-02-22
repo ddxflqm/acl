@@ -430,7 +430,8 @@ const redis_result* redis_command::run(redis_client_cluster* cluster,
 			conn->get_pool()->put(conn, false);
 
 			// 如果连接断开且请求数据为空时，则无须重试
-			if (request_obj_->get_size() == 0 && request_buf_->empty())
+			if ((request_obj_ == NULL || !request_obj_->get_size())
+				&& request_buf_->empty())
 			{
 				logger_error("not retry when no request!");
 				return NULL;
