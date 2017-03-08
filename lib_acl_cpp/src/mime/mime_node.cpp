@@ -206,7 +206,7 @@ bool mime_node::save(pipe_manager& out, const char* src, int len) const
 	else
 		mime_decoder = NULL;
 
-	size_t n = m_bodyEnd - m_bodyBegin;
+	size_t n = (size_t) (m_bodyEnd - m_bodyBegin);
 	if (out.update(src + m_bodyBegin, n) == false)
 	{
 		delete mime_decoder;
