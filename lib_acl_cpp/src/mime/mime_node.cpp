@@ -151,7 +151,7 @@ bool mime_node::save(pipe_manager& out) const
 
 	char  buf[8192];
 	size_t  size;
-	int len = m_bodyEnd - m_bodyBegin;
+	int len = (int) (m_bodyEnd - m_bodyBegin);
 
 	int   ret;
 	while (len > 0)

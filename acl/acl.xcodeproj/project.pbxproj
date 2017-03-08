@@ -536,6 +536,160 @@
 		0779D4B11DBE070E00449438 /* acl_xml3_util.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = acl_xml3_util.c; sourceTree = "<group>"; };
 		0779D4B21DBE070E00449438 /* acl_xml_parse.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = acl_xml_parse.c; sourceTree = "<group>"; };
 		0779D4B31DBE070E00449438 /* acl_xml_util.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = acl_xml_util.c; sourceTree = "<group>"; };
+		07A4694F1E6FD4FA002C9B3C /* acl_aio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_aio.h; sourceTree = "<group>"; };
+		07A469511E6FD4FA002C9B3C /* acl_base64.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_base64.h; sourceTree = "<group>"; };
+		07A469521E6FD4FA002C9B3C /* acl_code.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_code.h; sourceTree = "<group>"; };
+		07A469531E6FD4FA002C9B3C /* acl_gbcode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_gbcode.h; sourceTree = "<group>"; };
+		07A469541E6FD4FA002C9B3C /* acl_htmlcode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_htmlcode.h; sourceTree = "<group>"; };
+		07A469551E6FD4FA002C9B3C /* acl_urlcode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_urlcode.h; sourceTree = "<group>"; };
+		07A469561E6FD4FA002C9B3C /* acl_vstring_base64.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_vstring_base64.h; sourceTree = "<group>"; };
+		07A469571E6FD4FA002C9B3C /* acl_xmlcode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_xmlcode.h; sourceTree = "<group>"; };
+		07A469591E6FD4FA002C9B3C /* acl_db.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_db.h; sourceTree = "<group>"; };
+		07A4695A1E6FD4FA002C9B3C /* acl_dberr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_dberr.h; sourceTree = "<group>"; };
+		07A4695B1E6FD4FA002C9B3C /* acl_dbpool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_dbpool.h; sourceTree = "<group>"; };
+		07A4695C1E6FD4FA002C9B3C /* acl_dbsql.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_dbsql.h; sourceTree = "<group>"; };
+		07A4695D1E6FD4FA002C9B3C /* acl_mdb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_mdb.h; sourceTree = "<group>"; };
+		07A4695E1E6FD4FA002C9B3C /* zdb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = zdb.h; sourceTree = "<group>"; };
+		07A469601E6FD4FA002C9B3C /* acl_events.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_events.h; sourceTree = "<group>"; };
+		07A469611E6FD4FA002C9B3C /* acl_timer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_timer.h; sourceTree = "<group>"; };
+		07A469631E6FD4FA002C9B3C /* experiment.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = experiment.h; sourceTree = "<group>"; };
+		07A469651E6FD4FA002C9B3C /* acl_init.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_init.h; sourceTree = "<group>"; };
+		07A469671E6FD4FA002C9B3C /* acl_ioctl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_ioctl.h; sourceTree = "<group>"; };
+		07A469681E6FD4FA002C9B3C /* acl_spool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_spool.h; sourceTree = "<group>"; };
+		07A4696A1E6FD4FA002C9B3C /* acl_json.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_json.h; sourceTree = "<group>"; };
+		07A4696B1E6FD4FA002C9B3C /* lib_acl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lib_acl.h; sourceTree = "<group>"; };
+		07A4696C1E6FD4FA002C9B3C /* lib_util.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = lib_util.h; sourceTree = "<group>"; };
+		07A4696E1E6FD4FA002C9B3C /* acl_aio_params.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_aio_params.h; sourceTree = "<group>"; };
+		07A4696F1E6FD4FA002C9B3C /* acl_ioctl_params.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_ioctl_params.h; sourceTree = "<group>"; };
+		07A469701E6FD4FA002C9B3C /* acl_master.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_master.h; sourceTree = "<group>"; };
+		07A469711E6FD4FA002C9B3C /* acl_master_conf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_master_conf.h; sourceTree = "<group>"; };
+		07A469721E6FD4FA002C9B3C /* acl_master_type.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_master_type.h; sourceTree = "<group>"; };
+		07A469731E6FD4FA002C9B3C /* acl_multi_params.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_multi_params.h; sourceTree = "<group>"; };
+		07A469741E6FD4FA002C9B3C /* acl_server_api.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_server_api.h; sourceTree = "<group>"; };
+		07A469751E6FD4FA002C9B3C /* acl_single_params.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_single_params.h; sourceTree = "<group>"; };
+		07A469761E6FD4FA002C9B3C /* acl_threads_params.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_threads_params.h; sourceTree = "<group>"; };
+		07A469771E6FD4FA002C9B3C /* acl_trigger_params.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_trigger_params.h; sourceTree = "<group>"; };
+		07A469781E6FD4FA002C9B3C /* acl_udp_params.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_udp_params.h; sourceTree = "<group>"; };
+		07A4697A1E6FD4FA002C9B3C /* acl_aqueue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_aqueue.h; sourceTree = "<group>"; };
+		07A4697B1E6FD4FA002C9B3C /* acl_msgio.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_msgio.h; sourceTree = "<group>"; };
+		07A4697D1E6FD4FA002C9B3C /* acl_access.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_access.h; sourceTree = "<group>"; };
+		07A4697E1E6FD4FA002C9B3C /* acl_connect.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_connect.h; sourceTree = "<group>"; };
+		07A4697F1E6FD4FA002C9B3C /* acl_dns.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_dns.h; sourceTree = "<group>"; };
+		07A469801E6FD4FA002C9B3C /* acl_host_port.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_host_port.h; sourceTree = "<group>"; };
+		07A469811E6FD4FA002C9B3C /* acl_ifconf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_ifconf.h; sourceTree = "<group>"; };
+		07A469821E6FD4FA002C9B3C /* acl_listen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_listen.h; sourceTree = "<group>"; };
+		07A469831E6FD4FA002C9B3C /* acl_mask_addr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_mask_addr.h; sourceTree = "<group>"; };
+		07A469841E6FD4FA002C9B3C /* acl_net.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_net.h; sourceTree = "<group>"; };
+		07A469851E6FD4FA002C9B3C /* acl_netdb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_netdb.h; sourceTree = "<group>"; };
+		07A469861E6FD4FA002C9B3C /* acl_res.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_res.h; sourceTree = "<group>"; };
+		07A469871E6FD4FA002C9B3C /* acl_sane_inet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_sane_inet.h; sourceTree = "<group>"; };
+		07A469881E6FD4FA002C9B3C /* acl_sane_socket.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_sane_socket.h; sourceTree = "<group>"; };
+		07A469891E6FD4FA002C9B3C /* acl_tcp_ctl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_tcp_ctl.h; sourceTree = "<group>"; };
+		07A4698A1E6FD4FA002C9B3C /* acl_valid_hostname.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_valid_hostname.h; sourceTree = "<group>"; };
+		07A4698B1E6FD4FA002C9B3C /* acl_vstream_net.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_vstream_net.h; sourceTree = "<group>"; };
+		07A4698D1E6FD4FA002C9B3C /* acl_proctl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_proctl.h; sourceTree = "<group>"; };
+		07A4698F1E6FD4FA002C9B3C /* acl_allocator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_allocator.h; sourceTree = "<group>"; };
+		07A469901E6FD4FA002C9B3C /* acl_argv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_argv.h; sourceTree = "<group>"; };
+		07A469911E6FD4FA002C9B3C /* acl_array.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_array.h; sourceTree = "<group>"; };
+		07A469921E6FD4FA002C9B3C /* acl_atomic.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_atomic.h; sourceTree = "<group>"; };
+		07A469931E6FD4FA002C9B3C /* acl_binhash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_binhash.h; sourceTree = "<group>"; };
+		07A469941E6FD4FA002C9B3C /* acl_bits_map.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_bits_map.h; sourceTree = "<group>"; };
+		07A469951E6FD4FA002C9B3C /* acl_btree.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_btree.h; sourceTree = "<group>"; };
+		07A469961E6FD4FA002C9B3C /* acl_cache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_cache.h; sourceTree = "<group>"; };
+		07A469971E6FD4FA002C9B3C /* acl_cache2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_cache2.h; sourceTree = "<group>"; };
+		07A469981E6FD4FA002C9B3C /* acl_cfg_macro.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_cfg_macro.h; sourceTree = "<group>"; };
+		07A469991E6FD4FA002C9B3C /* acl_chunk_chain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_chunk_chain.h; sourceTree = "<group>"; };
+		07A4699A1E6FD4FA002C9B3C /* acl_dbuf_pool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_dbuf_pool.h; sourceTree = "<group>"; };
+		07A4699B1E6FD4FA002C9B3C /* acl_debug.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_debug.h; sourceTree = "<group>"; };
+		07A4699C1E6FD4FA002C9B3C /* acl_debug_malloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_debug_malloc.h; sourceTree = "<group>"; };
+		07A4699D1E6FD4FA002C9B3C /* acl_define.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_define.h; sourceTree = "<group>"; };
+		07A4699E1E6FD4FA002C9B3C /* acl_define_bsd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_define_bsd.h; sourceTree = "<group>"; };
+		07A4699F1E6FD4FA002C9B3C /* acl_define_linux.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_define_linux.h; sourceTree = "<group>"; };
+		07A469A01E6FD4FA002C9B3C /* acl_define_macosx.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_define_macosx.h; sourceTree = "<group>"; };
+		07A469A11E6FD4FA002C9B3C /* acl_define_sunx86.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_define_sunx86.h; sourceTree = "<group>"; };
+		07A469A21E6FD4FA002C9B3C /* acl_define_unix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_define_unix.h; sourceTree = "<group>"; };
+		07A469A31E6FD4FA002C9B3C /* acl_define_win32.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_define_win32.h; sourceTree = "<group>"; };
+		07A469A41E6FD4FA002C9B3C /* acl_dir.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_dir.h; sourceTree = "<group>"; };
+		07A469A51E6FD4FA002C9B3C /* acl_dlink.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_dlink.h; sourceTree = "<group>"; };
+		07A469A61E6FD4FA002C9B3C /* acl_dll.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_dll.h; sourceTree = "<group>"; };
+		07A469A71E6FD4FA002C9B3C /* acl_env.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_env.h; sourceTree = "<group>"; };
+		07A469A81E6FD4FA002C9B3C /* acl_exec_command.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_exec_command.h; sourceTree = "<group>"; };
+		07A469A91E6FD4FA002C9B3C /* acl_fhandle.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_fhandle.h; sourceTree = "<group>"; };
+		07A469AA1E6FD4FA002C9B3C /* acl_fifo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_fifo.h; sourceTree = "<group>"; };
+		07A469AB1E6FD4FA002C9B3C /* acl_file.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_file.h; sourceTree = "<group>"; };
+		07A469AC1E6FD4FA002C9B3C /* acl_getopt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_getopt.h; sourceTree = "<group>"; };
+		07A469AD1E6FD4FA002C9B3C /* acl_hash.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_hash.h; sourceTree = "<group>"; };
+		07A469AE1E6FD4FA002C9B3C /* acl_hex_code.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_hex_code.h; sourceTree = "<group>"; };
+		07A469AF1E6FD4FA002C9B3C /* acl_htable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_htable.h; sourceTree = "<group>"; };
+		07A469B01E6FD4FA002C9B3C /* acl_iostuff.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_iostuff.h; sourceTree = "<group>"; };
+		07A469B11E6FD4FA002C9B3C /* acl_iplink.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_iplink.h; sourceTree = "<group>"; };
+		07A469B21E6FD4FA002C9B3C /* acl_iterator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_iterator.h; sourceTree = "<group>"; };
+		07A469B31E6FD4FA002C9B3C /* acl_loadcfg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_loadcfg.h; sourceTree = "<group>"; };
+		07A469B41E6FD4FA002C9B3C /* acl_make_dirs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_make_dirs.h; sourceTree = "<group>"; };
+		07A469B51E6FD4FA002C9B3C /* acl_malloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_malloc.h; sourceTree = "<group>"; };
+		07A469B61E6FD4FA002C9B3C /* acl_mbox.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_mbox.h; sourceTree = "<group>"; };
+		07A469B71E6FD4FA002C9B3C /* acl_mem_hook.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_mem_hook.h; sourceTree = "<group>"; };
+		07A469B81E6FD4FA002C9B3C /* acl_mem_slice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_mem_slice.h; sourceTree = "<group>"; };
+		07A469B91E6FD4FA002C9B3C /* acl_meter_time.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_meter_time.h; sourceTree = "<group>"; };
+		07A469BA1E6FD4FA002C9B3C /* acl_msg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_msg.h; sourceTree = "<group>"; };
+		07A469BB1E6FD4FA002C9B3C /* acl_myflock.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_myflock.h; sourceTree = "<group>"; };
+		07A469BC1E6FD4FA002C9B3C /* acl_mylog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_mylog.h; sourceTree = "<group>"; };
+		07A469BD1E6FD4FA002C9B3C /* acl_mymalloc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_mymalloc.h; sourceTree = "<group>"; };
+		07A469BE1E6FD4FA002C9B3C /* acl_mystring.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_mystring.h; sourceTree = "<group>"; };
+		07A469BF1E6FD4FA002C9B3C /* acl_process.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_process.h; sourceTree = "<group>"; };
+		07A469C01E6FD4FA002C9B3C /* acl_readline.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_readline.h; sourceTree = "<group>"; };
+		07A469C11E6FD4FA002C9B3C /* acl_ring.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_ring.h; sourceTree = "<group>"; };
+		07A469C21E6FD4FA002C9B3C /* acl_safe.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_safe.h; sourceTree = "<group>"; };
+		07A469C31E6FD4FA002C9B3C /* acl_sane_basename.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_sane_basename.h; sourceTree = "<group>"; };
+		07A469C41E6FD4FA002C9B3C /* acl_sane_socketpair.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_sane_socketpair.h; sourceTree = "<group>"; };
+		07A469C51E6FD4FA002C9B3C /* acl_scan_dir.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_scan_dir.h; sourceTree = "<group>"; };
+		07A469C61E6FD4FA002C9B3C /* acl_slice.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_slice.h; sourceTree = "<group>"; };
+		07A469C71E6FD4FA002C9B3C /* acl_split_at.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_split_at.h; sourceTree = "<group>"; };
+		07A469C81E6FD4FA002C9B3C /* acl_stack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_stack.h; sourceTree = "<group>"; };
+		07A469C91E6FD4FA002C9B3C /* acl_stdlib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_stdlib.h; sourceTree = "<group>"; };
+		07A469CA1E6FD4FA002C9B3C /* acl_stringops.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_stringops.h; sourceTree = "<group>"; };
+		07A469CB1E6FD4FA002C9B3C /* acl_sys_patch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_sys_patch.h; sourceTree = "<group>"; };
+		07A469CC1E6FD4FA002C9B3C /* acl_timeops.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_timeops.h; sourceTree = "<group>"; };
+		07A469CD1E6FD4FA002C9B3C /* acl_token_tree.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_token_tree.h; sourceTree = "<group>"; };
+		07A469CE1E6FD4FA002C9B3C /* acl_vbuf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_vbuf.h; sourceTree = "<group>"; };
+		07A469CF1E6FD4FA002C9B3C /* acl_vbuf_print.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_vbuf_print.h; sourceTree = "<group>"; };
+		07A469D01E6FD4FA002C9B3C /* acl_vsprintf.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_vsprintf.h; sourceTree = "<group>"; };
+		07A469D11E6FD4FA002C9B3C /* acl_vstream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_vstream.h; sourceTree = "<group>"; };
+		07A469D21E6FD4FA002C9B3C /* acl_vstream_popen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_vstream_popen.h; sourceTree = "<group>"; };
+		07A469D31E6FD4FA002C9B3C /* acl_vstring.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_vstring.h; sourceTree = "<group>"; };
+		07A469D41E6FD4FA002C9B3C /* acl_vstring_vstream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_vstring_vstream.h; sourceTree = "<group>"; };
+		07A469D51E6FD4FA002C9B3C /* acl_xinetd_cfg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_xinetd_cfg.h; sourceTree = "<group>"; };
+		07A469D61E6FD4FA002C9B3C /* acl_ypipe.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_ypipe.h; sourceTree = "<group>"; };
+		07A469D71E6FD4FA002C9B3C /* acl_yqueue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_yqueue.h; sourceTree = "<group>"; };
+		07A469D81E6FD4FA002C9B3C /* avl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = avl.h; sourceTree = "<group>"; };
+		07A469D91E6FD4FA002C9B3C /* avl_impl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = avl_impl.h; sourceTree = "<group>"; };
+		07A469DB1E6FD4FA002C9B3C /* acl_chroot_uid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_chroot_uid.h; sourceTree = "<group>"; };
+		07A469DC1E6FD4FA002C9B3C /* acl_core_limit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_core_limit.h; sourceTree = "<group>"; };
+		07A469DD1E6FD4FA002C9B3C /* acl_mychown.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_mychown.h; sourceTree = "<group>"; };
+		07A469DE1E6FD4FA002C9B3C /* acl_open_lock.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_open_lock.h; sourceTree = "<group>"; };
+		07A469DF1E6FD4FA002C9B3C /* acl_safe_open.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_safe_open.h; sourceTree = "<group>"; };
+		07A469E01E6FD4FA002C9B3C /* acl_set_eugid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_set_eugid.h; sourceTree = "<group>"; };
+		07A469E11E6FD4FA002C9B3C /* acl_set_ugid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_set_ugid.h; sourceTree = "<group>"; };
+		07A469E21E6FD4FA002C9B3C /* acl_timed_wait.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_timed_wait.h; sourceTree = "<group>"; };
+		07A469E31E6FD4FA002C9B3C /* acl_trace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_trace.h; sourceTree = "<group>"; };
+		07A469E41E6FD4FA002C9B3C /* acl_transfer_fd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_transfer_fd.h; sourceTree = "<group>"; };
+		07A469E51E6FD4FA002C9B3C /* acl_unix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_unix.h; sourceTree = "<group>"; };
+		07A469E61E6FD4FA002C9B3C /* acl_username.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_username.h; sourceTree = "<group>"; };
+		07A469E71E6FD4FA002C9B3C /* acl_watchdog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_watchdog.h; sourceTree = "<group>"; };
+		07A469E91E6FD4FA002C9B3C /* acl_pthread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_pthread.h; sourceTree = "<group>"; };
+		07A469EA1E6FD4FA002C9B3C /* acl_pthread_pool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_pthread_pool.h; sourceTree = "<group>"; };
+		07A469EB1E6FD4FA002C9B3C /* acl_pthread_rwlock.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_pthread_rwlock.h; sourceTree = "<group>"; };
+		07A469EC1E6FD4FA002C9B3C /* acl_sem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_sem.h; sourceTree = "<group>"; };
+		07A469ED1E6FD4FA002C9B3C /* acl_thread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_thread.h; sourceTree = "<group>"; };
+		07A469EF1E6FD4FA002C9B3C /* acl_test_global.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_test_global.h; sourceTree = "<group>"; };
+		07A469F01E6FD4FA002C9B3C /* acl_test_macro.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_test_macro.h; sourceTree = "<group>"; };
+		07A469F11E6FD4FA002C9B3C /* acl_test_struct.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_test_struct.h; sourceTree = "<group>"; };
+		07A469F21E6FD4FA002C9B3C /* acl_test_var.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_test_var.h; sourceTree = "<group>"; };
+		07A469F31E6FD4FA002C9B3C /* acl_unit_test.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_unit_test.h; sourceTree = "<group>"; };
+		07A469F41E6FD4FA002C9B3C /* vld.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = vld.h; sourceTree = "<group>"; };
+		07A469F61E6FD4FA002C9B3C /* acl_xml.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_xml.h; sourceTree = "<group>"; };
+		07A469F71E6FD4FA002C9B3C /* acl_xml2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_xml2.h; sourceTree = "<group>"; };
+		07A469F81E6FD4FA002C9B3C /* acl_xml3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = acl_xml3.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -552,6 +706,7 @@
 		0779D3251DBE054C00449438 = {
 			isa = PBXGroup;
 			children = (
+				07A4694D1E6FD4FA002C9B3C /* include */,
 				0779D3501DBE070E00449438 /* src */,
 				0779D3301DBE054C00449438 /* acl */,
 				0779D32F1DBE054C00449438 /* Products */,
@@ -1121,6 +1276,304 @@
 				0779D4B11DBE070E00449438 /* acl_xml3_util.c */,
 				0779D4B21DBE070E00449438 /* acl_xml_parse.c */,
 				0779D4B31DBE070E00449438 /* acl_xml_util.c */,
+			);
+			path = xml;
+			sourceTree = "<group>";
+		};
+		07A4694D1E6FD4FA002C9B3C /* include */ = {
+			isa = PBXGroup;
+			children = (
+				07A4694E1E6FD4FA002C9B3C /* aio */,
+				07A469501E6FD4FA002C9B3C /* code */,
+				07A469581E6FD4FA002C9B3C /* db */,
+				07A4695F1E6FD4FA002C9B3C /* event */,
+				07A469621E6FD4FA002C9B3C /* experiment */,
+				07A469641E6FD4FA002C9B3C /* init */,
+				07A469661E6FD4FA002C9B3C /* ioctl */,
+				07A469691E6FD4FA002C9B3C /* json */,
+				07A4696B1E6FD4FA002C9B3C /* lib_acl.h */,
+				07A4696C1E6FD4FA002C9B3C /* lib_util.h */,
+				07A4696D1E6FD4FA002C9B3C /* master */,
+				07A469791E6FD4FA002C9B3C /* msg */,
+				07A4697C1E6FD4FA002C9B3C /* net */,
+				07A4698C1E6FD4FA002C9B3C /* proctl */,
+				07A4698E1E6FD4FA002C9B3C /* stdlib */,
+				07A469E81E6FD4FA002C9B3C /* thread */,
+				07A469EE1E6FD4FA002C9B3C /* unit_test */,
+				07A469F41E6FD4FA002C9B3C /* vld.h */,
+				07A469F51E6FD4FA002C9B3C /* xml */,
+			);
+			name = include;
+			path = ../lib_acl/include;
+			sourceTree = "<group>";
+		};
+		07A4694E1E6FD4FA002C9B3C /* aio */ = {
+			isa = PBXGroup;
+			children = (
+				07A4694F1E6FD4FA002C9B3C /* acl_aio.h */,
+			);
+			path = aio;
+			sourceTree = "<group>";
+		};
+		07A469501E6FD4FA002C9B3C /* code */ = {
+			isa = PBXGroup;
+			children = (
+				07A469511E6FD4FA002C9B3C /* acl_base64.h */,
+				07A469521E6FD4FA002C9B3C /* acl_code.h */,
+				07A469531E6FD4FA002C9B3C /* acl_gbcode.h */,
+				07A469541E6FD4FA002C9B3C /* acl_htmlcode.h */,
+				07A469551E6FD4FA002C9B3C /* acl_urlcode.h */,
+				07A469561E6FD4FA002C9B3C /* acl_vstring_base64.h */,
+				07A469571E6FD4FA002C9B3C /* acl_xmlcode.h */,
+			);
+			path = code;
+			sourceTree = "<group>";
+		};
+		07A469581E6FD4FA002C9B3C /* db */ = {
+			isa = PBXGroup;
+			children = (
+				07A469591E6FD4FA002C9B3C /* acl_db.h */,
+				07A4695A1E6FD4FA002C9B3C /* acl_dberr.h */,
+				07A4695B1E6FD4FA002C9B3C /* acl_dbpool.h */,
+				07A4695C1E6FD4FA002C9B3C /* acl_dbsql.h */,
+				07A4695D1E6FD4FA002C9B3C /* acl_mdb.h */,
+				07A4695E1E6FD4FA002C9B3C /* zdb.h */,
+			);
+			path = db;
+			sourceTree = "<group>";
+		};
+		07A4695F1E6FD4FA002C9B3C /* event */ = {
+			isa = PBXGroup;
+			children = (
+				07A469601E6FD4FA002C9B3C /* acl_events.h */,
+				07A469611E6FD4FA002C9B3C /* acl_timer.h */,
+			);
+			path = event;
+			sourceTree = "<group>";
+		};
+		07A469621E6FD4FA002C9B3C /* experiment */ = {
+			isa = PBXGroup;
+			children = (
+				07A469631E6FD4FA002C9B3C /* experiment.h */,
+			);
+			path = experiment;
+			sourceTree = "<group>";
+		};
+		07A469641E6FD4FA002C9B3C /* init */ = {
+			isa = PBXGroup;
+			children = (
+				07A469651E6FD4FA002C9B3C /* acl_init.h */,
+			);
+			path = init;
+			sourceTree = "<group>";
+		};
+		07A469661E6FD4FA002C9B3C /* ioctl */ = {
+			isa = PBXGroup;
+			children = (
+				07A469671E6FD4FA002C9B3C /* acl_ioctl.h */,
+				07A469681E6FD4FA002C9B3C /* acl_spool.h */,
+			);
+			path = ioctl;
+			sourceTree = "<group>";
+		};
+		07A469691E6FD4FA002C9B3C /* json */ = {
+			isa = PBXGroup;
+			children = (
+				07A4696A1E6FD4FA002C9B3C /* acl_json.h */,
+			);
+			path = json;
+			sourceTree = "<group>";
+		};
+		07A4696D1E6FD4FA002C9B3C /* master */ = {
+			isa = PBXGroup;
+			children = (
+				07A4696E1E6FD4FA002C9B3C /* acl_aio_params.h */,
+				07A4696F1E6FD4FA002C9B3C /* acl_ioctl_params.h */,
+				07A469701E6FD4FA002C9B3C /* acl_master.h */,
+				07A469711E6FD4FA002C9B3C /* acl_master_conf.h */,
+				07A469721E6FD4FA002C9B3C /* acl_master_type.h */,
+				07A469731E6FD4FA002C9B3C /* acl_multi_params.h */,
+				07A469741E6FD4FA002C9B3C /* acl_server_api.h */,
+				07A469751E6FD4FA002C9B3C /* acl_single_params.h */,
+				07A469761E6FD4FA002C9B3C /* acl_threads_params.h */,
+				07A469771E6FD4FA002C9B3C /* acl_trigger_params.h */,
+				07A469781E6FD4FA002C9B3C /* acl_udp_params.h */,
+			);
+			path = master;
+			sourceTree = "<group>";
+		};
+		07A469791E6FD4FA002C9B3C /* msg */ = {
+			isa = PBXGroup;
+			children = (
+				07A4697A1E6FD4FA002C9B3C /* acl_aqueue.h */,
+				07A4697B1E6FD4FA002C9B3C /* acl_msgio.h */,
+			);
+			path = msg;
+			sourceTree = "<group>";
+		};
+		07A4697C1E6FD4FA002C9B3C /* net */ = {
+			isa = PBXGroup;
+			children = (
+				07A4697D1E6FD4FA002C9B3C /* acl_access.h */,
+				07A4697E1E6FD4FA002C9B3C /* acl_connect.h */,
+				07A4697F1E6FD4FA002C9B3C /* acl_dns.h */,
+				07A469801E6FD4FA002C9B3C /* acl_host_port.h */,
+				07A469811E6FD4FA002C9B3C /* acl_ifconf.h */,
+				07A469821E6FD4FA002C9B3C /* acl_listen.h */,
+				07A469831E6FD4FA002C9B3C /* acl_mask_addr.h */,
+				07A469841E6FD4FA002C9B3C /* acl_net.h */,
+				07A469851E6FD4FA002C9B3C /* acl_netdb.h */,
+				07A469861E6FD4FA002C9B3C /* acl_res.h */,
+				07A469871E6FD4FA002C9B3C /* acl_sane_inet.h */,
+				07A469881E6FD4FA002C9B3C /* acl_sane_socket.h */,
+				07A469891E6FD4FA002C9B3C /* acl_tcp_ctl.h */,
+				07A4698A1E6FD4FA002C9B3C /* acl_valid_hostname.h */,
+				07A4698B1E6FD4FA002C9B3C /* acl_vstream_net.h */,
+			);
+			path = net;
+			sourceTree = "<group>";
+		};
+		07A4698C1E6FD4FA002C9B3C /* proctl */ = {
+			isa = PBXGroup;
+			children = (
+				07A4698D1E6FD4FA002C9B3C /* acl_proctl.h */,
+			);
+			path = proctl;
+			sourceTree = "<group>";
+		};
+		07A4698E1E6FD4FA002C9B3C /* stdlib */ = {
+			isa = PBXGroup;
+			children = (
+				07A4698F1E6FD4FA002C9B3C /* acl_allocator.h */,
+				07A469901E6FD4FA002C9B3C /* acl_argv.h */,
+				07A469911E6FD4FA002C9B3C /* acl_array.h */,
+				07A469921E6FD4FA002C9B3C /* acl_atomic.h */,
+				07A469931E6FD4FA002C9B3C /* acl_binhash.h */,
+				07A469941E6FD4FA002C9B3C /* acl_bits_map.h */,
+				07A469951E6FD4FA002C9B3C /* acl_btree.h */,
+				07A469961E6FD4FA002C9B3C /* acl_cache.h */,
+				07A469971E6FD4FA002C9B3C /* acl_cache2.h */,
+				07A469981E6FD4FA002C9B3C /* acl_cfg_macro.h */,
+				07A469991E6FD4FA002C9B3C /* acl_chunk_chain.h */,
+				07A4699A1E6FD4FA002C9B3C /* acl_dbuf_pool.h */,
+				07A4699B1E6FD4FA002C9B3C /* acl_debug.h */,
+				07A4699C1E6FD4FA002C9B3C /* acl_debug_malloc.h */,
+				07A4699D1E6FD4FA002C9B3C /* acl_define.h */,
+				07A4699E1E6FD4FA002C9B3C /* acl_define_bsd.h */,
+				07A4699F1E6FD4FA002C9B3C /* acl_define_linux.h */,
+				07A469A01E6FD4FA002C9B3C /* acl_define_macosx.h */,
+				07A469A11E6FD4FA002C9B3C /* acl_define_sunx86.h */,
+				07A469A21E6FD4FA002C9B3C /* acl_define_unix.h */,
+				07A469A31E6FD4FA002C9B3C /* acl_define_win32.h */,
+				07A469A41E6FD4FA002C9B3C /* acl_dir.h */,
+				07A469A51E6FD4FA002C9B3C /* acl_dlink.h */,
+				07A469A61E6FD4FA002C9B3C /* acl_dll.h */,
+				07A469A71E6FD4FA002C9B3C /* acl_env.h */,
+				07A469A81E6FD4FA002C9B3C /* acl_exec_command.h */,
+				07A469A91E6FD4FA002C9B3C /* acl_fhandle.h */,
+				07A469AA1E6FD4FA002C9B3C /* acl_fifo.h */,
+				07A469AB1E6FD4FA002C9B3C /* acl_file.h */,
+				07A469AC1E6FD4FA002C9B3C /* acl_getopt.h */,
+				07A469AD1E6FD4FA002C9B3C /* acl_hash.h */,
+				07A469AE1E6FD4FA002C9B3C /* acl_hex_code.h */,
+				07A469AF1E6FD4FA002C9B3C /* acl_htable.h */,
+				07A469B01E6FD4FA002C9B3C /* acl_iostuff.h */,
+				07A469B11E6FD4FA002C9B3C /* acl_iplink.h */,
+				07A469B21E6FD4FA002C9B3C /* acl_iterator.h */,
+				07A469B31E6FD4FA002C9B3C /* acl_loadcfg.h */,
+				07A469B41E6FD4FA002C9B3C /* acl_make_dirs.h */,
+				07A469B51E6FD4FA002C9B3C /* acl_malloc.h */,
+				07A469B61E6FD4FA002C9B3C /* acl_mbox.h */,
+				07A469B71E6FD4FA002C9B3C /* acl_mem_hook.h */,
+				07A469B81E6FD4FA002C9B3C /* acl_mem_slice.h */,
+				07A469B91E6FD4FA002C9B3C /* acl_meter_time.h */,
+				07A469BA1E6FD4FA002C9B3C /* acl_msg.h */,
+				07A469BB1E6FD4FA002C9B3C /* acl_myflock.h */,
+				07A469BC1E6FD4FA002C9B3C /* acl_mylog.h */,
+				07A469BD1E6FD4FA002C9B3C /* acl_mymalloc.h */,
+				07A469BE1E6FD4FA002C9B3C /* acl_mystring.h */,
+				07A469BF1E6FD4FA002C9B3C /* acl_process.h */,
+				07A469C01E6FD4FA002C9B3C /* acl_readline.h */,
+				07A469C11E6FD4FA002C9B3C /* acl_ring.h */,
+				07A469C21E6FD4FA002C9B3C /* acl_safe.h */,
+				07A469C31E6FD4FA002C9B3C /* acl_sane_basename.h */,
+				07A469C41E6FD4FA002C9B3C /* acl_sane_socketpair.h */,
+				07A469C51E6FD4FA002C9B3C /* acl_scan_dir.h */,
+				07A469C61E6FD4FA002C9B3C /* acl_slice.h */,
+				07A469C71E6FD4FA002C9B3C /* acl_split_at.h */,
+				07A469C81E6FD4FA002C9B3C /* acl_stack.h */,
+				07A469C91E6FD4FA002C9B3C /* acl_stdlib.h */,
+				07A469CA1E6FD4FA002C9B3C /* acl_stringops.h */,
+				07A469CB1E6FD4FA002C9B3C /* acl_sys_patch.h */,
+				07A469CC1E6FD4FA002C9B3C /* acl_timeops.h */,
+				07A469CD1E6FD4FA002C9B3C /* acl_token_tree.h */,
+				07A469CE1E6FD4FA002C9B3C /* acl_vbuf.h */,
+				07A469CF1E6FD4FA002C9B3C /* acl_vbuf_print.h */,
+				07A469D01E6FD4FA002C9B3C /* acl_vsprintf.h */,
+				07A469D11E6FD4FA002C9B3C /* acl_vstream.h */,
+				07A469D21E6FD4FA002C9B3C /* acl_vstream_popen.h */,
+				07A469D31E6FD4FA002C9B3C /* acl_vstring.h */,
+				07A469D41E6FD4FA002C9B3C /* acl_vstring_vstream.h */,
+				07A469D51E6FD4FA002C9B3C /* acl_xinetd_cfg.h */,
+				07A469D61E6FD4FA002C9B3C /* acl_ypipe.h */,
+				07A469D71E6FD4FA002C9B3C /* acl_yqueue.h */,
+				07A469D81E6FD4FA002C9B3C /* avl.h */,
+				07A469D91E6FD4FA002C9B3C /* avl_impl.h */,
+				07A469DA1E6FD4FA002C9B3C /* unix */,
+			);
+			path = stdlib;
+			sourceTree = "<group>";
+		};
+		07A469DA1E6FD4FA002C9B3C /* unix */ = {
+			isa = PBXGroup;
+			children = (
+				07A469DB1E6FD4FA002C9B3C /* acl_chroot_uid.h */,
+				07A469DC1E6FD4FA002C9B3C /* acl_core_limit.h */,
+				07A469DD1E6FD4FA002C9B3C /* acl_mychown.h */,
+				07A469DE1E6FD4FA002C9B3C /* acl_open_lock.h */,
+				07A469DF1E6FD4FA002C9B3C /* acl_safe_open.h */,
+				07A469E01E6FD4FA002C9B3C /* acl_set_eugid.h */,
+				07A469E11E6FD4FA002C9B3C /* acl_set_ugid.h */,
+				07A469E21E6FD4FA002C9B3C /* acl_timed_wait.h */,
+				07A469E31E6FD4FA002C9B3C /* acl_trace.h */,
+				07A469E41E6FD4FA002C9B3C /* acl_transfer_fd.h */,
+				07A469E51E6FD4FA002C9B3C /* acl_unix.h */,
+				07A469E61E6FD4FA002C9B3C /* acl_username.h */,
+				07A469E71E6FD4FA002C9B3C /* acl_watchdog.h */,
+			);
+			path = unix;
+			sourceTree = "<group>";
+		};
+		07A469E81E6FD4FA002C9B3C /* thread */ = {
+			isa = PBXGroup;
+			children = (
+				07A469E91E6FD4FA002C9B3C /* acl_pthread.h */,
+				07A469EA1E6FD4FA002C9B3C /* acl_pthread_pool.h */,
+				07A469EB1E6FD4FA002C9B3C /* acl_pthread_rwlock.h */,
+				07A469EC1E6FD4FA002C9B3C /* acl_sem.h */,
+				07A469ED1E6FD4FA002C9B3C /* acl_thread.h */,
+			);
+			path = thread;
+			sourceTree = "<group>";
+		};
+		07A469EE1E6FD4FA002C9B3C /* unit_test */ = {
+			isa = PBXGroup;
+			children = (
+				07A469EF1E6FD4FA002C9B3C /* acl_test_global.h */,
+				07A469F01E6FD4FA002C9B3C /* acl_test_macro.h */,
+				07A469F11E6FD4FA002C9B3C /* acl_test_struct.h */,
+				07A469F21E6FD4FA002C9B3C /* acl_test_var.h */,
+				07A469F31E6FD4FA002C9B3C /* acl_unit_test.h */,
+			);
+			path = unit_test;
+			sourceTree = "<group>";
+		};
+		07A469F51E6FD4FA002C9B3C /* xml */ = {
+			isa = PBXGroup;
+			children = (
+				07A469F61E6FD4FA002C9B3C /* acl_xml.h */,
+				07A469F71E6FD4FA002C9B3C /* acl_xml2.h */,
+				07A469F81E6FD4FA002C9B3C /* acl_xml3.h */,
 			);
 			path = xml;
 			sourceTree = "<group>";

@@ -885,7 +885,7 @@ static void mime_node_dump(const char* from_path, const char* dump_path,
 		{
 			n = dlen > 8192 ? 8192 : dlen;
 			//n = dlen;
-			decoder->decode_update(ptr, n, &result);
+			decoder->decode_update(ptr, (int) n, &result);
 			if (result.length() > 0)
 			{
 				out.write(result.c_str(), result.length());
