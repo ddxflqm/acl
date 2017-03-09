@@ -337,7 +337,8 @@ public:
 
 	~db_mysql_rows()
 	{
-		__mysql_free_result(my_res_);
+		if (__mysql_dll)
+			__mysql_free_result(my_res_);
 	}
 
 private:
