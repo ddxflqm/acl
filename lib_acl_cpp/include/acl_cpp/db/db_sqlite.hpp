@@ -13,53 +13,53 @@ class ACL_CPP_API db_sqlite : public db_handle
 {
 public:
 	/**
-	 * æ„é€ å‡½æ•°
-	 * @param charset {const char*} æœ¬åœ°å­—ç¬¦é›†(gbk, utf-8, ...)
+	 * ¹¹Ôìº¯Êı
+	 * @param charset {const char*} ±¾µØ×Ö·û¼¯(gbk, utf-8, ...)
 	 */
 	db_sqlite(const char* dbfile, const char* charset = "utf-8");
 	~db_sqlite(void);
 
 	/**
-	 * è¿”å›å½“å‰çš„ sqlite çš„ç‰ˆæœ¬ä¿¡æ¯
+	 * ·µ»Øµ±Ç°µÄ sqlite µÄ°æ±¾ĞÅÏ¢
 	 */
 	const char* version(void) const;
 
 	/**
-	 * å½“æ•°æ®åº“æ‰“å¼€åé€šè¿‡æ­¤å‡½æ•°å¯¹æ•°æ®åº“çš„æ“ä½œå¼•æ“è¿›è¡Œé…ç½®ï¼Œ
-	 * è¿›è¡Œé…ç½®çš„å†…å®¹éœ€è¦ä¸¥æ ¼éµå¾ª sqlite æœ¬èº«çš„é…ç½®é€‰é¡¹è¦æ±‚
-	 * @param pragma {const char*} é…ç½®é€‰é¡¹å†…å®¹ï¼Œæ ¼å¼ä¸ºï¼š
+	 * µ±Êı¾İ¿â´ò¿ªºóÍ¨¹ı´Ëº¯Êı¶ÔÊı¾İ¿âµÄ²Ù×÷ÒıÇæ½øĞĞÅäÖÃ£¬
+	 * ½øĞĞÅäÖÃµÄÄÚÈİĞèÒªÑÏ¸ñ×ñÑ­ sqlite ±¾ÉíµÄÅäÖÃÑ¡ÏîÒªÇó
+	 * @param pragma {const char*} ÅäÖÃÑ¡ÏîÄÚÈİ£¬¸ñÊ½Îª£º
 	 *  PRAGMA xxx=xxx
-	 *  å¦‚ï¼šPRAGMA synchronous = NORMAL
-	 * @return {bool} é…ç½®æ•°æ®åº“æ˜¯å¦æˆåŠŸ
+	 *  Èç£ºPRAGMA synchronous = NORMAL
+	 * @return {bool} ÅäÖÃÊı¾İ¿âÊÇ·ñ³É¹¦
 	 */
 	bool set_conf(const char* pragma);
 
 	/**
-	 * å½“æ•°æ®åº“æ‰“å¼€è°ƒç”¨æ­¤å‡½æ•°è·å¾—æ•°æ®å¼•æ“çš„é…ç½®é€‰é¡¹
-	 * @param pragma {const char*} é…ç½®é€‰é¡¹å†…å®¹ï¼Œæ ¼å¼ä¸ºï¼š
+	 * µ±Êı¾İ¿â´ò¿ªµ÷ÓÃ´Ëº¯Êı»ñµÃÊı¾İÒıÇæµÄÅäÖÃÑ¡Ïî
+	 * @param pragma {const char*} ÅäÖÃÑ¡ÏîÄÚÈİ£¬¸ñÊ½Îª£º
 	 *  PRAGMA xxx
-	 *  å¦‚ï¼šPRAGMA synchronous
-	 * @param out {string&} å¦‚æœè¿”å›å€¼éç©ºåˆ™å­˜å‚¨ç»“æœ
-	 * @return {const char*} ä¸ºç©ºåˆ™è¯´æ˜è¯¥é…ç½®ä¸å­˜åœ¨æˆ–æ•°æ®åº“æœªæ‰“å¼€
+	 *  Èç£ºPRAGMA synchronous
+	 * @param out {string&} Èç¹û·µ»ØÖµ·Ç¿ÕÔò´æ´¢½á¹û
+	 * @return {const char*} Îª¿ÕÔòËµÃ÷¸ÃÅäÖÃ²»´æÔÚ»òÊı¾İ¿âÎ´´ò¿ª
 	 */
 	const char* get_conf(const char* pragma, string& out);
 
 	/**
-	 * åœ¨æ•°æ®åº“æ‰“å¼€çš„æƒ…å†µä¸‹è¾“å…¥æ•°æ®åº“å¼•æ“çš„é…ç½®é€‰é¡¹
-	 * @param pragma {const char*} æŒ‡å®šçš„é…ç½®é€‰é¡¹ï¼Œå¦‚æœè¯¥å‚æ•°ä¸ºç©ºï¼Œ
-	 *  åˆ™è¾“å‡ºæ‰€æœ‰çš„é…ç½®é€‰é¡¹ï¼Œæ ¼å¼ä¸ºï¼šPRAGMA xxxï¼Œå¦‚ï¼šPRAGMA synchronous
+	 * ÔÚÊı¾İ¿â´ò¿ªµÄÇé¿öÏÂÊäÈëÊı¾İ¿âÒıÇæµÄÅäÖÃÑ¡Ïî
+	 * @param pragma {const char*} Ö¸¶¨µÄÅäÖÃÑ¡Ïî£¬Èç¹û¸Ã²ÎÊıÎª¿Õ£¬
+	 *  ÔòÊä³öËùÓĞµÄÅäÖÃÑ¡Ïî£¬¸ñÊ½Îª£ºPRAGMA xxx£¬Èç£ºPRAGMA synchronous
 	 */
 	void show_conf(const char* pragma = NULL);
 
 	/**
-	 * è‡ªæ•°æ®åº“æ‰“å¼€åæ‰€æœ‰çš„å½±å“çš„è®°å½•è¡Œæ•°
-	 * @return {int} å½±å“çš„è¡Œæ•°ï¼Œ-1 è¡¨ç¤ºå‡ºé”™
+	 * ×ÔÊı¾İ¿â´ò¿ªºóËùÓĞµÄÓ°ÏìµÄ¼ÇÂ¼ĞĞÊı
+	 * @return {int} Ó°ÏìµÄĞĞÊı£¬-1 ±íÊ¾³ö´í
 	 */
 	int affect_total_count() const;
 
 	/**
-	 * ç›´æ¥è·å¾— sqlite çš„å¥æŸ„ï¼Œå¦‚æœè¿”å› NULL åˆ™è¡¨ç¤º sqlite è¿˜æ²¡æœ‰æ‰“å¼€
-	 * æˆ–å‡ºé”™æ—¶å†…éƒ¨è‡ªåŠ¨å…³é—­äº† sqlite
+	 * Ö±½Ó»ñµÃ sqlite µÄ¾ä±ú£¬Èç¹û·µ»Ø NULL Ôò±íÊ¾ sqlite »¹Ã»ÓĞ´ò¿ª
+	 * »ò³ö´íÊ±ÄÚ²¿×Ô¶¯¹Ø±ÕÁË sqlite
 	 * @return {sqlite3*}
 	 */
 	sqlite3* get_conn() const
@@ -68,89 +68,89 @@ public:
 	}
 
 	/********************************************************************/
-	/*            ä»¥ä¸‹ä¸ºåŸºç±» db_handle çš„è™šæ¥å£                         */
+	/*            ÒÔÏÂÎª»ùÀà db_handle µÄĞé½Ó¿Ú                         */
 	/********************************************************************/
 
 	/**
-	 * è¿”å›æ•°æ®åº“çš„ç±»å‹æè¿°
+	 * ·µ»ØÊı¾İ¿âµÄÀàĞÍÃèÊö
 	 * @return {const char*}
 	 */
 	const char* dbtype() const;
 
 	/**
-	 * è·å¾—ä¸Šæ¬¡æ•°æ®åº“æ“ä½œçš„å‡ºé”™é”™è¯¯å·
+	 * »ñµÃÉÏ´ÎÊı¾İ¿â²Ù×÷µÄ³ö´í´íÎóºÅ
 	 * @return {int}
 	 */
 	int get_errno() const;
 
 	/**
-	 * è·å¾—ä¸Šæ¬¡æ•°æ®åº“æ“ä½œçš„å‡ºé”™é”™æè¿°
+	 * »ñµÃÉÏ´ÎÊı¾İ¿â²Ù×÷µÄ³ö´í´íÃèÊö
 	 * @return {const char*}
 	 */
 	const char* get_error() const;
 
 	/**
-	 * åŸºç±» db_handle çš„çº¯è™šæ¥å£
-	 * @param charset {const char*} æ‰“å¼€æ•°æ®åº“è¿æ¥æ—¶é‡‡ç”¨çš„å­—ç¬¦é›†ï¼Œå½“è¯¥
-	 *  å‚æ•°éç©ºæ—¶å°†ä¼šè¦†ç›–æ„é€ å‡½æ•°ä¸­ä¼ å…¥çš„å­—ç¬¦é›†
-	 * @return {bool} æ‰“å¼€æ˜¯å¦æˆåŠŸ
+	 * »ùÀà db_handle µÄ´¿Ğé½Ó¿Ú
+	 * @param charset {const char*} ´ò¿ªÊı¾İ¿âÁ¬½ÓÊ±²ÉÓÃµÄ×Ö·û¼¯£¬µ±¸Ã
+	 *  ²ÎÊı·Ç¿ÕÊ±½«»á¸²¸Ç¹¹Ôìº¯ÊıÖĞ´«ÈëµÄ×Ö·û¼¯
+	 * @return {bool} ´ò¿ªÊÇ·ñ³É¹¦
 	 */
 	bool dbopen(const char* charset = NULL);
 
 	/**
-	 * åŸºç±» db_handle çš„çº¯è™šæ¥å£ï¼Œæ•°æ®åº“æ˜¯å¦å·²ç»æ‰“å¼€äº†
-	 * @return {bool} è¿”å› true è¡¨æ˜æ•°æ®åº“å·²ç»æ‰“å¼€äº†
+	 * »ùÀà db_handle µÄ´¿Ğé½Ó¿Ú£¬Êı¾İ¿âÊÇ·ñÒÑ¾­´ò¿ªÁË
+	 * @return {bool} ·µ»Ø true ±íÃ÷Êı¾İ¿âÒÑ¾­´ò¿ªÁË
 	 */
 	bool is_opened() const;
 
 	/**
-	 * åŸºç±» db_handle çš„çº¯è™šæ¥å£
-	 * @return {bool} å…³é—­æ˜¯å¦æˆåŠŸ
+	 * »ùÀà db_handle µÄ´¿Ğé½Ó¿Ú
+	 * @return {bool} ¹Ø±ÕÊÇ·ñ³É¹¦
 	 */
 	bool close(void);
 
 	/**
-	 * åŸºç±» db_handle çš„çº¯è™šæ¥å£ï¼Œå­ç±»å¿…é¡»å®ç°æ­¤æ¥å£ç”¨äºåˆ¤æ–­æ•°æ®è¡¨æ˜¯å¦å­˜åœ¨
-	 * @return {bool} æ˜¯å¦å­˜åœ¨
+	 * »ùÀà db_handle µÄ´¿Ğé½Ó¿Ú£¬×ÓÀà±ØĞëÊµÏÖ´Ë½Ó¿ÚÓÃÓÚÅĞ¶ÏÊı¾İ±íÊÇ·ñ´æÔÚ
+	 * @return {bool} ÊÇ·ñ´æÔÚ
 	 */
 	bool tbl_exists(const char* tbl_name);
 
 	/**
-	 * åŸºç±» db_handle çš„çº¯è™šæ¥å£
-	 * @param sql {const char*} æ ‡å‡†çš„ SELECT SQL è¯­å¥ï¼Œå¹¶ä¸”ä¸€å®šå¾—è¦
-	 *  æ³¨æ„è¯¥ SQL è¯­å¥å¿…é¡»ç»è¿‡è½¬ä¹‰å¤„ç†ï¼Œä»¥é˜²æ­¢ SQL æ³¨å…¥æ”»å‡»
-	 * @return {bool} æ‰§è¡Œæ˜¯å¦æˆåŠŸ
+	 * »ùÀà db_handle µÄ´¿Ğé½Ó¿Ú
+	 * @param sql {const char*} ±ê×¼µÄ SELECT SQL Óï¾ä£¬²¢ÇÒÒ»¶¨µÃÒª
+	 *  ×¢Òâ¸Ã SQL Óï¾ä±ØĞë¾­¹ı×ªÒå´¦Àí£¬ÒÔ·ÀÖ¹ SQL ×¢Èë¹¥»÷
+	 * @return {bool} Ö´ĞĞÊÇ·ñ³É¹¦
 	 */
 	bool sql_select(const char* sql);
 
 	/**
-	 * åŸºç±» db_handle çš„çº¯è™šæ¥å£
-	 * @param sql {const char*} æ ‡å‡†çš„ INSERT/UPDATE/DELETE SQL è¯­å¥ï¼Œ
-	 *  å¹¶ä¸”ä¸€å®šå¾—è¦æ³¨æ„è¯¥ SQL è¯­å¥å¿…é¡»ç»è¿‡è½¬ä¹‰å¤„ç†ï¼Œä»¥é˜²æ­¢ SQL æ³¨å…¥æ”»å‡»
-	 * @return {bool} æ‰§è¡Œæ˜¯å¦æˆåŠŸ
+	 * »ùÀà db_handle µÄ´¿Ğé½Ó¿Ú
+	 * @param sql {const char*} ±ê×¼µÄ INSERT/UPDATE/DELETE SQL Óï¾ä£¬
+	 *  ²¢ÇÒÒ»¶¨µÃÒª×¢Òâ¸Ã SQL Óï¾ä±ØĞë¾­¹ı×ªÒå´¦Àí£¬ÒÔ·ÀÖ¹ SQL ×¢Èë¹¥»÷
+	 * @return {bool} Ö´ĞĞÊÇ·ñ³É¹¦
 	 */
 	bool sql_update(const char* sql);
 
 	/**
-	 * åŸºç±» db_handle çš„çº¯è™šæ¥å£ï¼šä¸Šæ¬¡ sql æ“ä½œå½±å“çš„è®°å½•è¡Œæ•°
-	 * @return {int} å½±å“çš„è¡Œæ•°ï¼Œ-1 è¡¨ç¤ºå‡ºé”™
+	 * »ùÀà db_handle µÄ´¿Ğé½Ó¿Ú£ºÉÏ´Î sql ²Ù×÷Ó°ÏìµÄ¼ÇÂ¼ĞĞÊı
+	 * @return {int} Ó°ÏìµÄĞĞÊı£¬-1 ±íÊ¾³ö´í
 	 */
 	int affect_count() const;
 
 private:
-	// sqlite å¼•æ“
+	// sqlite ÒıÇæ
 	sqlite3* db_;
 
-	// æ•°æ®å­˜å‚¨æ–‡ä»¶
+	// Êı¾İ´æ´¢ÎÄ¼ş
 	string dbfile_;
 
-	// å­—ç¬¦é›†è½¬ç å™¨
+	// ×Ö·û¼¯×ªÂëÆ÷
 	charset_conv* conv_;
 
-	// æœ¬åœ°å­—ç¬¦é›†
+	// ±¾µØ×Ö·û¼¯
 	string charset_;
 
-	// çœŸæ­£æ‰§è¡ŒSQLæŸ¥è¯¢çš„å‡½æ•°
+	// ÕæÕıÖ´ĞĞSQL²éÑ¯µÄº¯Êı
 	bool exec_sql(const char* sql);
 };
 

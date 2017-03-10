@@ -6,7 +6,7 @@ namespace acl
 {
 
 /**
- * memcache å®¢æˆ·ç«¯è¯·æ±‚è¿æ¥æ± ç®¡ç†ç±»
+ * memcache ¿Í»§¶ËÇëÇóÁ¬½Ó³Ø¹ÜÀíÀà
  */
 class ACL_CPP_API memcache_manager : public acl::connect_manager
 {
@@ -16,10 +16,10 @@ public:
 
 protected:
 	/**
-	 * åŸºç±»çº¯è™šå‡½æ•°ï¼Œç”¨æ¥åˆ›å»ºè¿æ¥æ± å¯¹è±¡
-	 * @param addr {const char*} æœåŠ¡å™¨ç›‘å¬åœ°å€ï¼Œæ ¼å¼ï¼šip:port
-	 * @param count {size_t} è¿æ¥æ± çš„å¤§å°é™åˆ¶ï¼Œè¯¥å€¼ä¸º 0 æ—¶æ²¡æœ‰é™åˆ¶
-	 * @param idx {size_t} è¯¥è¿æ¥æ± å¯¹è±¡åœ¨é›†åˆä¸­çš„ä¸‹æ ‡ä½ç½®(ä» 0 å¼€å§‹)
+	 * »ùÀà´¿Ğéº¯Êı£¬ÓÃÀ´´´½¨Á¬½Ó³Ø¶ÔÏó
+	 * @param addr {const char*} ·şÎñÆ÷¼àÌıµØÖ·£¬¸ñÊ½£ºip:port
+	 * @param count {size_t} Á¬½Ó³ØµÄ´óĞ¡ÏŞÖÆ£¬¸ÃÖµÎª 0 Ê±Ã»ÓĞÏŞÖÆ
+	 * @param idx {size_t} ¸ÃÁ¬½Ó³Ø¶ÔÏóÔÚ¼¯ºÏÖĞµÄÏÂ±êÎ»ÖÃ(´Ó 0 ¿ªÊ¼)
 	 */
 	connect_pool* create_pool(const char* addr, size_t count, size_t idx);
 };

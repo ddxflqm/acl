@@ -49,42 +49,42 @@ class ACL_CPP_API log
 {
 public:
 	/**
-	 * 打开日志文件, 在程序初始化里调用本函数一次
-	 * @param recipients {const char*} 日志接收器列表，由 "|" 分隔，接收器
-	 *  可以是本地文件或远程套接口，如:
+	 * ����־�ļ�, �ڳ����ʼ������ñ�����һ��
+	 * @param recipients {const char*} ��־�������б����� "|" �ָ���������
+	 *  �����Ǳ����ļ���Զ���׽ӿڣ���:
 	 *  /tmp/test.log|UDP:127.0.0.1:12345|TCP:127.0.0.1:12345|UNIX:/tmp/test.sock
-	 *  该配置要求将所有日志同时发给 /tmp/test.log, UDP:127.0.0.1:12345,
-	 *  TCP:127.0.0.1:12345 和 UNIX:/tmp/test.sock 四个日志接收器对象
-	 * @param procname 程序名, 如: test
-	 * @param cfg 调试日志配置, 格式为: {section}:{level}; {section}:{level}; ...
-	 *  如: 100:2; 101:3; 102: 4, 表示只记录标识为 100/级别 < 2,
-	 *  以及标识为 101/级别 < 3, 以及标识为 102/级别 < 4 的日志项
+	 *  ������Ҫ��������־ͬʱ���� /tmp/test.log, UDP:127.0.0.1:12345,
+	 *  TCP:127.0.0.1:12345 �� UNIX:/tmp/test.sock �ĸ���־����������
+	 * @param procname ������, ��: test
+	 * @param cfg ������־����, ��ʽΪ: {section}:{level}; {section}:{level}; ...
+	 *  ��: 100:2; 101:3; 102: 4, ��ʾֻ��¼��ʶΪ 100/���� < 2,
+	 *  �Լ���ʶΪ 101/���� < 3, �Լ���ʶΪ 102/���� < 4 ����־��
 	 */
 	static void open(const char* recipients, const char* procname = "unknown",
 		const char* cfg = NULL);
 
 	/**
-	 * 程序退出前调用此函数关闭日志
+	 * �����˳�ǰ���ô˺����ر���־
 	 */
 	static void close(void);
 
 	/**
-	 * 初始化日志调试调用接口
-	 * @param cfg {const char*} 调试标签及级别字符串, 格式如下:
+	 * ��ʼ����־���Ե��ýӿ�
+	 * @param cfg {const char*} ���Ա�ǩ�������ַ���, ��ʽ����:
 	 *  {section}:{level}; {section}:{level}; ...
-	 *  如: 1:1, 2:10, 3:8...  or 1:1; 2:10; 3:8... or all:1
+	 *  ��: 1:1, 2:10, 3:8...  or 1:1; 2:10; 3:8... or all:1
 	 */
 	static void debug_init(const char* cfg);
 
 	/**
-	 * 当未通过 open 打开日志流而调用记日志等相关函数时是否需要将信息
-	 * 输出至标准输出
+	 * ��δͨ�� open ����־�������ü���־����غ���ʱ�Ƿ���Ҫ����Ϣ
+	 * �������׼���
 	 * @param onoff {bool}
 	 */
 	static void stdout_open(bool onoff);
 
 	/**
-	 * 日志记录函数
+	 * ��־��¼����
 	 */
 
 	static void ACL_CPP_PRINTF(1, 2) msg1(const char* fmt, ...);
@@ -127,7 +127,7 @@ public:
 		const char* fmt, va_list ap);
 
 	/************************************************************************/
-	/*                        示例                                          */
+	/*                        ʾ��                                          */
 	/************************************************************************/
 	static void logger_test1(void)
 	{
@@ -139,12 +139,12 @@ public:
 		const char* logfile = "test.log", *procname = "test";
 		const char* cfg = "101:2; 102:3; 103:2";
 
-		// 在程序初始化时打开日志
+		// �ڳ����ʼ��ʱ����־
 		logger_open(logfile, procname, cfg);
 
 #if defined(VC2003) || defined(VC2002) || defined(VC6)
 
-		// 会写日志
+		// ��д��־
 
 		logger("%s(%d), %s: %s", __FILE__, __LINE__, __FUNCTION__, "zsx");
 
@@ -155,14 +155,14 @@ public:
 		logger_debug(DEBUG_TEST3, 2, "%s(%d), %s: hello world13(%s)!",
 			__FILE__, __LINE__, __FUNCTION__, "zsx");
 
-		// 不会写日志
+		// ����д��־
 
 		logger_debug(DEBUG_TEST1, 3, "%s(%d), %s: hello world21(%s)!",
 			__FILE__, __LINE__, __FUNCTION__, "zsx");
 
 #else	// VC2005, VC2008, VC2010
 
-		// 会写日志
+		// ��д��־
 
 		logger("error(%s)!", "zsx");
 
@@ -170,13 +170,13 @@ public:
 		logger_debug(DEBUG_TEST2, 3, "hello world12(%s)!", "zsx");
 		logger_debug(DEBUG_TEST3, 2, "hello world13(%s)!", "zsx");
 
-		// 不会写日志
+		// ����д��־
 
 		logger_debug(DEBUG_TEST1, 3, "hello world21(%s)!", "zsx");
 
 #endif
 
-		// 程序结束前关闭日志
+		// �������ǰ�ر���־
 		logger_close();
 	}
 	static void logger_test2(void)

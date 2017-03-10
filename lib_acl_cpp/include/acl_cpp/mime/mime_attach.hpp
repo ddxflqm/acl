@@ -15,8 +15,8 @@ public:
 	virtual ~mime_attach();
 
 	/**
-	 * 鑾峰緱闄勪欢鐨勬枃浠跺悕
-	 * @return {const char*} 杩斿洖鍊间负 NULL 鍒欒鏄庢病鏈夋壘鍒版枃浠跺悕
+	 * 获得附件的文件名
+	 * @return {const char*} 返回值为 NULL 则说明没有找到文件名
 	 */
 	const char* get_filename() const;
 
