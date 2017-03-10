@@ -6,8 +6,8 @@ namespace acl
 {
 
 /**
- * redis Á¬½Ó³ØÀà£¬¸ÃÀà¼Ì³ĞÓÚ connect_pool£¬ÔÚ connect_pool ¶¨ÒåÁËÍ¨ÓÃµÄÓĞ¹Ø
- * TCP Á¬½Ó³ØµÄÍ¨ÓÃ·½·¨¡£
+ * redis è¿æ¥æ± ç±»ï¼Œè¯¥ç±»ç»§æ‰¿äº connect_poolï¼Œåœ¨ connect_pool å®šä¹‰äº†é€šç”¨çš„æœ‰å…³
+ * TCP è¿æ¥æ± çš„é€šç”¨æ–¹æ³•ã€‚
  * redis connection pool inherting from connect_pool, which includes
  * TCP connection pool methods.
  */
@@ -15,15 +15,15 @@ class ACL_CPP_API redis_client_pool : public connect_pool
 {
 public:
 	/**
-	 * ¹¹Ôìº¯Êı
+	 * æ„é€ å‡½æ•°
 	 * constructor
-	 * @param addr {const char*} ·şÎñ¶ËµØÖ·£¬¸ñÊ½£ºip:port
+	 * @param addr {const char*} æœåŠ¡ç«¯åœ°å€ï¼Œæ ¼å¼ï¼šip:port
 	 *  the redis-server's listening address, format: ip:port
-	 * @param count {size_t} Á¬½Ó³ØµÄ×î´óÁ¬½ÓÊıÏŞÖÆ£¬Èç¹û´ËÖµÎª 0£¬ÔòÁ¬½Ó³Ø
-	 *  Ã»ÓĞÉÏÏŞÏŞÖÆ¡£
+	 * @param count {size_t} è¿æ¥æ± çš„æœ€å¤§è¿æ¥æ•°é™åˆ¶ï¼Œå¦‚æœæ­¤å€¼ä¸º 0ï¼Œåˆ™è¿æ¥æ± 
+	 *  æ²¡æœ‰ä¸Šé™é™åˆ¶ã€‚
 	 *  the max connections for each connection pool. there is
 	 *  no connections limit of the pool when the count is 0.
-	 * @param idx {size_t} ¸ÃÁ¬½Ó³Ø¶ÔÏóÔÚ¼¯ºÏÖĞµÄÏÂ±êÎ»ÖÃ(´Ó 0 ¿ªÊ¼)
+	 * @param idx {size_t} è¯¥è¿æ¥æ± å¯¹è±¡åœ¨é›†åˆä¸­çš„ä¸‹æ ‡ä½ç½®(ä» 0 å¼€å§‹)
 	 *  the subscript of the connection pool in the connection cluster
 	 */
 	redis_client_pool(const char* addr, size_t count, size_t idx = 0);
@@ -31,15 +31,15 @@ public:
 	virtual ~redis_client_pool(void);
 
 	/**
-	 * ÉèÖÃÁ¬½Ó redis ·şÎñÆ÷µÄÁ¬½ÓÃÜÂë
-	 * @param pass {const char*} Á¬½ÓÃÜÂë
+	 * è®¾ç½®è¿æ¥ redis æœåŠ¡å™¨çš„è¿æ¥å¯†ç 
+	 * @param pass {const char*} è¿æ¥å¯†ç 
 	 * @return {redis_client_pool&}
 	 */
 	redis_client_pool& set_password(const char* pass);
 
 protected:
 	/**
-	 * »ùÀà´¿Ğéº¯Êı: µ÷ÓÃ´Ëº¯ÊıÓÃÀ´´´½¨Ò»¸öĞÂµÄÁ¬½Ó
+	 * åŸºç±»çº¯è™šå‡½æ•°: è°ƒç”¨æ­¤å‡½æ•°ç”¨æ¥åˆ›å»ºä¸€ä¸ªæ–°çš„è¿æ¥
 	 * virtual function in class connect_pool to create a new connection
 	 * @return {connect_client*}
 	 */

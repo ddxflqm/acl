@@ -9,7 +9,7 @@ namespace acl
 class redis_result;
 
 /**
- * ÔÚ´Ó disque ¶ÓÁĞÖĞ»ñµÃµÄÈÎÎñĞÅÏ¢µÄÀà
+ * åœ¨ä» disque é˜Ÿåˆ—ä¸­è·å¾—çš„ä»»åŠ¡ä¿¡æ¯çš„ç±»
  */
 class ACL_CPP_API disque_job
 {
@@ -19,7 +19,7 @@ public:
 
 	/**
 	 * get the ID of the job
-	 * »ñµÃµ±Ç°ÈÎÎñµÄ ID ºÅ
+	 * è·å¾—å½“å‰ä»»åŠ¡çš„ ID å·
 	 * @return {const char*}
 	 */
 	const char* get_id() const
@@ -29,7 +29,7 @@ public:
 
 	/**
 	 * get the queue name holding the job
-	 * »ñµÃµ±Ç°ÈÎÎñËùÔÚµÄ¶ÓÁĞ
+	 * è·å¾—å½“å‰ä»»åŠ¡æ‰€åœ¨çš„é˜Ÿåˆ—
 	 * @return {const char*}
 	 */
 	const char* get_queue() const
@@ -39,7 +39,7 @@ public:
 
 	/**
 	 * get the job's data
-	 * »ñµÃµ±Ç°ÈÎÎñµÄÏûÏ¢ÄÚÈİ
+	 * è·å¾—å½“å‰ä»»åŠ¡çš„æ¶ˆæ¯å†…å®¹
 	 * @return {const string&}
 	 */
 	const string& get_body() const

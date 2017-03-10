@@ -75,17 +75,17 @@ public:
 	}
 
 private:
-	char* dbaddr_;          // Êı¾İ¿â¼àÌıµØÖ·
-	char* dbname_;          // Êı¾İ¿âÃû
+	char* dbaddr_;          // æ•°æ®åº“ç›‘å¬åœ°å€
+	char* dbname_;          // æ•°æ®åº“å
 	char* dbkey_;           // dbname@dbaddr
-	char* dbuser_;          // Êı¾İ¿âÕËºÅ
-	char* dbpass_;          // Êı¾İ¿âÕËºÅÃÜÂë
-	char* charset_;         // Á¬½ÓÊı¾İ¿âÊ±µÄ×Ö·û¼¯
-	size_t dblimit_;        // Êı¾İ¿âÁ¬½Ó³ØÁ¬½ÓÊıÉÏÏŞ
-	unsigned long dbflags_; // ´ò¿ªÊı¾İ¿âÊ±µÄ±êÖ¾Î»
-	bool  auto_commit_;     // ÊÇ·ñ×Ô¶¯Ìá½»ĞŞ¸ÄºóµÄÊı¾İ
-	int   conn_timeout_;    // Á¬½ÓÊı¾İ¿âµÄ³¬Ê±Ê±¼ä
-	int   rw_timeout_;      // ÓëÊı¾İ¿âÍ¨ĞÅµÄ³¬Ê±Ê±¼ä
+	char* dbuser_;          // æ•°æ®åº“è´¦å·
+	char* dbpass_;          // æ•°æ®åº“è´¦å·å¯†ç 
+	char* charset_;         // è¿æ¥æ•°æ®åº“æ—¶çš„å­—ç¬¦é›†
+	size_t dblimit_;        // æ•°æ®åº“è¿æ¥æ± è¿æ¥æ•°ä¸Šé™
+	unsigned long dbflags_; // æ‰“å¼€æ•°æ®åº“æ—¶çš„æ ‡å¿—ä½
+	bool  auto_commit_;     // æ˜¯å¦è‡ªåŠ¨æäº¤ä¿®æ”¹åçš„æ•°æ®
+	int   conn_timeout_;    // è¿æ¥æ•°æ®åº“çš„è¶…æ—¶æ—¶é—´
+	int   rw_timeout_;      // ä¸æ•°æ®åº“é€šä¿¡çš„è¶…æ—¶æ—¶é—´
 };
 
 } // namespace acl
