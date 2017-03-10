@@ -12,7 +12,12 @@ public:
 	charset_transfer& set_to_path(const char* path);
 	charset_transfer& set_utf8bom(bool yes);
 
-	int run(bool recursive = true);
+	int transfer(bool recursive = true);
+
+	static bool check_buff(const acl::string& buf, const char* charset,
+		acl::string& res);
+	static bool check_file(const char* filepath, const char* charset);
+	static int  check_path(const char* path, const char* charset);
 
 private:
 	acl::string from_charset_;
@@ -21,9 +26,10 @@ private:
 	acl::string to_path_;
 	bool utf8_bom_;
 
-	bool check(void);
+	bool check_params(void);
 	bool get_filepath(acl::scan_dir& scan, const char* filename,
 		acl::string& from_filepath, acl::string& to_filepath,
 		acl::string& to_path);
 	bool transfer(const char* from_file, const char* to_file);
+	bool save_to(const acl::string& buf, const char* to_file);
 };

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "charset.h"
 #include "charset_transfer.h"
 
 #ifdef WIN32
@@ -48,7 +49,7 @@ charset_transfer& charset_transfer::set_utf8bom(bool yes)
 	return *this;
 }
 
-bool charset_transfer::check(void)
+bool charset_transfer::check_params(void)
 {
 	if (from_charset_.empty())
 	{
@@ -92,6 +93,7 @@ bool charset_transfer::get_filepath(acl::scan_dir& scan, const char* filename,
 	else
 		from_filepath << rpath << SEP << filename;
 
+#if 0
 	if (strstr(from_filepath.c_str(), ".svn") != NULL
 		|| strstr(from_filepath.c_str(), ".git") != NULL
 		|| strstr(from_filepath.c_str(), ".cvs") != NULL
@@ -109,15 +111,116 @@ bool charset_transfer::get_filepath(acl::scan_dir& scan, const char* filename,
 		logger("skip %s", from_filepath.c_str());
 		return false;
 	}
+#else
+	static const char* files_ext[] = {
+		".c",
+		".h",
+		".cpp",
+		".hpp",
+		".cxx",
+		".hxx",
+		NULL,
+	};
+
+	bool match = false;
+	for (int i = 0; files_ext[i] != NULL; i++)
+	{
+		if (from_filepath.rncompare(files_ext[i],
+			strlen(files_ext[i]), false) == 0)
+		{
+			match = true;
+			break;
+		}
+	}
+	if (!match)
+		return false;
+#endif
 
 	to_path << to_path_ << SEP << rpath;
 	to_filepath << to_path << SEP << filename;
 	return true;
 }
 
-int charset_transfer::run(bool recursive /* = true */)
+bool charset_transfer::check_buff(const acl::string& buf, const char* charset,
+	acl::string& res)
 {
-	if (check() == false)
+	if (buf[0] == UTF8_HEADER[0] && buf[1] == UTF8_HEADER[1]
+		&& buf[2] == UTF8_HEADER[2])
+	{
+		res = "utf-8";
+	}
+	else
+	{
+		charset_radar r;
+
+		if (r.detact(buf, res) == false)
+		{
+			res = "uknown";
+			return false;
+		}
+	}
+
+#define EQ !strcasecmp
+
+	if (res.equal("UTF-8", false)
+		&& (EQ(charset, "utf-8") || EQ(charset, "utf8")))
+	{
+		return true;
+	}
+	else if (res.equal("GB18030", false)
+		&& (EQ(charset, "gbk") || EQ(charset, "gb2312")))
+	{
+		return true;
+	}
+	else if (res.equal(charset, false))
+		return true;
+	else
+		return false;
+}
+
+bool charset_transfer::check_file(const char* filepath,
+	const char* charset)
+{
+	acl::string buf;
+	if (acl::ifstream::load(filepath, &buf) == false)
+	{
+		logger_error("load %s error %s", filepath, acl::last_serror());
+		return false;
+	}
+
+	acl::string res;
+	if (check_buff(buf, charset, res) == false)
+	{
+		logger("%s, guess: %s, want: %s",
+			filepath, res.c_str(), charset);
+		return false;
+	}
+	return true;
+}
+
+int charset_transfer::check_path(const char* path, const char* charset)
+{
+	acl::scan_dir scan;
+	if (scan.open(path, true) == false)
+	{
+		logger_error("open %s error %s", path, acl::last_serror());
+		return -1;
+	}
+
+	const char* filepath;
+	int count = 0;
+	while ((filepath = scan.next_file(true)) != NULL)
+	{
+		if (check_file(filepath, charset))
+			count++;
+	}
+
+	return count;
+}
+
+int charset_transfer::transfer(bool recursive /* = true */)
+{
+	if (check_params() == false)
 		return -1;
 
 	if (from_charset_.equal(to_charset_, false))
@@ -198,6 +301,13 @@ bool charset_transfer::transfer(const char* from_file, const char* to_file)
 		return false;
 	}
 
+	acl::string charset_res;
+	if (check_buff(buf, to_charset_, charset_res))
+		return save_to(buf, to_file);
+
+//	printf("to_charset_: %s, charset_res: %s\r\n",
+//		to_charset_.c_str(), charset_res.c_str());
+
 	if (!from_charset_.equal("utf-8", false) &&
 		!from_charset_.equal("utf8", false))
 	{
@@ -205,9 +315,9 @@ bool charset_transfer::transfer(const char* from_file, const char* to_file)
 			&& buf[1] == UTF8_HEADER[1]
 			&& buf[2] == UTF8_HEADER[2])
 		{
-			logger_warn("skip %s, utf8 header in no utf8 file",
-				from_file);
-			return false;
+			logger_warn("skip %s, utf8 header in no utf8 file, %s",
+				from_file, from_charset_.c_str());
+			return save_to(buf, to_file);
 		}
 	}
 
@@ -218,7 +328,7 @@ bool charset_transfer::transfer(const char* from_file, const char* to_file)
 	{
 		logger_error("charset convert error: %s, file: %s",
 			conv.serror(), from_file);
-		return false;
+		return save_to(buf, to_file);
 	}
 
 	acl::ofstream fp;
@@ -242,8 +352,27 @@ bool charset_transfer::transfer(const char* from_file, const char* to_file)
 
 	if (fp.write(res) == -1)
 	{
-		logger_error("write to %s error %s", to_file,
+		logger_error("write to %s error %s",
+			to_file, acl::last_serror());
+		return false;
+	}
+
+	return true;
+}
+
+bool charset_transfer::save_to(const acl::string& buf, const char* to_file)
+{
+	acl::ofstream fp;
+	if (fp.open_write(to_file) == false)
+	{
+		logger_error("open_write %s error %s", to_file,
 			acl::last_serror());
+		return false;
+	}
+	if (fp.write(buf) == -1)
+	{
+		logger_error("write to %s error %s",
+			to_file, acl::last_serror());
 		return false;
 	}
 
