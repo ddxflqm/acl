@@ -1980,11 +1980,7 @@
 		0779D3381DBE054C00449438 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-					MACOSX,
-				);
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited) ";
 				HEADER_SEARCH_PATHS = (
 					../lib_acl/include,
 					../lib_acl,

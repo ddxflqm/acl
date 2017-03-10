@@ -1728,11 +1728,7 @@
 		07A4583B1E6FCCB4002C9B3C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-					MACOSX,
-				);
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited) ";
 				HEADER_SEARCH_PATHS = (
 					../lib_acl/include,
 					../lib_protocol/include,
@@ -1785,6 +1781,7 @@
 				07A4583C1E6FCCB4002C9B3C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
