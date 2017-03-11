@@ -257,11 +257,13 @@ void CJencodeDlg::OnBnClickedButtonUtf2gb()
 void CJencodeDlg::OnBnClickedButtonGb2uni()
 {
 	// TODO: 在此添加控件通知处理程序代码
-		if (!CheckPath())
+	if (!CheckPath())
 	{
 		MessageBox(m_sPath);
 		return;
 	}
+
+	return;
 
 	static CGb2Utf8 gb2uni("gbk", "UCS2LE");
 
