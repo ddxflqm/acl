@@ -92,6 +92,7 @@ bool charset_transfer::get_filepath(acl::scan_dir& scan, const char* filename,
 	else
 		from_filepath << rpath << SEP << filename;
 
+#if 0
 	if (strstr(from_filepath.c_str(), ".svn") != NULL
 		|| strstr(from_filepath.c_str(), ".git") != NULL
 		|| strstr(from_filepath.c_str(), ".cvs") != NULL
@@ -109,6 +110,27 @@ bool charset_transfer::get_filepath(acl::scan_dir& scan, const char* filename,
 		logger("skip %s", from_filepath.c_str());
 		return false;
 	}
+#else
+	static const char* files_ext[] = {
+		".c",
+		".h",
+		".cpp",
+		".hpp",
+		".cxx",
+		".hxx",
+		NULL,
+	};
+
+	for (int i = 0; files_ext[i] != NULL; i++)
+	{
+		if (from_filepath.rncompare(files_ext[i],
+			strlen(files_ext[i]), false) != 0)
+		{
+			//logger("skip %s", from_filepath.c_str());
+			return false;
+		}
+	}
+#endif
 
 	to_path << to_path_ << SEP << rpath;
 	to_filepath << to_path << SEP << filename;
