@@ -8,7 +8,8 @@ static void usage(const char* procname)
 		" -t to_charset\r\n"
 		" -b [when to_charset is utf-8 if BOM header be added]\r\n"
 		" -s source_dir\r\n"
-		" -d destination_dir\r\n",
+		" -d destination_dir\r\n"
+		" -c [just check charset only]\r\n",
 		procname);
 }
 
@@ -16,9 +17,9 @@ int main(int argc, char* argv[])
 {
 	int ch;
 	acl::string from_charset, to_charset, from_dir, to_dir;
-	bool use_bom = false;
+	bool use_bom = false, check_only = false;;
 
-	while ((ch = getopt(argc, argv, "hf:t:bs:d:")) > 0)
+	while ((ch = getopt(argc, argv, "hf:t:bs:d:c")) > 0)
 	{
 		switch (ch)
 		{
@@ -40,9 +41,30 @@ int main(int argc, char* argv[])
 		case 'd':
 			to_dir = optarg;
 			break;
+		case 'c':
+			check_only = true;
+			break;
 		default:
 			break;
 		}
+	}
+
+	acl::log::stdout_open(true);
+
+	if (check_only)
+	{
+		if (from_dir.empty() || from_charset.empty())
+		{
+			printf("from_charset or from_dir not set\r\n");
+			return 1;
+		}
+
+		charset_transfer tr;
+		tr.set_from_path(from_dir);
+		int n = tr.check_charset(from_charset);
+		printf("check over: %d, charset: %s\r\n",
+			n, from_charset.c_str());
+		return 0;
 	}
 
 	if (from_charset.empty() || to_charset.empty()
@@ -51,8 +73,6 @@ int main(int argc, char* argv[])
 		usage(argv[0]);
 		return 0;
 	}
-
-	acl::log::stdout_open(true);
 
 	if (chdir(from_dir.c_str()) == -1)
 	{

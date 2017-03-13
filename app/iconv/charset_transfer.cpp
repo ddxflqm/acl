@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "charset.h"
 #include "charset_transfer.h"
 
 #ifdef WIN32
@@ -121,20 +122,82 @@ bool charset_transfer::get_filepath(acl::scan_dir& scan, const char* filename,
 		NULL,
 	};
 
+	bool match = false;
 	for (int i = 0; files_ext[i] != NULL; i++)
 	{
 		if (from_filepath.rncompare(files_ext[i],
-			strlen(files_ext[i]), false) != 0)
+			strlen(files_ext[i]), false) == 0)
 		{
-			//logger("skip %s", from_filepath.c_str());
-			return false;
+			match = true;
+			break;
 		}
 	}
+	if (match)
+		return false;
 #endif
 
 	to_path << to_path_ << SEP << rpath;
 	to_filepath << to_path << SEP << filename;
 	return true;
+}
+
+bool charset_transfer::check_file(const char* filepath,
+	const char* charset)
+{
+	acl::string buf;
+	if (acl::ifstream::load(filepath, &buf) == false)
+	{
+		logger_error("load %s error %s",
+			filepath, acl::last_serror());
+		return false;
+	}
+
+	acl::string charset_res;
+	radar r;
+	if (r.detact(buf, charset_res) == false)
+	{
+		logger_error("check %s error, charset %s",
+			filepath, charset);
+		return false;
+	}
+
+	if (charset_res.equal(charset, false))
+		return true;
+	else
+	{
+		logger("%s, charset res: %s, charset: %s",
+			filepath, charset_res.c_str(), charset);
+		return false;
+	}
+}
+
+int charset_transfer::check_charset(const char* charset)
+{
+	if (from_path_.empty())
+	{
+		logger_error("from_path_ empty!");
+		return -1;
+	}
+
+	acl::scan_dir scan;
+	if (scan.open(from_path_, true) == false)
+	{
+		logger_error("open %s error %s", from_path_.c_str(),
+			acl::last_serror());
+		return -1;
+	}
+
+	const char* filepath;
+	int count = 0;
+	while ((filepath = scan.next_file(true)) != NULL)
+	{
+		if (check_file(filepath, charset))
+			count++;
+		else
+			logger("%s, not %s", filepath, charset);
+	}
+
+	return count;
 }
 
 int charset_transfer::run(bool recursive /* = true */)

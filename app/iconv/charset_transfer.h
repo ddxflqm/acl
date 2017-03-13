@@ -14,6 +14,9 @@ public:
 
 	int run(bool recursive = true);
 
+	bool check_file(const char* filepath, const char* charset);
+	int check_charset(const char* charset);
+
 private:
 	acl::string from_charset_;
 	acl::string to_charset_;
