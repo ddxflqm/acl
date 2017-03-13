@@ -1,10 +1,10 @@
 #pragma once
 
-class radar 
+class charset_radar
 {
 public:
-	radar(void);
-	~radar(void);
+	charset_radar(void);
+	~charset_radar(void);
 
 	/**
 	 * 识别给定字符串的字符集
@@ -14,18 +14,18 @@ public:
 	 * @return {bool} 是否识别成功
 	 */
 	bool detact(const char *data, int len, acl::string &charset_result);
-	bool detact(acl::string &data, acl::string &charset_result);
+	bool detact(const acl::string &data, acl::string &charset_result);
 
 	/*
 	 * 设置是否开启调试模式
 	 */
 	void setDebugMode(bool flag)
 	{
-		___debug_mode = flag;
+		debug_mode_ = flag;
 	}
 
 private:
-	bool ___debug_mode;
+	bool debug_mode_;
 };
 
 //bool format_utf8(const char *str, int len, acl::string &out);

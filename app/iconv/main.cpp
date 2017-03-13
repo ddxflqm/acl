@@ -59,9 +59,8 @@ int main(int argc, char* argv[])
 			return 1;
 		}
 
-		charset_transfer tr;
-		tr.set_from_path(from_dir);
-		int n = tr.check_charset(from_charset);
+		int n = charset_transfer::check_path(from_dir, from_charset);
+
 		printf("check over: %d, charset: %s\r\n",
 			n, from_charset.c_str());
 		return 0;
@@ -88,7 +87,7 @@ int main(int argc, char* argv[])
 		.set_to_path(to_dir)
 		.set_utf8bom(use_bom);
 
-	int n = transfer.run();
+	int n = transfer.transfer();
 	printf("transfer over: %d, from_charset: %s, to_charset: %s,"
 		" from_path: %s, to_path: %s\r\n", n, from_charset.c_str(),
 		to_charset.c_str(), from_dir.c_str(), to_dir.c_str());
