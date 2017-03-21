@@ -308,42 +308,37 @@ namespace acl
 //////////////////////////////////////////////////////////////////////////
 // mysql 的记录行类型定义
 
-class db_mysql_rows : public db_rows
+static void mysql_rows_free(void* ctx)
 {
-public:
-	db_mysql_rows(MYSQL_RES *my_res)
-	{
-		int   ncolumn = __mysql_num_fields(my_res);
-		MYSQL_FIELD *fields = __mysql_fetch_fields(my_res);
+	MYSQL_RES* my_res = (MYSQL_RES*) ctx;
+	if (my_res && __mysql_dll)
+		__mysql_free_result(my_res);
+}
 
-		// 取出变量名
+static void mysql_rows_save(MYSQL_RES* my_res, db_rows& result)
+{
+	int   ncolumn = __mysql_num_fields(my_res);
+	MYSQL_FIELD *fields = __mysql_fetch_fields(my_res);
+
+	// 取出变量名
+	for (int j = 0; j < ncolumn; j++)
+		result.names_.push_back(fields[j].name);
+
+	// 开始取出所有行数据结果，加入动态数组中
+	while (true)
+	{
+		MYSQL_ROW my_row = __mysql_fetch_row(my_res);
+		if (my_row == NULL)
+			break;
+		db_row* row = NEW db_row(result.names_);
 		for (int j = 0; j < ncolumn; j++)
-			names_.push_back(fields[j].name);
-
-		// 开始取出所有行数据结果，加入动态数组中
-		while (true)
-		{
-			MYSQL_ROW my_row = __mysql_fetch_row(my_res);
-			if (my_row == NULL)
-				break;
-			db_row* row = NEW db_row(names_);
-			for (int j = 0; j < ncolumn; j++)
-				row->push_back(my_row[j]);
-			rows_.push_back(row);
-		}
-
-		my_res_ = my_res;
+			row->push_back(my_row[j]);
+		result.rows_.push_back(row);
 	}
 
-	~db_mysql_rows()
-	{
-		if (__mysql_dll)
-			__mysql_free_result(my_res_);
-	}
-
-private:
-	MYSQL_RES *my_res_;
-};
+	result.result_free = mysql_rows_free;
+	result.result_tmp_ = my_res;
+}
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -724,7 +719,7 @@ bool db_mysql::tbl_exists(const char* tbl_name)
 	return ret;
 }
 
-bool db_mysql::sql_select(const char* sql)
+bool db_mysql::sql_select(const char* sql, db_rows* result /* = NULL */)
 {
 	// 优先调用基类方法释放上次的查询结果
 	free_result();
@@ -751,7 +746,14 @@ bool db_mysql::sql_select(const char* sql)
 		return true;
 	}
 
-	result_ = NEW db_mysql_rows(my_res);
+	if (result != NULL)
+		mysql_rows_save(my_res, *result);
+	else
+	{
+		result_ = NEW db_rows();
+		mysql_rows_save(my_res, *result_);
+	}
+
 	return true;
 }
 
