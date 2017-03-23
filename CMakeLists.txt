@@ -9,12 +9,17 @@ if (${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
 	message(FATAL_ERROR "Please into another dir to build!")
 endif()
 
+string(TOUPPER ${CMAKE_SYSTEM_NAME} CMAKE_SYSTEM_NAME)
+if(CMAKE_SYSTEM_NAME MATCHES "DARWIN")
+	set(CMAKE_MACOSX_RPATH build)
+endif()
+
 add_subdirectory(lib_acl lib_acl)
 add_subdirectory(lib_protocol lib_protocol)
 add_subdirectory(lib_acl_cpp lib_acl_cpp)
 
 #if (CMAKE_SYSTEM_NAME MATCHES "Linux" OR CMAKE_SYSTEM_NAME MATCHES "Android")
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
+if (CMAKE_SYSTEM_NAME MATCHES "LINUX")
 	add_subdirectory(lib_fiber/c lib_fiber)
 	add_subdirectory(lib_fiber/cpp lib_fiber_cpp)
 endif()

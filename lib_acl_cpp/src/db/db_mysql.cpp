@@ -856,7 +856,7 @@ bool db_mysql::tbl_exists(const char*)
 	return false;
 }
 
-bool db_mysql::sql_select(const char*)
+bool db_mysql::sql_select(const char*, db_rows*)
 {
 	return false;
 }

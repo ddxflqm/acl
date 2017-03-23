@@ -21,7 +21,6 @@ add_definitions(
 	"-D_POSIX_PTHREAD_SEMANTICS"
 	"-DHAS_MYSQL_DLL"
 	"-DHAS_SQLITE_DLL"
-	"-DHAS_ZLIB_DLL"
 	"-Wno-invalid-source-encoding"
 	"-Wno-unused-private-field"
 	"-Wno-unused-parameter"
@@ -45,6 +44,7 @@ string(TOUPPER ${CMAKE_SYSTEM_NAME} CMAKE_SYSTEM_NAME)
 if(CMAKE_SYSTEM_NAME MATCHES "ANDROID")
 	add_definitions("-DANDROID")
 elseif(CMAKE_SYSTEM_NAME MATCHES "LINUX")
+elseif(CMAKE_SYSTEM_NAME MATCHES "DARWIN")
 else()
 	message(FATAL_ERROR "unknown CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}")
 endif()
@@ -105,7 +105,9 @@ else()
 	add_library(_acl_cpp_static STATIC ${lib_src})
 	SET_TARGET_PROPERTIES(_acl_cpp_static PROPERTIES OUTPUT_NAME "_acl_cpp")
 
-	set(CMAKE_SHARED_LINKER_FLAGS "-shared -Wl,-rpath,. -L${lib_output_path} -l_protocol -l_acl")
+	set(CMAKE_SHARED_LINKER_FLAGS
+		"-shared -Wl,-rpath,. -L${lib_output_path} -l_protocol -l_acl"
+		"-liconv -lz -lpthread")
 	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${lib_output_path})
 	link_directories(${lib_output_path})
 endif()

@@ -569,7 +569,7 @@ bool db_sqlite::dbopen(const char*) { return false; }
 bool db_sqlite::is_opened() const { return false; }
 bool db_sqlite::close(void) { return false; }
 bool db_sqlite::tbl_exists(const char*) { return false; }
-bool db_sqlite::sql_select(const char*) { return false; }
+bool db_sqlite::sql_select(const char*, db_rows*) { return false; }
 bool db_sqlite::sql_update(const char*) { return false; }
 int db_sqlite::affect_count() const { return 0; }
 int db_sqlite::get_errno() const { return -1; }
