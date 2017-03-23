@@ -453,7 +453,6 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
 			acl_msg_info("%s(%d), %s: fiber-%u was killed",
 				__FILE__, __LINE__, __FUNCTION__,
 				acl_fiber_id(pe.fiber));
-			errno = ECANCELED;
 			pe.nready = -1;
 			break;
 		}
