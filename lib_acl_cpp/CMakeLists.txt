@@ -105,9 +105,14 @@ else()
 	add_library(_acl_cpp_static STATIC ${lib_src})
 	SET_TARGET_PROPERTIES(_acl_cpp_static PROPERTIES OUTPUT_NAME "_acl_cpp")
 
-	set(CMAKE_SHARED_LINKER_FLAGS
-		"-shared -Wl,-rpath,. -L${lib_output_path} -l_protocol -l_acl"
-		"-liconv -lz -lpthread")
+	if(CMAKE_SYSTEM_NAME MATCHES "DARWIN")
+		set(CMAKE_SHARED_LINKER_FLAGS
+			"-shared -Wl,-rpath,. -L${lib_output_path} -l_protocol -l_acl -liconv -lz -lpthread")
+	else()
+		set(CMAKE_SHARED_LINKER_FLAGS
+			"-shared -Wl,-rpath,. -L${lib_output_path} -l_protocol -l_acl -lz -lpthread")
+	endif()
+
 	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${lib_output_path})
 	link_directories(${lib_output_path})
 endif()
