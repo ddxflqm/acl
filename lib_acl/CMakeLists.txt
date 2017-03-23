@@ -99,7 +99,9 @@ foreach(iter ${sources})
 	aux_source_directory(${iter} lib_src)
 endforeach()
 
-if(NOT CMAKE_SYSTEM_NAME MATCHES "ANDROID")
+if(CMAKE_SYSTEM_NAME MATCHES "ANDROID")
+	set(CMAKE_SHARED_LINKER_FLAGS "-shared")
+else()
 	set(lib_output_path ${PROJECT_BINARY_DIR}/lib)
 
 	set(LIBRARY_OUTPUT_PATH ${lib_output_path})

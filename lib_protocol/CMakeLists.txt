@@ -69,14 +69,16 @@ foreach(iter ${sources})
 	aux_source_directory(${iter} lib_src)
 endforeach()
 
-if(NOT CMAKE_SYSTEM_NAME MATCHES "ANDROID")
+if(CMAKE_SYSTEM_NAME MATCHES "ANDROID")
+	set(CMAKE_SHARED_LINKER_FLAGS "-shared")
+else()
 	set(lib_output_path ${PROJECT_BINARY_DIR}/lib)
 
 	set(LIBRARY_OUTPUT_PATH ${lib_output_path})
 	add_library(_protocol_static STATIC ${lib_src})
 	SET_TARGET_PROPERTIES(_protocol_static PROPERTIES OUTPUT_NAME "_protocol")
 
-	set(CMAKE_SHARED_LINKER_FLAGS "-Wl,-rpath,. -L${lib_output_path} -l_acl")
+	set(CMAKE_SHARED_LINKER_FLAGS "-shared, -Wl,-rpath,. -L${lib_output_path} -l_acl")
 	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${lib_output_path})
 	link_directories(${lib_output_path})
 endif()
