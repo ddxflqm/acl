@@ -17,7 +17,9 @@ LIB_NAME  = lib_acl.a
 
 CFLAGS = -c -g -W \
 -O3 \
+-fPIC \
 -Wall \
+-Werror \
 -Wshadow \
 -Wpointer-arith \
 -Waggregate-return \
@@ -29,7 +31,7 @@ CFLAGS = -c -g -W \
 -Wuninitialized \
 -D_POSIX_PTHREAD_SEMANTICS \
 -DACL_PREPARE_COMPILE \
--Winvalid-pch
+-Winvalid-pch \
 #-DDEBUG_MEM
 #-DUSE_EPOLL \
 #-Wno-tautological-compare \
@@ -79,25 +81,20 @@ endif
 
 # For FreeBSD
 ifeq ($(findstring FreeBSD, $(UNIXNAME)), FreeBSD)
-#	CFLAGS += -DFREEBSD -fPIC -Werror
-	CFLAGS += -fPIC -Werror
 	UNIXTYPE = FREEBSD
 	RPATH = freebsd
 endif
 
 # For Darwin
 ifeq ($(findstring Darwin, $(UNIXNAME)), Darwin)
-#	CFLAGS += -DMACOSX -Wno-invalid-source-encoding
 	CFLAGS += -Wno-invalid-source-encoding \
-		  -Wno-extended-offsetof -fPIC -Werror
+		  -Wno-extended-offsetof
 	UNIXTYPE = MACOSX
 	RPATH = macos
 endif
 
 # For Linux
 ifeq ($(findstring Linux, $(UNIXNAME)), Linux)
-#	CFLAGS += -DLINUX2 -fPIC -Werror
-	CFLAGS += -fPIC -Werror
 	UNIXTYPE = LINUX
 	ifeq ($(findstring i686, $(OSTYPE)), i686)
 		CFLAGS += -march=i686

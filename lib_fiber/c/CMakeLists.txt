@@ -10,6 +10,7 @@ endif()
 
 add_definitions(
 	"-W"
+	"-fPIC"
 	"-Wall"
 	"-Werror"
 	"-Wshadow"
@@ -24,7 +25,6 @@ add_definitions(
 	"-D_POSIX_PTHREAD_SEMANTICS"
 	"-DACL_PREPARE_COMPILE"
 	"-Wno-invalid-source-encoding"
-	"-fPIC"
 	"-Wstrict-prototypes"
 )
 
