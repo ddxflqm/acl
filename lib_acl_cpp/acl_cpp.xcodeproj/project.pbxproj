@@ -1731,8 +1731,8 @@
 			buildSettings = {
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
-					HAS_MYSQL_DLL,
-					HAS_SQLITE_DLL,
+					HAS_MYSQL,
+					HAS_SQLITE,
 				);
 				HEADER_SEARCH_PATHS = (
 					../lib_acl/include,
@@ -1752,6 +1752,11 @@
 		07A4583C1E6FCCB4002C9B3C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					HAS_MYSQL,
+					HAS_SQLITE,
+				);
 				HEADER_SEARCH_PATHS = (
 					../lib_acl/include,
 					../lib_protocol/include,

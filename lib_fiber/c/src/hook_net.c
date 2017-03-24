@@ -321,8 +321,9 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 	fiber_wait_write(sockfd);
 
 	if (acl_fiber_killed(me)) {
-		acl_msg_info("%s(%d), %s: fiber-%u was killed",
-			__FILE__, __LINE__, __FUNCTION__, acl_fiber_id(me));
+		acl_msg_info("%s(%d), %s: fiber-%u was killed, %s",
+			__FILE__, __LINE__, __FUNCTION__,
+			acl_fiber_id(me), acl_last_serror());
 		return -1;
 	}
 
@@ -450,9 +451,9 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
 
 		if (acl_fiber_killed(pe.fiber)) {
 			acl_ring_detach(&pe.me);
-			acl_msg_info("%s(%d), %s: fiber-%u was killed",
+			acl_msg_info("%s(%d), %s: fiber-%u was killed, %s",
 				__FILE__, __LINE__, __FUNCTION__,
-				acl_fiber_id(pe.fiber));
+				acl_fiber_id(pe.fiber), acl_last_serror());
 			pe.nready = -1;
 			break;
 		}
