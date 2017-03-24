@@ -11,16 +11,11 @@
 
 #if defined(HAS_SQLITE) || defined(HAS_SQLITE_DLL)
 
-#if defined(ACL_WINDOWS) || defined(HAS_SQLITE_DLL)
+# ifdef HAS_SQLITE_DLL
 
-#ifndef STDCALL
-# ifdef ACL_WINDOWS
-//#  define STDCALL __stdcall
-#  define STDCALL
-# else
-#  define STDCALL
-# endif // ACL_WINDOWS
-#endif // STDCALL
+#  ifndef STDCALL
+#   define STDCALL
+#  endif // STDCALL
 
  typedef char* (STDCALL *sqlite3_libversion_fn)(void);
  typedef int   (STDCALL *sqlite3_open_fn)(const char*, sqlite3**);
@@ -151,18 +146,18 @@
 	logger("%s loaded", path);
 	atexit(__sqlite_dll_unload);
  }
-#else
-# define __sqlite3_libversion sqlite3_libversion
-# define __sqlite3_open sqlite3_open
-# define __sqlite3_close sqlite3_close
-# define __sqlite3_get_table sqlite3_get_table
-# define __sqlite3_free_table sqlite3_free_table
-# define __sqlite3_busy_handler sqlite3_busy_handler
-# define __sqlite3_errmsg sqlite3_errmsg
-# define __sqlite3_errcode sqlite3_errcode
-# define __sqlite3_changes sqlite3_changes
-# define __sqlite3_total_changes sqlite3_total_changes
-#endif
+# else
+#  define __sqlite3_libversion sqlite3_libversion
+#  define __sqlite3_open sqlite3_open
+#  define __sqlite3_close sqlite3_close
+#  define __sqlite3_get_table sqlite3_get_table
+#  define __sqlite3_free_table sqlite3_free_table
+#  define __sqlite3_busy_handler sqlite3_busy_handler
+#  define __sqlite3_errmsg sqlite3_errmsg
+#  define __sqlite3_errcode sqlite3_errcode
+#  define __sqlite3_changes sqlite3_changes
+#  define __sqlite3_total_changes sqlite3_total_changes
+# endif // HAS_SQLITE && !HAS_SQLITE_DLL
 
 namespace acl
 {
@@ -173,7 +168,11 @@ namespace acl
 static void sqlite_rows_free(void* ctx)
 {
 	char** results = (char**) ctx;
+#ifdef HAS_SQLITE_DLL
 	if (__sqlite_dll && results)
+#else
+	if (results)
+#endif
 		__sqlite3_free_table(results);
 }
 
@@ -220,7 +219,7 @@ db_sqlite::db_sqlite(const char* dbfile, const char* charset /* ="utf-8" */)
 		conv_ = NULL;
 
 	acl_assert(dbfile && *dbfile);
-#if defined(ACL_CPP_DLL) || defined(HAS_SQLITE_DLL)
+#ifdef HAS_SQLITE_DLL
 	acl_pthread_once(&__sqlite_once, __sqlite_dll_load);
 #endif
 }
@@ -577,4 +576,4 @@ const char* db_sqlite::get_error() const { return "unknown"; }
 
 }  // namespace acl
 
-#endif  // HAS_SQLITE
+#endif  // !HAS_SQLITE && !HAS_SQLITE_DLL

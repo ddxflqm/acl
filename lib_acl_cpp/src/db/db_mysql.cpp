@@ -14,7 +14,7 @@
 
 #if defined(HAS_MYSQL) || defined(HAS_MYSQL_DLL)
 
-# if defined(ACL_CPP_DLL) || defined(HAS_MYSQL_DLL)
+# ifdef HAS_MYSQL_DLL
 
 #  ifndef STDCALL
 #   ifdef ACL_WINDOWS
@@ -311,7 +311,11 @@ namespace acl
 static void mysql_rows_free(void* ctx)
 {
 	MYSQL_RES* my_res = (MYSQL_RES*) ctx;
+#ifdef HAS_MYSQL_DLL
 	if (my_res && __mysql_dll)
+#else
+	if (my_res)
+#endif
 		__mysql_free_result(my_res);
 }
 
@@ -381,7 +385,7 @@ void db_mysql::sane_mysql_init(const char* dbaddr, const char* dbname,
 	conn_timeout_ = conn_timeout;
 	rw_timeout_ = rw_timeout;
 
-#if defined(ACL_CPP_DLL) || defined(HAS_MYSQL_DLL)
+#ifdef HAS_MYSQL_DLL
 	acl_pthread_once(&__mysql_once, __mysql_dll_load);
 #endif
 	conn_ = NULL;
@@ -413,7 +417,11 @@ db_mysql::~db_mysql()
 		acl_myfree(dbuser_);
 	if (dbpass_)
 		acl_myfree(dbpass_);
+#ifdef HAS_MYSQL_DLL
 	if (conn_ && __mysql_dll)
+#else
+	if (conn_)
+#endif
 		__mysql_close(conn_);
 }
 
@@ -456,7 +464,7 @@ static void thread_free_dummy(void* ctx)
 	if ((unsigned long) acl_pthread_self() != acl_main_thread_self())
 		acl_myfree(ctx);
 
-#if defined(ACL_CPP_DLL) || defined(HAS_MYSQL_DLL)
+#ifdef HAS_MYSQL_DLL
 	if (__mysql_thread_end)
 		__mysql_thread_end();
 #endif
@@ -471,7 +479,7 @@ static void main_free_dummy(void)
 		__main_dummy = NULL;
 	}
 
-#if defined(ACL_CPP_DLL) || defined(HAS_MYSQL_DLL)
+#ifdef HAS_MYSQL_DLL
 	if (__mysql_thread_end)
 		__mysql_thread_end();
 #endif
@@ -645,7 +653,11 @@ bool db_mysql::is_opened() const
 
 bool db_mysql::close()
 {
+#ifdef HAS_MYSQL_DLL
 	if (conn_ && __mysql_dll)
+#else
+	if (conn_)
+#endif
 	{
 		__mysql_close(conn_);
 		conn_ = NULL;
@@ -903,4 +915,4 @@ const char* db_mysql::get_error() const
 
 } // namespace acl
 
-#endif  // HAS_MYSQL
+#endif  // !HAS_MYSQL && !HAS_MYSQL_DLL
