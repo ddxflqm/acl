@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.0)
 project(acl)
 message(${CMAKE_SYSTEM_NAME})
 
@@ -9,8 +9,9 @@ if (${CMAKE_BINARY_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
 	message(FATAL_ERROR "Please into another dir to build!")
 endif()
 
-string(TOUPPER ${CMAKE_SYSTEM_NAME} CMAKE_SYSTEM_NAME)
-if(CMAKE_SYSTEM_NAME MATCHES "DARWIN")
+#The below line was built error on Android Studio
+#string(TOUPPER ${CMAKE_SYSTEM_NAME} OS_NAME)
+if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
 	set(CMAKE_MACOSX_RPATH build)
 endif()
 
