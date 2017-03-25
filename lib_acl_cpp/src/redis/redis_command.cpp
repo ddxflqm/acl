@@ -342,7 +342,7 @@ redis_client* redis_command::redirect(redis_client_cluster* cluster,
 		if (conn != NULL)
 			return conn;
 
-#ifdef SET_ALIVE
+#ifdef AUTO_SET_ALIVE
 		conns->set_alive(false);
 #endif
 		conns = (redis_client_pool*) cluster->peek();
@@ -387,7 +387,7 @@ redis_client* redis_command::peek_conn(redis_client_cluster* cluster, int slot)
 		// 取消哈希槽的地址映射关系
 		cluster->clear_slot(slot);
 
-#ifdef SET_ALIVE
+#ifdef AUTO_SET_ALIVE
 		// 将连接池对象置为不可用状态
 		conns->set_alive(false);
 #endif
@@ -443,7 +443,7 @@ const redis_result* redis_command::run(redis_client_cluster* cluster,
 				return NULL;
 			}
 
-#ifdef SET_ALIVE
+#ifdef AUTO_SET_ALIVE
 			// 将连接池对象置为不可用状态
 			pool->set_alive(false);
 #endif

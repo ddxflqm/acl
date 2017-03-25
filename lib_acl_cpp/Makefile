@@ -179,8 +179,8 @@ OBJS_DEF = $(patsubst %.cpp, $(DEF_PATH_DST)/%.inc, $(notdir $(wildcard src/*.cp
 VERSION = 1.1.1.2
 DATE_NOW = 20`date +%y`.`date +%m`.`date +%d`
 
-STATIC_LIBNAME = lib_acl_cpp.a
-SHARED_LIBNAME = lib_acl_cpp.so
+STATIC_LIBNAME = libacl_cpp.a
+SHARED_LIBNAME = libacl_cpp.so
 PCH = src/acl_stdafx.hpp.gch
 
 lib: static
@@ -207,6 +207,8 @@ static: depends $(OBJS_DST)
 	@echo 'creating $(LIB_PATH_DST)/$(STATIC_LIBNAME)'
 	@$(AR) $(ARFL) $(LIB_PATH_DST)/$(STATIC_LIBNAME) $(OBJS_DST)
 	@$(RANLIB) $(LIB_PATH_DST)/$(STATIC_LIBNAME)
+	@(cd $(LIB_PATH_DST); rm -f lib_acl_cpp.a; \
+		ln -s $(STATIC_LIBNAME) lib_acl_cpp.a)
 	@echo 'create $(LIB_PATH_DST)/$(STATIC_LIBNAME) ok!'
 
 shared: depends pch $(OBJS_DST)
@@ -335,7 +337,9 @@ $(DEF_PATH_DST)/%.inc: ./src/serialize/%.cpp
 	$(CREATE_DEF)
 
 clean:
+	rm -f $(LIB_PATH_DST)/libacl_cpp.a
 	rm -f $(LIB_PATH_DST)/lib_acl_cpp.a
+	rm -f $(LIB_PATH_DST)/libacl_cpp.so
 	rm -f $(LIB_PATH_DST)/lib_acl_cpp.so
 	rm -f $(OBJS_DST)
 	rm -f $(OBJS_DEF)

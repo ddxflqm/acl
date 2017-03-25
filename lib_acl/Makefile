@@ -10,7 +10,7 @@ RANLIB  = ${ENV_RANLIB}
 FLAGS   = ${ENV_FLAGS}
 
 # default lib name
-LIB_NAME  = lib_acl.a
+LIB_NAME  = libacl.a
 
 #-fno-strict-aliasing \
 #CFLAGS = -c -g -W -Wall -Wcast-qual -Wcast-align
@@ -279,8 +279,10 @@ OBJS_DEF     = $(INIT_DEF) $(PRIV_DEF) $(STDLIB_DEF) \
 ###########################################################
 .PHONY = all static shared acl_master clean clean_lib clean_master rebuild
 
-STATIC_LIBNAME = lib_acl.a
-SHARED_LIBNAME = lib_acl.so
+STATIC_OLD_LIBNAME = lib_acl.a
+SHARED_OLD_LIBNAME = lib_acl.so
+STATIC_LIBNAME = libacl.a
+SHARED_LIBNAME = libacl.so
 
 all: static shared acl_master
 
@@ -307,6 +309,8 @@ static: depends $(OBJS_DST)
 	@echo 'creating $(LIB_PATH_DST)/$(STATIC_LIBNAME)'
 	@$(AR) $(ARFL) $(LIB_PATH_DST)/$(STATIC_LIBNAME) $(OBJS_DST)
 	@$(RANLIB) $(LIB_PATH_DST)/$(STATIC_LIBNAME)
+	@(cd $(LIB_PATH_DST); rm -f $(STATIC_OLD_LIBNAME); \
+		ln -s $(STATIC_LIBNAME) $(STATIC_OLD_LIBNAME))
 	@echo 'build $(LIB_PATH_DST)/$(STATIC_LIBNAME) ok!'
 
 #shared_ldflags = -lmysqlclient -lrt -lpthread -ldl
@@ -527,8 +531,9 @@ $(DEF_PATH_DST)/%.inc: $(SRC_PATH_SRC)/unit_test/%.c
 #	$(CREATE_DEF)
 
 clean_lib:
-	rm -f $(LIB_PATH_DST)/$(LIB_NAME)
-	rm -f $(LIB_PATH_DST)/lib_acl.so
+	rm -f $(LIB_PATH_DST)/$(STATIC_LIBNAME)
+	rm -f $(LIB_PATH_DST)/$(STATIC_OLD_LIBNAME)
+	rm -f $(LIB_PATH_DST)/libacl.so
 	rm -f $(OBJS_DST)
 	rm -f $(OBJS_DEF)
 	rm -f $(PCH)

@@ -138,8 +138,8 @@ OBJ = $(patsubst %.c, $(OBJ_PATH_DST)/%.o, $(notdir $(SRC)))
 LIB_ACL_PATH = ../../lib_acl
 CFLAGS += -I $(LIB_ACL_PATH)/include -I$(LIB_ACL_PATH)/src/master
 
-STATIC_LIBNAME = lib_fiber.a
-SHARED_LIBNAME = lib_fiber.so
+STATIC_LIBNAME = libfiber.a
+SHARED_LIBNAME = libfiber.so
 
 ###########################################################
 

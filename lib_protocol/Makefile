@@ -144,8 +144,8 @@ OBJS_DST = $(BASE_OBJ) $(HTTP_OBJ) $(ICMP_OBJ) $(SMTP_OBJ)
 LIB_ACL_PATH = ../lib_acl
 CFLAGS += -I $(LIB_ACL_PATH)/include
 
-STATIC_LIBNAME = lib_protocol.a
-SHARED_LIBNAME = lib_protocol.so
+STATIC_LIBNAME = libprotocol.a
+SHARED_LIBNAME = libprotocol.so
 
 ###########################################################
 
@@ -160,6 +160,8 @@ static: $(OBJS_DST)
 	@echo 'creating $(LIB_PATH_DST)/$(STATIC_LIBNAME)'
 	$(AR) $(ARFL) $(LIB_PATH_DST)/$(STATIC_LIBNAME) $(OBJS_DST)
 	$(RANLIB) $(LIB_PATH_DST)/$(STATIC_LIBNAME)
+	@(cd $(LIB_PATH_DST); rm -f lib_protocol.a; \
+		ln -s $(STATIC_LIBNAME) lib_protocol.a)
 	@echo 'build $(LIB_PATH_DST)/$(STATIC_LIBNAME) ok!'
 
 shared_ldflags = -l_acl -lrt -lpthread
@@ -206,12 +208,13 @@ $(OBJ_PATH_DST)/%.o: $(SRC_PATH_SRC)/smtp/%.c
 	$(COMPILE) $< -o $@
 
 clean:
+	rm -f $(LIB_PATH_DST)/libprotocol.a
 	rm -f $(LIB_PATH_DST)/lib_protocol.a
-	rm -f $(LIB_PATH_DST)/lib_protocol.so
+	rm -f $(LIB_PATH_DST)/libprotocol.so
 	rm -f $(OBJS_DST)
 
 all_lib: $(OBJS_DST)
 	@(cd debug; ar x ../../lib_acl/lib/lib_acl.a)
-	$(AR) $(ARFL) $(LIB_PATH_DST)/lib_protocol.a debug/*.o
-	$(RANLIB) $(LIB_PATH_DST)/lib_protocol.a
+	$(AR) $(ARFL) $(LIB_PATH_DST)/libprotocol.a debug/*.o
+	$(RANLIB) $(LIB_PATH_DST)/libprotocol.a
 	@(cd debug; rm -f `ar -t ../../lib_acl/lib/lib_acl.a`)
