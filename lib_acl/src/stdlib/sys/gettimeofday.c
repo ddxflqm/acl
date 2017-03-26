@@ -29,8 +29,12 @@
 # endif
 
 #ifndef ACL_DLL
+#ifndef _daylight
 int _daylight;
+#endif
+#ifndef _timezone
 long _timezone;
+#endif
 #endif
 
 static void dummy(void *ptr acl_unused)
