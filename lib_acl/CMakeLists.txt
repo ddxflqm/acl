@@ -123,6 +123,10 @@ else()
 	add_library(acl_static STATIC ${lib_src})
 	SET_TARGET_PROPERTIES(acl_static PROPERTIES OUTPUT_NAME "acl")
 
+	if (${WIN_OS})
+		set(CMAKE_SHARED_LINKER_FLAGS "/DYNAMICBASE ws2_32.lib IPHlpApi.lib")
+	endif()
+
 	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${lib_output_path})
 endif()
 

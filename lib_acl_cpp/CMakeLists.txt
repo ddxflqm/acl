@@ -117,6 +117,7 @@ elseif (${WIN_OS})
 		"-DACL_PREPARE_COMPILE"
 		"-DHAS_ZLIB_DLL"
 		"-DUSE_WIN_ICONV")
+	aux_source_directory(${src}/stdlib/internal lib_src)
 endif()
 
 if (CMAKE_SYSTEM_NAME MATCHES "Android")
