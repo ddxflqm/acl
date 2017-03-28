@@ -14,6 +14,12 @@ extern "C" {
 # else
 #  define ICMP_API __declspec(dllimport)
 # endif
+#elif defined(_WINDLL)
+# ifdef protocol_EXPORTS
+#  define ICMP_API __declspec(dllexport)
+# else
+#  define ICMP_API __declspec(dllimport)
+# endif
 #else
 #  define ICMP_API
 #endif

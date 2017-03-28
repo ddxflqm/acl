@@ -14,6 +14,12 @@ extern "C" {
 # else
 #  define HTTP_API __declspec(dllimport)
 # endif
+#elif defined(_WINDLL)
+# ifdef protocol_EXPORTS
+#  define HTTP_API __declspec(dllexport)
+# else
+#  define HTTP_API __declspec(dllimport)
+# endif
 #else
 #  define HTTP_API
 #endif

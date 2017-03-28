@@ -7,11 +7,18 @@
 #  else
 #   define ACL_CPP_API __declspec(dllimport)
 #  endif
+#elif defined(_WINDLL)
+# ifdef acl_cpp_EXPORTS
+#  define ACL_CPP_API __declspec(dllexport)
 # else
+#  define ACL_CPP_API __declspec(dllimport)
+# endif
+#else
 #  define ACL_CPP_API
 # endif
 #endif
 
+/*
 #ifndef ACL_CPP_TPL
 # ifdef ACL_CPP_DLL
 #  ifdef ACL_CPP_EXPORTS
@@ -23,6 +30,7 @@
 #  define ACL_CPP_TPL
 # endif
 #endif
+*/
 
 #include <stdlib.h>
 #include <stdio.h>

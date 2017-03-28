@@ -96,6 +96,8 @@ else()
 
 	if (${UNIX_OS})
 		set(CMAKE_SHARED_LINKER_FLAGS "-shared -Wl,-rpath,. -L${lib_output_path} -lacl")
+	elseif (${WIN_OS})
+		set(CMAKE_SHARED_LINKER_FLAGS "/DYNAMICBASE ws2_32.lib")
 	endif()
 
 	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${lib_output_path})

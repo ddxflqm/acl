@@ -13,6 +13,12 @@ extern "C" {
 # else
 #  define SMTP_API __declspec(dllimport)
 # endif
+#elif defined(_WINDLL)
+# ifdef protocol_EXPORTS
+#  define SMTP_API __declspec(dllexport)
+# else
+#  define SMTP_API __declspec(dllimport)
+# endif
 #else
 #  define SMTP_API
 #endif

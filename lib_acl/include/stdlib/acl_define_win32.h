@@ -46,6 +46,12 @@
 #  else
 #   define ACL_API __declspec(dllimport)
 #  endif
+# elif defined(_WINDLL)
+#  ifdef acl_EXPORTS
+#   define ACL_API __declspec(dllexport)
+#  else
+#   define ACL_API __declspec(dllimport)
+#  endif
 # else
 #  define ACL_API
 # endif
