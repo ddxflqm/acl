@@ -1,3 +1,7 @@
+44) 2017.3.28
+44.1) feature: fiber.c 中 fiber_alloc 函数当复用缓存的协程内存对象时，应调用
+free->malloc，而不是调用 realloc，这样一方面可以避免使用 tcmalloc 时的 valgrind
+的内存警告，另一方面，可以有效地使用虚存
 
 43) 2017.3.23
 43.1) feature: fiber.c 中 acl_fiber_signal/acl_fiber_kill 中，需要设置 errno

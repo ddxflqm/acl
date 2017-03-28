@@ -552,10 +552,17 @@ static ACL_FIBER *fiber_alloc(void (*fn)(ACL_FIBER *, void *),
 	head = acl_ring_pop_head(&__thread_fiber->dead);
 	if (head == NULL) {
 		fiber = (ACL_FIBER *) acl_mycalloc(1, sizeof(ACL_FIBER));
+		/* no using calloc just avoiding using real memory */
 		fiber->buff = (char *) acl_mymalloc(size);
-	} else if ((fiber = APPL(head, ACL_FIBER, me))->size < size)
-		fiber->buff = (char *) acl_myrealloc(fiber->buff, size);
-	else
+	} else if ((fiber = APPL(head, ACL_FIBER, me))->size < size) {
+		/* if using realloc, real memory will be used, when we first
+		 * free and malloc again, then we'll just use virtual memory,
+		 * because memcpy will be called in realloc.
+		 */
+		/* fiber->buff = (char *) acl_myrealloc(fiber->buff, size); */
+		acl_myfree(fiber->buff);
+		fiber->buff = (char *) acl_mymalloc(size);
+	} else
 		size = fiber->size;
 
 	fiber->errnum = 0;

@@ -273,6 +273,14 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 		return __sys_connect(sockfd, addr, addrlen);
 
 	me = acl_fiber_running();
+
+	if (acl_fiber_killed(me)) {
+		acl_msg_info("%s(%d), %s: fiber-%u was killed, %s",
+			__FILE__, __LINE__, __FUNCTION__,
+			acl_fiber_id(me), acl_last_serror());
+		return -1;
+	}
+
 	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
 
 	int ret = __sys_connect(sockfd, addr, addrlen);
