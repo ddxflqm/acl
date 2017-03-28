@@ -431,8 +431,19 @@ void acl_fiber_signal(ACL_FIBER *fiber, int signum)
 
 	acl_ring_detach(&curr->me);
 	acl_ring_detach(&fiber->me);
+
+#if 0
 	acl_fiber_ready(fiber);
 	acl_fiber_yield();
+#else
+	curr->status = FIBER_STATUS_READY;
+	acl_ring_append(&__thread_fiber->ready, &curr->me);
+
+	fiber->status = FIBER_STATUS_READY;
+	acl_ring_append(&__thread_fiber->ready, &fiber->me);
+
+	acl_fiber_switch();
+#endif
 }
 
 int acl_fiber_signum(ACL_FIBER *fiber)
