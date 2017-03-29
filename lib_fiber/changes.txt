@@ -1,3 +1,9 @@
+45) 2017.3.29
+45.1) bugfix: 当一个协程处于 poll wait 状态时被另一个协程 kill 掉时，会造成内存
+非法访问，修复方式是在 event.c 中对 poll list 的遍历访问采用 pop 方式，同时在
+hook_net.c 中的 poll 函数中当被 kill 时自动清理自身，与本 BUG 相关的文件有
+fiber.c, hook_net.c, event.c，其中 hook_net.c 及 event.c 中的修复是最关键的
+
 44) 2017.3.28
 44.1) feature: fiber.c 中 fiber_alloc 函数当复用缓存的协程内存对象时，应调用
 free->malloc，而不是调用 realloc，这样一方面可以避免使用 tcmalloc 时的 valgrind
