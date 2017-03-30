@@ -436,8 +436,12 @@ ACL_VSTRING *acl_json_build(ACL_JSON *json, ACL_VSTRING *buf)
 	acl_foreach(iter, json) {
 		node = (ACL_JSON_NODE*) iter.data;
 		prev = acl_json_node_prev(node);
-		if (prev != NULL && ((json->flag & ACL_JSON_FLAG_ADD_SPACE)))
-			acl_vstring_strcat(buf, ", ");
+		if (prev != NULL) {
+			if ((json->flag & ACL_JSON_FLAG_ADD_SPACE))
+				acl_vstring_strcat(buf, ", ");
+			else
+				acl_vstring_strcat(buf, ",");
+		}
 
 		/* 只有当标签的对应值为 JSON 对象或数组对象时 tag_node 非空 */
 		if (node->tag_node != NULL) {
