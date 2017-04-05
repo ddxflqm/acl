@@ -89,7 +89,7 @@ void *acl_mbox_read(ACL_MBOX *mbox, int timeout, int *success)
 
 	if (msg != NULL) {
 		if (success)
-			*success = 0;
+			*success = 1;
 		return msg;
 	}
 
@@ -100,12 +100,12 @@ void *acl_mbox_read(ACL_MBOX *mbox, int timeout, int *success)
 	if (ret == ACL_VSTREAM_EOF) {
 		if (mbox->in->errnum == ACL_ETIMEDOUT) {
 			if (success)
-				*success = 0;
+				*success = 1;
 			return NULL;
 		}
 
 		if (success)
-			*success = -1;
+			*success = 0;
 		return NULL;
 	}
 
@@ -113,12 +113,12 @@ void *acl_mbox_read(ACL_MBOX *mbox, int timeout, int *success)
 		acl_msg_error("%s(%d), %s: read invalid: %c",
 			__FILE__, __LINE__, __FUNCTION__, kbuf[0]);
 		if (success)
-			*success = -1;
+			*success = 0;
 		return NULL;
 	}
 
 	if (success)
-		*success = 0;
+		*success = 1;
 	return acl_ypipe_read(mbox->ypipe);
 }
 

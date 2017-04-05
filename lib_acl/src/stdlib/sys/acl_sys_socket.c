@@ -99,6 +99,11 @@ int acl_socket_close(ACL_SOCKET fd)
 	return closesocket(fd);
 }
 
+int acl_socket_shutdown(ACL_SOCKET fd, int how)
+{
+	return shutdown(fd, how);
+}
+
 int acl_socket_read(ACL_SOCKET fd, void *buf, size_t size,
 	int timeout, ACL_VSTREAM *fp, void *arg acl_unused)
 {
