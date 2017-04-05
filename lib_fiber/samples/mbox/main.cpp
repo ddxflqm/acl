@@ -51,7 +51,7 @@ private:
 class myfiber : public acl::fiber
 {
 public:
-	myfiber(void) {}
+	myfiber(acl::fiber_sem& sem) : sem_(sem) {}
 	~myfiber(void) {}
 
 protected:
@@ -68,13 +68,13 @@ protected:
 		assert(o == &mo);
 		printf("fiber-%u: result = %d\r\n", get_id(), o->get_result());
 
+		sem_.post();
 		delete this;
-
-		acl::fiber::schedule_stop();
 	}
 
 private:
 	acl::mbox mb_;
+	acl::fiber_sem& sem_;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -82,19 +82,30 @@ private:
 class sleepy_fiber : public acl::fiber
 {
 public:
-	sleepy_fiber(void) {}
+	sleepy_fiber(acl::fiber_sem& sem) : sem_(sem) {}
 	~sleepy_fiber(void) {}
 
 protected:
 	void run(void)
 	{
+		time_t begin = time(NULL);
 		int n = 0;
-		while (true)
+		while (n++ < 6)
 		{
-			printf("fiber-%u sleep %d second\r\n", get_id(), ++n);
 			sleep(1);
+			printf("fiber-%u sleep %d second\r\n", get_id(), n);
 		}
+
+		time_t end = time(NULL);
+
+		printf("fiber-%u wait sem, spent: %ld\r\n",
+			get_id(), (long) (end - begin));
+		sem_.wait();
+		acl::fiber::schedule_stop();
 	}
+
+private:
+	acl::fiber_sem& sem_;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -123,10 +134,12 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	acl::fiber* f = new myfiber();
+	acl::fiber_sem sem(0);
+
+	acl::fiber* f = new myfiber(sem);
 	f->start();
 
-	sleepy_fiber fb;
+	sleepy_fiber fb(sem);
 	fb.start();
 
 	acl::fiber::schedule();

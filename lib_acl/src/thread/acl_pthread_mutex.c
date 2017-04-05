@@ -13,7 +13,6 @@
 #include "stdlib/acl_mymalloc.h"
 #include "stdlib/acl_msg.h"
 #include "thread/acl_pthread.h"
-
 #endif
 
 #ifdef	ACL_WINDOWS
@@ -146,6 +145,13 @@ acl_pthread_mutex_t *acl_pthread_mutex_create(void)
 	}
 
 	return mutex;
+}
+
+int acl_pthread_mutex_destroy(acl_pthread_mutex_t *mutex)
+{
+	int ret = pthread_mutex_destroy(mutex);
+	acl_myfree(mutex);
+	return ret;
 }
 
 #endif /* ACL_WINDOWS/ACL_UNIX */

@@ -1,5 +1,6 @@
 #pragma once
 #include "acl_cpp/acl_cpp_define.hpp"
+#include "acl_cpp/stdlib/noncopyable.hpp"
 
 struct ACL_MBOX;
 
@@ -13,7 +14,7 @@ public:
 	virtual ~mobj(void) {}
 };
 
-class ACL_CPP_API mbox
+class ACL_CPP_API mbox : public noncopyable
 {
 public:
 	mbox(void);
