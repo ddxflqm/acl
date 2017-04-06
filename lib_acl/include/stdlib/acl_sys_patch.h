@@ -80,16 +80,6 @@ ACL_API int acl_socket_close(ACL_SOCKET fd);
 # ifndef SHUT_RDWR
 #  define SHUT_RDWR SD_BOTH
 # endif
-#else
-# ifndef SHUT_RD
-#  define SHUT_RD 0x00
-# endif
-# ifndef SHUT_WR
-#  define SHUT_WR 0x01
-# endif
-# ifndef SHUT_RDWR
-#  define SHUT_RDWR 0x02
-# endif
 #endif
 ACL_API int acl_socket_shutdown(ACL_SOCKET fd, int how);
 
