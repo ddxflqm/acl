@@ -122,18 +122,32 @@ ACL_SOCKET acl_inet_connect_ex(const char *addr, int b_mode,
 
 /* inet_connect_one - try to connect to one address */
 
+#if defined(AF_INET6) && defined(ACL_IPV6)
+# define ACL_AF_INET		AF_INET6
+# define ACL_SOCKADDR_IN	sockaddr_in6
+# define acl_sin_family		sin6_family
+# define acl_sin_addr		sin6_addr
+# define acl_sin_port		sin6_port
+#else
+# define ACL_AF_INET		AF_INET
+# define ACL_SOCKADDR_IN	sockaddr_in
+# define acl_sin_family		sin_family
+# define acl_sin_addr		sin_addr
+# define acl_sin_port		sin_port
+#endif
+
 static ACL_SOCKET inet_connect_one(const char *ip, int port,
 	const char *local_ip, int b_mode, int timeout)
 {
 	const char *myname = "inet_connect_one";
 	ACL_SOCKET  sock;
-	struct sockaddr_in saddr;
+	struct ACL_SOCKADDR_IN saddr;
 
 	/*
 	 * Create a client socket.
 	 */
 	/* sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP); */
-	sock = socket(AF_INET, SOCK_STREAM, 0);
+	sock = socket(ACL_AF_INET, SOCK_STREAM, 0);
 	if (sock == ACL_SOCKET_INVALID) {
 		acl_msg_error("%s(%d): create socket error: %s",
 			myname, __LINE__, acl_last_serror());
@@ -145,8 +159,14 @@ static ACL_SOCKET inet_connect_one(const char *ip, int port,
 
 	if (local_ip != NULL && *local_ip != 0) {
 		memset(&saddr, 0, sizeof(saddr));
-		saddr.sin_family = AF_INET;
-		saddr.sin_addr.s_addr = inet_addr(local_ip);
+		saddr.acl_sin_family = ACL_AF_INET;
+		if (inet_pton(ACL_AF_INET, local_ip, &saddr.acl_sin_addr) <= 0) {
+			acl_msg_error("%s(%d): inet_pton error: %s, ip: %s",
+				myname, __LINE__, acl_last_serror(), ip);
+			return ACL_SOCKET_INVALID;
+		}
+		//saddr.sin_addr.s_addr = inet_addr(local_ip);
+
 		if (bind(sock, (struct sockaddr *) &saddr,
 			sizeof(struct sockaddr)) < 0)
 		{
@@ -159,9 +179,14 @@ static ACL_SOCKET inet_connect_one(const char *ip, int port,
 	}
 
 	memset(&saddr, 0, sizeof(saddr));
-	saddr.sin_family = AF_INET;
-	saddr.sin_port = htons((short) port);
-	saddr.sin_addr.s_addr = inet_addr(ip);
+
+	saddr.acl_sin_family = ACL_AF_INET;
+	saddr.acl_sin_port = htons((short) port);
+	if (inet_pton(ACL_AF_INET, ip, &saddr.acl_sin_addr) <= 0) {
+		acl_msg_error("%s(%d): inet_pton error: %s, ip: %s",
+			myname, __LINE__, acl_last_serror(), ip);
+		return ACL_SOCKET_INVALID;
+	}
 
 	/*
 	 * Timed connect.
@@ -220,5 +245,6 @@ static ACL_SOCKET inet_connect_one(const char *ip, int port,
 		acl_socket_close(sock);
 		return ACL_SOCKET_INVALID;
 	}
+
 	return sock;
 }

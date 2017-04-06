@@ -35,7 +35,11 @@ int acl_sane_connect(ACL_SOCKET sock, const struct sockaddr * sa, socklen_t len)
 	 * the Postfix watchdog timer.
 	 */
 
+#ifdef AF_INET6
+	if (sa->sa_family == AF_INET || sa->sa_family == AF_INET6) {
+#else
 	if (sa->sa_family == AF_INET) {
+#endif
 		/* default set to nodelay --- zsx, 2008.9.4*/
 		acl_tcp_nodelay(sock, 1);
 #if defined(BROKEN_READ_SELECT_ON_TCP_SOCKET) && defined(SO_KEEPALIVE)
