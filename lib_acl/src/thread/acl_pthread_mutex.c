@@ -42,9 +42,9 @@ int acl_pthread_mutex_init(acl_pthread_mutex_t *mutex,
 	return 0;
 }
 
-acl_pthread_mutex_t *acl_pthread_mutex_create(void)
+acl_pthread_mutex_t *acl_thread_mutex_create(void)
 {
-	const char *myname = "acl_pthread_mutex_create";
+	const char *myname = "acl_thread_mutex_create";
 	acl_pthread_mutex_t *mutex;
 
 	mutex = acl_mycalloc(1, sizeof(acl_pthread_mutex_t));
@@ -125,9 +125,9 @@ int acl_pthread_mutex_unlock(acl_pthread_mutex_t *mutex)
 
 #include <pthread.h>
 
-acl_pthread_mutex_t *acl_pthread_mutex_create(void)
+acl_pthread_mutex_t *acl_thread_mutex_create(void)
 {
-	const char *myname = "acl_pthread_mutex_create";
+	const char *myname = "acl_thread_mutex_create";
 	acl_pthread_mutex_t *mutex;
 	int   status;
 
@@ -149,9 +149,7 @@ acl_pthread_mutex_t *acl_pthread_mutex_create(void)
 
 int acl_pthread_mutex_destroy(acl_pthread_mutex_t *mutex)
 {
-	int ret = pthread_mutex_destroy(mutex);
-	acl_myfree(mutex);
-	return ret;
+	return pthread_mutex_destroy(mutex);
 }
 
 #endif /* ACL_WINDOWS/ACL_UNIX */
