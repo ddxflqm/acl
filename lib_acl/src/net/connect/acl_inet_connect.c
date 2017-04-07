@@ -191,7 +191,7 @@ ACL_SOCKET acl_inet_connect_ex(const char *addr, int blocking,
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family   = PF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
-#ifdef ACL_MACOS
+#ifdef ACL_MACOSX
 	hints.ai_flags    = AI_DEFAULT;
 #else
 	hints.ai_flags    = AI_V4MAPPED | AI_ADDRCONFIG;
