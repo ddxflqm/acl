@@ -134,9 +134,13 @@ ACL_SOCKET acl_inet_listen(const char *addr, int backlog, int blocking)
 	}
 
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family  = PF_UNSPEC;
+	hints.ai_family   = PF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
+#ifdef ACL_MACOS
 	hints.ai_flags    = AI_DEFAULT;
+#else
+	hints.ai_flags    = AI_V4MAPPED | AI_ADDRCONFIG;
+#endif
 
 	if ((err = getaddrinfo(host, port, &hints, &res0))) {
 		acl_msg_error("%s(%d), %s: getaddrinfo error %s, host=%s",
