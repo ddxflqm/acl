@@ -201,7 +201,7 @@ ACL_IFCONF *acl_get_ifaddrs()
 			continue;
 		if (strcmp(info->IpAddressList.IpAddress.String, "0.0.0.0") == 0)
 			continue;
-		if (acl_is_ip(info->IpAddressList.IpAddress.String) < 0)
+		if (!acl_is_ip(info->IpAddressList.IpAddress.String))
 			continue;
 
 		ifconf->addrs[j].name = acl_mystrdup(info->AdapterName);
@@ -274,7 +274,7 @@ ACL_IFCONF *acl_get_ifaddrs()
 			continue;
 		if (strcmp(info->IpAddressList.IpAddress.String, "0.0.0.0") == 0)
 			continue;
-		if (acl_is_ip(info->IpAddressList.IpAddress.String) < 0)
+		if (!acl_is_ip(info->IpAddressList.IpAddress.String))
 			continue;
 
 		ifconf->addrs[j].name = acl_mystrdup(info->AdapterName);
