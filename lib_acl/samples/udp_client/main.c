@@ -125,6 +125,7 @@ int main(int argc, char *argv[])
 	int   need_read = 0;
 
 	acl_lib_init();
+	acl_msg_stdout_enable(1);
 
 	snprintf(peer, sizeof(peer), "127.0.0.1:8888");
 	snprintf(local, sizeof(local), "127.0.0.1:0");

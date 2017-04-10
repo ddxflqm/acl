@@ -126,8 +126,8 @@ struct ACL_VSTREAM {
 	int   rw_timeout;               /**< read/write timeout */
 	char *addr_local;               /**< the local addr of the fp */
 	char *addr_peer;                /**< the peer addr of the fp */
-	struct sockaddr_in *sa_local;
-	struct sockaddr_in *sa_peer;
+	struct sockaddr_in *sa_local;   /**< xxx: not for IPV6 */
+	struct sockaddr_in *sa_peer;    /**< xxx: not for IPV6 */
 	size_t sa_local_size;
 	size_t sa_peer_size;
 	size_t sa_local_len;
