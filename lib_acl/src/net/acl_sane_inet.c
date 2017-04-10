@@ -23,6 +23,7 @@
 #include "stdlib/acl_sys_patch.h"
 #include "stdlib/acl_msg.h"
 #include "net/acl_sane_inet.h"
+#include "net/acl_valid_hostname.h"
 
 #endif
 

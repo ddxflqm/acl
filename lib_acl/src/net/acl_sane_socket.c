@@ -69,7 +69,11 @@ int acl_getpeername(ACL_SOCKET fd, char *buf, size_t size)
 		return 0;
 	} else
 #endif
+#ifdef AF_INET6
+	if (sa->sa_family != AF_INET && sa->sa_family != AF_INET6)
+#else
 	if (sa->sa_family != AF_INET)
+#endif
 		return -1;
 	if (acl_inet_ntoa(addr.sa.in.sin_addr, ip, sizeof(ip)) == NULL)
 		return -1;
@@ -100,7 +104,11 @@ int acl_getsockname(ACL_SOCKET fd, char *buf, size_t size)
 		return 0;
 	} else
 #endif
+#ifdef AF_INET6
+	if (sa->sa_family != AF_INET && sa->sa_family != AF_INET6)
+#else
 	if (sa->sa_family != AF_INET)
+#endif
 		return -1;
 	if (acl_inet_ntoa(addr.sa.in.sin_addr, ip, sizeof(ip)) == NULL)
 		return -1;
@@ -125,8 +133,12 @@ int acl_getsocktype(ACL_SOCKET fd)
 	if (sa->sa_family == AF_UNIX)
 		return AF_UNIX;
 #endif
+#ifdef AF_INET6
+	if (sa->sa_family == AF_INET && sa->sa_family == AF_INET6)
+#else
 	if (sa->sa_family == AF_INET)
-		return AF_INET;
+#endif
+		return sa->sa_family;
 	return -1;
 }
 

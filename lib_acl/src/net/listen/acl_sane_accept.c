@@ -89,7 +89,12 @@ ACL_SOCKET acl_sane_accept(ACL_SOCKET sock, struct sockaddr * sa, socklen_t *len
 	 * socket provided that the kernel's keepalive timer expires before
 	 * the Postfix watchdog timer.
 	 */
-	else if (sa != 0 && sa->sa_family == AF_INET) {
+#ifdef AF_INET6
+	else if (sa && (sa->sa_family == AF_INET || sa->sa_family == AF_INET6))
+#else
+	else if (sa && sa->sa_family == AF_INET)
+#endif
+	{
 		int     on = 1;
 
 		/* default set client to nodelay --- add by zsx, 2008.9.4 */
@@ -139,7 +144,11 @@ ACL_SOCKET acl_accept(ACL_SOCKET sock, char *buf, size_t size, int* sock_type)
 		if (sa->sa_family == AF_UNIX)
 			snprintf(buf, size, "%s", addr.sa.un.sun_path);
 #endif
+#ifdef AF_INET6
+		if (sa->sa_family != AF_INET && sa->sa_family != AF_INET6)
+#else
 		if (sa->sa_family != AF_INET)
+#endif
 			return fd;
 		if (acl_inet_ntoa(addr.sa.in.sin_addr, buf, size) == NULL)
 			return fd;

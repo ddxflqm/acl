@@ -2190,7 +2190,11 @@ ACL_VSTREAM *acl_vstream_fdopen(ACL_SOCKET fd, unsigned int oflags,
 
 	if ((ret = acl_check_socket(fd)) == 1) {
 		ret = acl_getsocktype(fd);
+#ifdef ACL_INET6
+		if (ret == AF_INET || ret == AF_INET6)
+#else
 		if (ret == AF_INET)
+#endif
 			fp->type |= ACL_VSTREAM_TYPE_LISTEN_INET;
 #ifndef ACL_WINDOWS
 		else if (ret == AF_UNIX)
@@ -2989,7 +2993,7 @@ static void set_sock_addr(struct sockaddr_in *saddr, const char *addr)
 	*ptr++ = 0;
 	port = atoi(ptr);
 
-	saddr->sin_family = AF_INET;
+	saddr->sin_family = AF_INET; /* xxx ? if AF_INET6 ? */
 	saddr->sin_port = htons(port);
 	saddr->sin_addr.s_addr = inet_addr(buf);
 }
