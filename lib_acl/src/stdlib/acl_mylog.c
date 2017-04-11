@@ -334,8 +334,8 @@ static int open_udp_log(const char *addr, const char *logpre)
 	ACL_LOG *log;
 	ACL_ITER iter;
 	ACL_SOCKET fd;
-	char  ip[128], *ptr, *port;
-	int   err;
+	char  ip[128], *ptr, *sport;
+	int   err, port;
 	struct addrinfo hints, *res0, *res;
 
 	snprintf(ip, sizeof(ip), "%s", addr);
@@ -346,9 +346,10 @@ static int open_udp_log(const char *addr, const char *logpre)
 	}
 
 	*ptr++ = 0;
-	port   = ptr;
-	if (atoi(port) <= 0) {
-		printf("invalid addr: %s, port: %s\r\n", addr, port);
+	sport  = ptr;
+	port   = atoi(sport);
+	if (sport <= 0) {
+		printf("invalid addr: %s, port: %d\r\n", addr, port);
 		abort();
 	}
 
@@ -377,7 +378,7 @@ static int open_udp_log(const char *addr, const char *logpre)
 	hints.ai_flags    = AI_V4MAPPED | AI_ADDRCONFIG;
 #endif
 
-	if ((err = getaddrinfo(ip, port, &hints, &res0))) {
+	if ((err = getaddrinfo(ip, sport, &hints, &res0))) {
 		printf("%s(%d), %s: getaddrinfo error %s, peer=%s",
 			__FILE__, __LINE__, myname, gai_strerror(err), ip);
 		abort();
