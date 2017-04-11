@@ -54,6 +54,7 @@ int acl_getpeername(ACL_SOCKET fd, char *buf, size_t size)
 		return -1;
 
 	memset(&addr, 0, sizeof(addr));
+
 	if (getpeername(fd, sa, &len) == -1)
 		return -1;
 
