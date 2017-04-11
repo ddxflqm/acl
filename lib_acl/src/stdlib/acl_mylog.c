@@ -348,7 +348,7 @@ static int open_udp_log(const char *addr, const char *logpre)
 	*ptr++ = 0;
 	sport  = ptr;
 	port   = atoi(sport);
-	if (sport <= 0) {
+	if (sport == NULL) {
 		printf("invalid addr: %s, port: %d\r\n", addr, port);
 		abort();
 	}
