@@ -386,18 +386,17 @@ static int open_udp_log(const char *addr, const char *logpre)
 
 	fd = ACL_SOCKET_INVALID;
 
-	for (res = res0; res != NULL ; res = res->ai_next) {
+	for (res = res0; res != NULL; res = res->ai_next) {
 		fd = socket(res->ai_family, res->ai_socktype,
 				res->ai_protocol);
 		if (fd != ACL_SOCKET_INVALID)
 			break;
 
 		printf("%s: socket %s", myname, acl_last_serror());
-		freeaddrinfo(res0);
 		abort();
 	}
 
-	if (fd == ACL_SOCKET_INVALID) {
+	if (fd == ACL_SOCKET_INVALID || res == NULL) {
 		printf("%s(%d), %s: invalid socket, addr: %s\r\n",
 			__FILE__, __LINE__, myname, addr);
 		abort();
