@@ -115,7 +115,6 @@ ACL_VSTREAM *acl_vstream_listen(const char *addr, int qlen)
 ACL_VSTREAM *acl_vstream_accept_ex(ACL_VSTREAM *listen_stream,
 	ACL_VSTREAM *client_stream, char *addr, int size)
 {
-	const char *myname = "acl_vstream_accept_ex";
 	ACL_SOCKET connfd = ACL_SOCKET_INVALID;
 	ACL_SOCKET servfd = ACL_VSTREAM_SOCK(listen_stream);
 	char buf[256];
@@ -123,65 +122,54 @@ ACL_VSTREAM *acl_vstream_accept_ex(ACL_VSTREAM *listen_stream,
 	if (listen_stream->read_ready)
 		listen_stream->read_ready = 0;
 
-	if ((listen_stream->type & ACL_VSTREAM_TYPE_LISTEN_INET)) {
-#ifdef ACL_WINDOWS
-		if (!(listen_stream->type & ACL_VSTREAM_TYPE_LISTEN_IOCP))
-			connfd = acl_inet_accept_ex(servfd, buf, sizeof(buf));
-		else if (listen_stream->iocp_sock == ACL_SOCKET_INVALID)
-			return NULL;
-		else {
-			int   ret;
+#if defined(ACL_UNIX)
+	connfd = acl_accept(servfd, buf, sizeof(buf), NULL);
+#elif defined(ACL_WINDOWS)
+	if (!(listen_stream->type & ACL_VSTREAM_TYPE_LISTEN_IOCP))
+		connfd = acl_accept(servfd, buf, sizeof(buf), NULL);
+	else if (listen_stream->iocp_sock == ACL_SOCKET_INVALID)
+		return NULL;
+	else {
+		int   ret;
 
-			connfd = listen_stream->iocp_sock;
-			listen_stream->iocp_sock = ACL_SOCKET_INVALID;
+		connfd = listen_stream->iocp_sock;
+		listen_stream->iocp_sock = ACL_SOCKET_INVALID;
 
-			/* iocp 方式下，需调用下面过程以允许调用
-			 * getpeername/getsockname
-			 */
-			ret = setsockopt(connfd, SOL_SOCKET,
-				SO_UPDATE_ACCEPT_CONTEXT,
-				(char *)&servfd, sizeof(servfd));
+		/* iocp 方式下，需调用下面过程以允许调用
+		 * getpeername/getsockname
+		 */
+		ret = setsockopt(connfd, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT,
+			(char *)&servfd, sizeof(servfd));
+		if (ret == SOCKET_ERROR)
 			buf[0] = 0;
-			if (ret != SOCKET_ERROR)
-				acl_getpeername(connfd, buf, sizeof(buf));
-		}
+		else
+			acl_getpeername(connfd, buf, sizeof(buf));
+	}
 #else
-		connfd = acl_inet_accept_ex(servfd, buf, sizeof(buf));
+#error "unknown os"
 #endif
-
-		if (connfd != ACL_SOCKET_INVALID && addr != NULL && size > 0)
-			ACL_SAFE_STRNCPY(addr, buf, size);
-#ifdef	ACL_UNIX
-	} else if ((listen_stream->type & ACL_VSTREAM_TYPE_LISTEN_UNIX)) {
-		connfd = acl_unix_accept(servfd);
-		if (acl_getpeername(connfd, buf, sizeof(buf)) < 0)
-			buf[0] = 0;
-		if (addr)
-			ACL_SAFE_STRNCPY(addr, buf, size);
-#endif
-	} else
-		acl_msg_fatal("%s(%d)->%s: invalid listen stream(%d)",
-			__FILE__, __LINE__, myname, listen_stream->flag);
 
 	if (connfd == ACL_SOCKET_INVALID)
 		return NULL;
 
-	if (client_stream != NULL) {
-		acl_vstream_reset(client_stream);
-		ACL_VSTREAM_SET_SOCK(client_stream, connfd);
-	} else {
+	if (addr != NULL && size > 0)
+		ACL_SAFE_STRNCPY(addr, buf, size);
+
+	if (client_stream == NULL) {
 		client_stream = acl_vstream_fdopen(connfd,
 			ACL_VSTREAM_FLAG_RW,
 			(int) listen_stream->read_buf_len,
 			listen_stream->rw_timeout,
 			ACL_VSTREAM_TYPE_SOCK);
+
 		/* 让 client_stream 的 context 成员继承 listen_stream 的
 		 * context 成员变量.
 		 */
 		client_stream->context = listen_stream->context;
+	} else {
+		acl_vstream_reset(client_stream);
+		ACL_VSTREAM_SET_SOCK(client_stream, connfd);
 	}
-	if (client_stream == NULL)
-		return NULL;
 
 	acl_vstream_set_peer(client_stream, buf);
 	return client_stream;
@@ -253,8 +241,14 @@ ACL_VSTREAM *acl_vstream_connect(const char *addr, int block_mode,
 static int udp_read(ACL_SOCKET fd, void *buf, size_t size,
 	int timeout acl_unused, ACL_VSTREAM *stream, void *arg acl_unused)
 {
-	struct sockaddr_in sa;
-	socklen_t sa_len = sizeof(struct sockaddr_in);
+	union {
+#ifdef AF_INET6
+		struct sockaddr_in6 in6;
+#endif
+		struct sockaddr_in in;
+		struct sockaddr sa;
+	} sa;
+	socklen_t sa_len = sizeof(sa);
 	int   ret;
 
 	if (stream->sa_peer_size == 0)
@@ -269,7 +263,7 @@ static int udp_read(ACL_SOCKET fd, void *buf, size_t size,
 			(struct sockaddr*) &sa, &sa_len);
 
 	if (ret > 0 && memcmp(stream->sa_peer, &sa, sizeof(sa)) != 0)
-		acl_vstream_set_peer_addr(stream, &sa);
+		acl_vstream_set_peer_addr(stream, (struct sockaddr *) &sa);
 	return ret;
 }
 

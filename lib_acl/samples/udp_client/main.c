@@ -46,7 +46,7 @@ static void run(const char *local_addr, const char *peer_addr,
 		 */
 		ret = acl_vstream_write(stream, data, dlen);
 		if (ret == ACL_VSTREAM_EOF) {
-			printf("acl_vtream_writen error %s\r\n",
+			printf("acl_vtream_write error %s\r\n",
 				acl_last_serror());
 			break;
 		}

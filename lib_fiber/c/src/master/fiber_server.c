@@ -681,7 +681,7 @@ static void fiber_main(ACL_FIBER *fiber acl_unused, void *ctx acl_unused)
 		acl_msg_fatal("%s(%d): invalid socket_count: %d",
 			myname, __LINE__, socket_count);
 	else {
-		fdtype = ACL_VSTREAM_TYPE_LISTEN | ACL_VSTREAM_TYPE_LISTEN_INET;
+		fdtype = ACL_VSTREAM_TYPE_LISTEN;
 		__sstreams = server_daemon_open(socket_count, fdtype);
 	}
 #else
