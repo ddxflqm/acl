@@ -133,6 +133,12 @@ void acl_fiber_switch(void);
 void acl_fiber_schedule(void);
 
 /**
+ * 调用本函数检测当前线程是否处于协程调度状态
+ * @return {int} 0 表示非协程状态，非 0 表示处于协程调度状态
+ */
+int acl_fiber_scheduled(void);
+
+/**
  * 停止协程过程
  */
 void acl_fiber_schedule_stop(void);
