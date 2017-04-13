@@ -1170,7 +1170,7 @@ int gethostbyname_r(const char *name, struct hostent *ret,
 	RETURN (-1);
 }
 
-static int get_port(const char *service, int sock_type)
+static int get_port(const char *service, int socktype)
 {
 	const char *filepath = "/etc/services";
 	ACL_VSTREAM *fp;
@@ -1221,7 +1221,7 @@ static int get_port(const char *service, int sock_type)
 			continue;
 		}
 
-		if (type == sock_type && !strcmp(tokens->argv[0], service)) {
+		if (type == socktype && !strcmp(tokens->argv[0], service)) {
 			port = atoi(sport);
 			acl_argv_free(tokens);
 			break;
@@ -1234,6 +1234,53 @@ static int get_port(const char *service, int sock_type)
 	return port;
 }
 
+struct SOCK_ADDR {
+	union {
+#ifdef AF_INET6
+		struct sockaddr_in6 in6;
+#endif
+		struct sockaddr_in in;
+		struct sockaddr sa;
+	} sa;
+};
+
+static struct addrinfo *create_addrinfo(const char *ip, short port,
+	int socktype, int flags)
+{
+	struct addrinfo *res;
+	size_t addrlen = sizeof(struct SOCK_ADDR);
+	struct SOCK_ADDR *sa;
+
+	if (acl_is_ipv4(ip)) {
+		sa = (struct SOCK_ADDR *) acl_mycalloc(1, addrlen);
+		sa->sa.in.sin_family      = AF_INET;
+		sa->sa.in.sin_addr.s_addr = inet_addr(ip);
+		sa->sa.in.sin_port        = htons(port);
+	}
+#ifdef AF_INET6
+	else if (acl_is_ipv6(ip)) {
+		sa = (struct SOCK_ADDR *) acl_mycalloc(1, addrlen);
+		sa->sa.in6.sin6_family = AF_INET6;
+		sa->sa.in6.sin6_port   = htons(port);
+		if (inet_pton(AF_INET6, ip, &sa->sa.in6.sin6_addr) <= 0) {
+			acl_myfree(sa);
+			return NULL;
+		}
+	}
+#endif
+	else
+		return NULL;
+
+	res = (struct addrinfo *) acl_mycalloc(1, sizeof(struct addrinfo));
+	res->ai_family   = sa->sa.sa.sa_family;
+	res->ai_socktype = socktype;
+	res->ai_flags    = flags;
+	res->ai_addrlen  = (socklen_t) addrlen;
+	res->ai_addr     = (struct sockaddr *) sa;
+
+	return res;
+}
+
 int getaddrinfo(const char *node, const char *service,
 	const struct addrinfo* hints, struct addrinfo **res)
 {
@@ -1242,6 +1289,7 @@ int getaddrinfo(const char *node, const char *service,
 	short port;
 	ACL_ITER iter;
 	char dns_ip[64];
+	int  socktype = hints ? hints->ai_socktype : SOCK_STREAM;
 
 	if (__sys_getaddrinfo == NULL)
 		hook_net();
@@ -1250,28 +1298,19 @@ int getaddrinfo(const char *node, const char *service,
 		return __sys_getaddrinfo ?
 			__sys_getaddrinfo(node, service, hints, res) : -1;
 
-	port = get_port(service, hints ? hints->ai_socktype : SOCK_STREAM);
+	port = get_port(service, socktype);
 
 	*res = NULL;
+
 	if (acl_is_ip(node)) {
-		struct addrinfo *addr = (struct addrinfo *)
-			acl_mycalloc(1, sizeof(struct addrinfo));
-		size_t addrlen = sizeof(struct sockaddr_in);
-		struct sockaddr_in *in = (struct sockaddr_in *)
-			acl_mycalloc(1, addrlen);
-
-		in->sin_family = AF_INET;
-		in->sin_addr.s_addr = inet_addr(node);
-		in->sin_port = htons(port);
-
-		addr->ai_flags = 0;
-		addr->ai_family = in->sin_family;
-		addr->ai_addrlen = (socklen_t) addrlen;
-		addr->ai_addr = (struct sockaddr *) in;
-		addr->ai_next = *res;
-		*res = addr;
-
-		return 0;
+		struct addrinfo *ai = create_addrinfo(node, port, socktype,
+			hints ? hints->ai_flags : 0);
+		if (ai) {
+			ai->ai_next = *res;
+			*res = ai;
+			return 0;
+		} else
+			return EAI_NODATA;
 	}
 
 	get_dns(dns_ip, sizeof(dns_ip));
@@ -1288,22 +1327,12 @@ int getaddrinfo(const char *node, const char *service,
 
 	acl_foreach(iter, db) {
 		ACL_HOSTNAME *h = (ACL_HOSTNAME *) iter.data;
-		struct addrinfo *addr = (struct addrinfo *)
-			acl_mycalloc(1, sizeof(struct addrinfo));
-		size_t addrlen = sizeof(struct sockaddr_in);
-		struct sockaddr_in *in = (struct sockaddr_in *)
-			acl_mycalloc(1, addrlen);
-
-		in->sin_family = AF_INET;
-		in->sin_addr.s_addr = inet_addr(h->ip);
-		in->sin_port = htons(port);
-
-		addr->ai_flags = 0;
-		addr->ai_family = in->sin_family;
-		addr->ai_addrlen = (socklen_t) addrlen;
-		addr->ai_addr = (struct sockaddr *) in;
-		addr->ai_next = *res;
-		*res = addr;
+		struct addrinfo *ai = create_addrinfo(h->ip, port, socktype,
+			hints ? hints->ai_flags : 0);
+		if (ai) {
+			ai->ai_next = *res;
+			*res = ai;
+		}
 	}
 
 	acl_netdb_free(db);
