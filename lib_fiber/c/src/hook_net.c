@@ -1,11 +1,12 @@
+#define _GNU_SOURCE
 #include "stdafx.h"
+#include <dlfcn.h>
 #include <poll.h>
 #include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/epoll.h>
-#define __USE_GNU
-#include <dlfcn.h>
+#include <pthread.h>
 #include "fiber/lib_fiber.h"
 #include "event.h"
 #include "fiber.h"
@@ -22,27 +23,32 @@ typedef int (*poll_fn)(struct pollfd *, nfds_t, int);
 typedef int (*select_fn)(int, fd_set *, fd_set *, fd_set *, struct timeval *);
 typedef int (*gethostbyname_r_fn)(const char *, struct hostent *, char *,
 	size_t, struct hostent **, int *);
+typedef int (*getaddrinfo_fn)(const char *node, const char *service,
+	const struct addrinfo* hints, struct addrinfo **res);
+typedef void (*freeaddrinfo_fn)(struct addrinfo *res);
 
 typedef int (*epoll_create_fn)(int);
 typedef int (*epoll_wait_fn)(int, struct epoll_event *,int, int);
 typedef int (*epoll_ctl_fn)(int, int, int, struct epoll_event *);
 
-static close_fn      __sys_close    = NULL;
-static socket_fn     __sys_socket   = NULL;
-static socketpair_fn __sys_socketpair = NULL;
-static bind_fn       __sys_bind     = NULL;
-static listen_fn     __sys_listen   = NULL;
-static accept_fn     __sys_accept   = NULL;
-static connect_fn    __sys_connect  = NULL;
+static close_fn           __sys_close           = NULL;
+static socket_fn          __sys_socket          = NULL;
+static socketpair_fn      __sys_socketpair      = NULL;
+static bind_fn            __sys_bind            = NULL;
+static listen_fn          __sys_listen          = NULL;
+static accept_fn          __sys_accept          = NULL;
+static connect_fn         __sys_connect         = NULL;
 
-static poll_fn       __sys_poll     = NULL;
-static poll_fn       __sys_inner_poll = NULL;
-static select_fn     __sys_select   = NULL;
+static poll_fn            __sys_poll            = NULL;
+static poll_fn            __sys_inner_poll      = NULL;
+static select_fn          __sys_select          = NULL;
 static gethostbyname_r_fn __sys_gethostbyname_r = NULL;
+static getaddrinfo_fn     __sys_getaddrinfo     = NULL;
+static freeaddrinfo_fn    __sys_freeaddrinfo    = NULL;
 
-static epoll_create_fn __sys_epoll_create = NULL;
-static epoll_wait_fn   __sys_epoll_wait   = NULL;
-static epoll_ctl_fn    __sys_epoll_ctl    = NULL;
+static epoll_create_fn    __sys_epoll_create    = NULL;
+static epoll_wait_fn      __sys_epoll_wait      = NULL;
+static epoll_ctl_fn       __sys_epoll_ctl       = NULL;
 
 void hook_net(void)
 {
@@ -86,6 +92,13 @@ void hook_net(void)
 	__sys_gethostbyname_r = (gethostbyname_r_fn) dlsym(RTLD_NEXT,
 			"gethostbyname_r");
 	acl_assert(__sys_gethostbyname_r);
+
+	__sys_getaddrinfo = (getaddrinfo_fn) dlsym(RTLD_NEXT, "getaddrinfo");
+	acl_assert(__sys_getaddrinfo);
+
+	__sys_freeaddrinfo = (freeaddrinfo_fn) dlsym(RTLD_NEXT,
+			"freeaddrinfo");
+	acl_assert(__sys_freeaddrinfo);
 
 	__sys_epoll_create = (epoll_create_fn) dlsym(RTLD_NEXT, "epoll_create");
 	acl_assert(__sys_epoll_create);
@@ -956,9 +969,89 @@ int epoll_wait(int epfd, struct epoll_event *events,
 
 /****************************************************************************/
 
-extern struct hostent *fiber_gethostbyname(const char *name);
+static const char *__dns_ip_default = "8.8.8.8";
+static char __dns_ip[128] = { 0 };
+static int  __dns_port = 53;
 
-struct hostent *fiber_gethostbyname(const char *name)
+void acl_fiber_set_dns(const char* ip, int port)
+{
+	if (ip == NULL || *ip == 0)
+		__dns_ip[0] = 0;
+	else
+		snprintf(__dns_ip, sizeof(__dns_ip), "%s", ip);
+
+	__dns_port = port > 0 ? port : 53;
+}
+
+#define SKIP_WHILE(cond, cp) { while (*cp && (cond)) cp++; }
+
+static acl_pthread_mutex_t __lock = PTHREAD_MUTEX_INITIALIZER;
+
+static void get_dns(char *ip, size_t size)
+{
+	const char *filepath = "/etc/resolv.conf";
+	ACL_VSTREAM *fp;
+	char buf[4096], *ptr;
+	ACL_ARGV *tokens;
+
+	(void) acl_pthread_mutex_lock(&__lock);
+
+	if (__dns_ip[0] != 0) {
+		ACL_SAFE_STRNCPY(ip, __dns_ip, size);
+		(void) acl_pthread_mutex_unlock(&__lock);
+		return;
+	}
+
+	fp = acl_vstream_fopen(filepath, O_RDONLY, 066, 4096);
+	if (fp == NULL) {
+		(void) acl_pthread_mutex_unlock(&__lock);
+		ACL_SAFE_STRNCPY(ip, __dns_ip_default, size);
+
+		return;
+	}
+
+	__dns_ip[0] = 0;
+
+	while (acl_vstream_gets_nonl(fp, buf, sizeof(buf)) != ACL_VSTREAM_EOF) {
+		ptr = buf;
+		SKIP_WHILE(*ptr == ' ' || *ptr == '\t' || *ptr == '#', ptr);
+		if (*ptr == 0)
+			continue;
+
+		tokens = acl_argv_split(ptr, " \t");
+		if (tokens->argc < 2) {
+			acl_argv_free(tokens);
+			continue;
+		}
+
+		if (strcasecmp(tokens->argv[0], "nameserver") != 0) {
+			acl_argv_free(tokens);
+			continue;
+		}
+
+		if (!acl_is_ip(tokens->argv[1])) {
+			acl_argv_free(tokens);
+			continue;
+		}
+
+		snprintf(__dns_ip, sizeof(__dns_ip), "%s", tokens->argv[1]);
+		acl_argv_free(tokens);
+		break;
+	}
+
+	acl_vstream_close(fp);
+
+	if (__dns_ip[0] == 0) {
+		(void) acl_pthread_mutex_unlock(&__lock);
+		ACL_SAFE_STRNCPY(ip, __dns_ip_default, size);
+		return;
+	}
+
+	ACL_SAFE_STRNCPY(ip, __dns_ip, size);
+	(void) acl_pthread_mutex_unlock(&__lock);
+}
+
+struct hostent *gethostbyname(const char *name)
 {
 	static __thread struct hostent ret, *result;
 #define BUF_LEN	4096
@@ -968,30 +1061,14 @@ struct hostent *fiber_gethostbyname(const char *name)
 		== 0 ? result : NULL;
 }
 
-struct hostent *gethostbyname(const char *name)
-{
-	return fiber_gethostbyname(name);
-}
-
-static char dns_ip[128] = "8.8.8.8";
-static int dns_port = 53;
-
-void acl_fiber_set_dns(const char* ip, int port)
-{
-	snprintf(dns_ip, sizeof(dns_ip), "%s", ip);
-	dns_port = port;
-}
-
-extern int fiber_gethostbyname_r(const char *name, struct hostent *ret,
-	char *buf, size_t buflen, struct hostent **result, int *h_errnop);
-
-int fiber_gethostbyname_r(const char *name, struct hostent *ret,
+int gethostbyname_r(const char *name, struct hostent *ret,
 	char *buf, size_t buflen, struct hostent **result, int *h_errnop)
 {
 	ACL_RES *ns = NULL;
 	ACL_DNS_DB *res = NULL;
 	size_t n = 0, len, i = 0;
 	ACL_ITER iter;
+	char dns_ip[64];
 
 #define	RETURN(x) do { \
 	if (res) \
@@ -1008,23 +1085,18 @@ int fiber_gethostbyname_r(const char *name, struct hostent *ret,
 		return __sys_gethostbyname_r(name, ret, buf, buflen, result,
 				h_errnop);
 
-	ns = acl_res_new(dns_ip, dns_port);
+	get_dns(dns_ip, sizeof(dns_ip));
 
 	memset(ret, 0, sizeof(struct hostent));
 	memset(buf, 0, buflen);
 
-	if (ns == NULL) {
-		acl_msg_error("%s(%d), %s: acl_res_new NULL, name: %s,"
-			" dns_ip: %s, dns_port: %d", __FILE__, __LINE__,
-			__FUNCTION__, name, dns_ip, dns_port);
-		RETURN (-1);
-	}
-
+	ns = acl_res_new(dns_ip, __dns_port);
 	res = acl_res_lookup(ns, name);
+
 	if (res == NULL) {
 		acl_msg_error("%s(%d), %s: acl_res_lookup NULL, name: %s,"
 			" dns_ip: %s, dns_port: %d", __FILE__, __LINE__,
-			__FUNCTION__, name, dns_ip, dns_port);
+			__FUNCTION__, name, dns_ip, __dns_port);
 		if (h_errnop)
 			*h_errnop = HOST_NOT_FOUND;
 		RETURN (-1);
@@ -1091,8 +1163,160 @@ int fiber_gethostbyname_r(const char *name, struct hostent *ret,
 	RETURN (-1);
 }
 
-int gethostbyname_r(const char *name, struct hostent *ret,
-	char *buf, size_t buflen, struct hostent **result, int *h_errnop)
+static int get_port(const char *service, int sock_type)
 {
-	return fiber_gethostbyname_r(name, ret, buf, buflen, result, h_errnop);
+	const char *filepath = "/etc/services";
+	ACL_VSTREAM *fp;
+	char buf[4096], *ptr, *sport, *transport;
+	ACL_ARGV *tokens;
+	int port = 0, type;
+
+	if (service == NULL || *service == 0)
+		return 0;
+
+	if (acl_alldig(service))
+		return atoi(service);
+
+	fp = acl_vstream_fopen(filepath, O_RDONLY, 0600, 4096);
+	if (fp == NULL)
+		return 0;
+
+	while (acl_vstream_gets_nonl(fp, buf, sizeof(buf)) != ACL_VSTREAM_EOF) {
+		ptr = buf;
+		SKIP_WHILE(*ptr == ' ' || *ptr == '\t' || *ptr == '#', ptr);
+		if (*ptr == 0)
+			continue;
+
+		tokens = acl_argv_split(ptr, " \t");
+		if (tokens->argc < 2) {
+			acl_argv_free(tokens);
+			continue;
+		}
+
+		sport = tokens->argv[1];
+		transport = strchr(sport, '/');
+		if (transport == NULL) {
+			acl_argv_free(tokens);
+			continue;
+		}
+		*transport++ = 0;
+		if (!acl_alldig(sport)) {
+			acl_argv_free(tokens);
+			continue;
+		}
+
+		if (strcasecmp(transport, "tcp") == 0)
+			type = SOCK_STREAM;
+		else if (strcasecmp(transport, "udp") == 0)
+			type = SOCK_DGRAM;
+		else {
+			acl_argv_free(tokens);
+			continue;
+		}
+
+		if (type == sock_type && !strcmp(tokens->argv[0], service)) {
+			port = atoi(sport);
+			acl_argv_free(tokens);
+			break;
+		}
+
+		acl_argv_free(tokens);
+	}
+
+	acl_vstream_close(fp);
+	return port;
+}
+
+int getaddrinfo(const char *node, const char *service,
+	const struct addrinfo* hints, struct addrinfo **res)
+{
+	ACL_RES *ns;
+	ACL_DNS_DB *db;
+	short port;
+	ACL_ITER iter;
+	char dns_ip[64];
+
+	if (__sys_getaddrinfo == NULL)
+		hook_net();
+
+	if (!acl_var_hook_sys_api)
+		return __sys_getaddrinfo(node, service, hints, res);
+
+	port = get_port(service, hints ? hints->ai_socktype : SOCK_STREAM);
+
+	*res = NULL;
+	if (acl_is_ip(node)) {
+		struct addrinfo *addr = (struct addrinfo *)
+			acl_mycalloc(1, sizeof(struct addrinfo));
+		size_t addrlen = sizeof(struct sockaddr_in);
+		struct sockaddr_in *in = (struct sockaddr_in *)
+			acl_mycalloc(1, addrlen);
+
+		in->sin_family = AF_INET;
+		in->sin_addr.s_addr = inet_addr(node);
+		in->sin_port = htons(port);
+
+		addr->ai_flags = 0;
+		addr->ai_family = in->sin_family;
+		addr->ai_addrlen = (socklen_t) addrlen;
+		addr->ai_addr = (struct sockaddr *) in;
+		addr->ai_next = *res;
+		*res = addr;
+
+		return 0;
+	}
+
+	get_dns(dns_ip, sizeof(dns_ip));
+
+	ns = acl_res_new(dns_ip, __dns_port);
+	db = acl_res_lookup(ns, node);
+	if (db == NULL) {
+		acl_msg_error("%s(%d), %s: acl_res_lookup NULL, node: %s,"
+			" dns_ip: %s, dns_port: %d", __FILE__, __LINE__,
+			__FUNCTION__, node, dns_ip, __dns_port);
+		acl_res_free(ns);
+		return EAI_NODATA;
+	}
+
+	acl_foreach(iter, db) {
+		ACL_HOSTNAME *h = (ACL_HOSTNAME *) iter.data;
+		struct addrinfo *addr = (struct addrinfo *)
+			acl_mycalloc(1, sizeof(struct addrinfo));
+		size_t addrlen = sizeof(struct sockaddr_in);
+		struct sockaddr_in *in = (struct sockaddr_in *)
+			acl_mycalloc(1, addrlen);
+
+		in->sin_family = AF_INET;
+		in->sin_addr.s_addr = inet_addr(h->ip);
+		in->sin_port = htons(port);
+
+		addr->ai_flags = 0;
+		addr->ai_family = in->sin_family;
+		addr->ai_addrlen = (socklen_t) addrlen;
+		addr->ai_addr = (struct sockaddr *) in;
+		addr->ai_next = *res;
+		*res = addr;
+	}
+
+	acl_netdb_free(db);
+	acl_res_free(ns);
+	return 0;
+}
+
+void freeaddrinfo(struct addrinfo *res)
+{
+	if (__sys_freeaddrinfo == NULL)
+		hook_net();
+
+	if (!acl_var_hook_sys_api) {
+		__sys_freeaddrinfo(res);
+		return;
+	}
+
+	while (res) {
+		struct addrinfo *tmp = res;
+		res = res->ai_next;
+		acl_myfree(tmp->ai_addr);
+		acl_myfree(tmp);
+	}
 }
