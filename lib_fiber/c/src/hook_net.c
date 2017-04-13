@@ -40,7 +40,7 @@ static accept_fn          __sys_accept          = NULL;
 static connect_fn         __sys_connect         = NULL;
 
 static poll_fn            __sys_poll            = NULL;
-static poll_fn            __sys_inner_poll      = NULL;
+static poll_fn            __sys_xx_poll         = NULL;
 static select_fn          __sys_select          = NULL;
 static gethostbyname_r_fn __sys_gethostbyname_r = NULL;
 static getaddrinfo_fn     __sys_getaddrinfo     = NULL;
@@ -83,8 +83,7 @@ void hook_net(void)
 	__sys_poll       = (poll_fn) dlsym(RTLD_NEXT, "poll");
 	acl_assert(__sys_poll);
 
-	__sys_inner_poll = (poll_fn) dlsym(RTLD_NEXT, "__poll");
-	acl_assert(__sys_inner_poll);
+	__sys_xx_poll = (poll_fn) dlsym(RTLD_NEXT, "__poll");
 
 	__sys_select     = (select_fn) dlsym(RTLD_NEXT, "select");
 	acl_assert(__sys_select);
@@ -117,6 +116,8 @@ int socket(int domain, int type, int protocol)
 	if (__sys_socket == NULL)
 		hook_net();
 
+	if (__sys_socket == NULL)
+		return -1;
 	sockfd = __sys_socket(domain, type, protocol);
 
 	if (!acl_var_hook_sys_api)
@@ -136,6 +137,8 @@ int socketpair(int domain, int type, int protocol, int sv[2])
 	if (__sys_socketpair == NULL)
 		hook_net();
 
+	if (__sys_socketpair == NULL)
+		return -1;
 	ret = __sys_socketpair(domain, type, protocol, sv);
 
 	if (!acl_var_hook_sys_api)
@@ -153,6 +156,8 @@ int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 	if (__sys_bind == NULL)
 		hook_net();
 
+	if (__sys_bind == NULL)
+		return -1;
 	if (__sys_bind(sockfd, addr, addrlen) == 0)
 		return 0;
 
@@ -169,7 +174,7 @@ int listen(int sockfd, int backlog)
 		hook_net();
 
 	if (!acl_var_hook_sys_api)
-		return __sys_listen(sockfd, backlog);
+		return __sys_listen ? __sys_listen(sockfd, backlog) : -1;
 
 	acl_non_blocking(sockfd, ACL_NON_BLOCKING);
 	if (__sys_listen(sockfd, backlog) == 0)
@@ -194,7 +199,7 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 		hook_net();
 
 	if (!acl_var_hook_sys_api)
-		return __sys_accept(sockfd, addr, addrlen);
+		return __sys_accept ? __sys_accept(sockfd, addr, addrlen) : -1;
 
 	me = acl_fiber_running();
 
@@ -287,7 +292,7 @@ int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 		hook_net();
 
 	if (!acl_var_hook_sys_api)
-		return __sys_connect(sockfd, addr, addrlen);
+		return __sys_connect ? __sys_connect(sockfd, addr, addrlen) : -1;
 
 	me = acl_fiber_running();
 
@@ -464,10 +469,10 @@ extern int __poll(struct pollfd fds[], nfds_t nfds, int timeout);
 
 int __poll(struct pollfd fds[], nfds_t nfds, int timeout)
 {
-	if (__sys_inner_poll == NULL)
+	if (__sys_xx_poll == NULL)
 		hook_net();
 	if (!acl_var_hook_sys_api)
-		return __sys_inner_poll(fds, nfds, timeout);
+		return __sys_xx_poll ? __sys_xx_poll(fds, nfds, timeout) : -1;
 
 	return poll(fds, nfds, timeout);
 }
@@ -482,7 +487,7 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
 		hook_net();
 
 	if (!acl_var_hook_sys_api)
-		return __sys_poll(fds, nfds, timeout);
+		return __sys_poll ? __sys_poll(fds, nfds, timeout) : -1;
 
 	fiber_io_check();
 
@@ -534,8 +539,8 @@ int select(int nfds, fd_set *readfds, fd_set *writefds,
 		hook_net();
 
 	if (!acl_var_hook_sys_api)
-		return __sys_select(nfds, readfds, writefds,
-				exceptfds, timeout);
+		return __sys_select ? __sys_select
+			(nfds, readfds, writefds, exceptfds, timeout) : -1;
 
 	fds = (struct pollfd *) acl_mycalloc(nfds + 1, sizeof(struct pollfd));
 
@@ -762,7 +767,7 @@ int epoll_create(int size acl_unused)
 		hook_net();
 
 	if (!acl_var_hook_sys_api)
-		return __sys_epoll_create(size);
+		return __sys_epoll_create ? __sys_epoll_create(size) : -1;
 
 	fiber_io_check();
 	ev = fiber_io_event();
@@ -835,7 +840,8 @@ int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
 		hook_net();
 
 	if (!acl_var_hook_sys_api)
-		return __sys_epoll_ctl(epfd, op, fd, event);
+		return __sys_epoll_ctl ?
+			__sys_epoll_ctl(epfd, op, fd, event) : -1;
 
 	ee = epoll_event_find(epfd);
 	if (ee == NULL) {
@@ -917,7 +923,8 @@ int epoll_wait(int epfd, struct epoll_event *events,
 		hook_net();
 
 	if (!acl_var_hook_sys_api)
-		return __sys_epoll_wait(epfd, events, maxevents, timeout);
+		return __sys_epoll_wait ?
+			__sys_epoll_wait(epfd, events, maxevents, timeout) : -1;
 
 	ev = fiber_io_event();
 	if (ev == NULL) {
@@ -1082,8 +1089,8 @@ int gethostbyname_r(const char *name, struct hostent *ret,
 		hook_net();
 
 	if (!acl_var_hook_sys_api)
-		return __sys_gethostbyname_r(name, ret, buf, buflen, result,
-				h_errnop);
+		return sys_gethostbyname_r ?  __sys_gethostbyname_r
+			(name, ret, buf, buflen, result, h_errnop) : -1;
 
 	get_dns(dns_ip, sizeof(dns_ip));
 
@@ -1240,7 +1247,8 @@ int getaddrinfo(const char *node, const char *service,
 		hook_net();
 
 	if (!acl_var_hook_sys_api)
-		return __sys_getaddrinfo(node, service, hints, res);
+		return __sys_getaddrinfo ?
+			__sys_getaddrinfo(node, service, hints, res) : -1;
 
 	port = get_port(service, hints ? hints->ai_socktype : SOCK_STREAM);
 
@@ -1309,7 +1317,8 @@ void freeaddrinfo(struct addrinfo *res)
 		hook_net();
 
 	if (!acl_var_hook_sys_api) {
-		__sys_freeaddrinfo(res);
+		if (__sys_freeaddrinfo)
+			__sys_freeaddrinfo(res);
 		return;
 	}
 
