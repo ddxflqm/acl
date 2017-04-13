@@ -1089,7 +1089,7 @@ int gethostbyname_r(const char *name, struct hostent *ret,
 		hook_net();
 
 	if (!acl_var_hook_sys_api)
-		return sys_gethostbyname_r ?  __sys_gethostbyname_r
+		return __sys_gethostbyname_r ?  __sys_gethostbyname_r
 			(name, ret, buf, buflen, result, h_errnop) : -1;
 
 	get_dns(dns_ip, sizeof(dns_ip));
