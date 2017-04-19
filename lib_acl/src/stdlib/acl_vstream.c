@@ -549,6 +549,9 @@ int acl_vstream_probe_status(ACL_VSTREAM *fp)
 	fp->rw_timeout = 0;
 	fp->errnum = 0;
 
+	if (acl_read_wait(ACL_VSTREAM_SOCK(fp), 0) < 0)
+		return errno == ACL_ETIMEDOUT ? 0 : -1;
+
 	ch = acl_vstream_getc(fp);
 
 	fp->rw_timeout = rw_timeout;
